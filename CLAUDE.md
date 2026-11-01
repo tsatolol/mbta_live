@@ -22,7 +22,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 | 技術スタック | Next.js (App Router, TypeScript) 一体型、Cloud Run 1 サービス + Cloud Run Jobs |
 | DB | Cloud SQL for PostgreSQL 16 + Drizzle ORM (drizzle-kit でマイグレーション) |
 | データ収集 | Cloud Scheduler → Cloud Run Job による定期ポーリング（prod **1 分**、dev 5 分） |
-| データ保持 | 生データ **28 日**（dev は 14 日）、日次集計は**無期限** |
+| データ保持 | 生データ **28 日**（dev は 3 日）、日次集計は**無期限** |
 | MBTA API キー | 開発の初期はなし（20 req/分 制限）。**prod の稼働前に取得**し、dev / prod で別のキーを使う（§10.1） |
 | 画面更新 | ブラウザ → 自前 API を 15〜30 秒間隔でポーリング（DB の最新スナップショットを返す） |
 | 地図 | MapLibre GL JS + OpenFreeMap（OSM ベース、API キー不要） |
@@ -132,7 +132,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 ### 4.3 履歴テーブル（生データ。28 日で削除）
 
-日単位のパーティション（PostgreSQL の宣言的パーティショニング）にして、保持期間の削除はパーティションごと `DROP` する。Drizzle はパーティションを扱えないので、`drizzle/` 配下に手書き SQL のマイグレーションとして作る。
+日単位のパーティション（PostgreSQL の宣言的パーティショニング）にして、保持期間の削除はパーティションごと `DROP` する。**集計が成功していない運行日のパーティションは、保持期間を過ぎても削除しない**（`aggregate` Job が数日失敗し続けても、集計前の生データを失わないようにするため。保持期間の短い dev で特に効く）。Drizzle はパーティションを扱えないので、`drizzle/` 配下に手書き SQL のマイグレーションとして作る。
 
 - `vehicle_positions` — `vehicle_id`, `updated_at`, `polled_at`, `route_id`, `trip_id`, `direction_id`, `lat`, `lon`, `bearing`, `current_status`, `stop_id`, `current_stop_sequence`。PK (`vehicle_id`, `updated_at`)。`updated_at` が前回と同じ車両は保存しない
 - `prediction_samples` — `service_date`, `trip_id`, `stop_id`, `lead_bucket_min`, `route_id`, `direction_id`, `predicted_arrival_at`, `observed_at`。PK (`service_date`, `trip_id`, `stop_id`, `lead_bucket_min`)
@@ -148,7 +148,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 曜日 × 時間帯のヒートマップは、これらのテーブルの `service_date` の曜日と `hour` から作る。
 
-> **注意**: 集計の定義を後から変えても、生データが残っている直近 28 日分（dev は 14 日分）しか再集計できない。それより古い期間は、変更前の定義で集計した値のまま残る。集計の定義を変えたら `aggregate` Job を保持期間分さかのぼって再実行し、変更日を `docs/` か本ファイルに記録する
+> **注意**: 集計の定義を後から変えても、生データが残っている直近 28 日分（dev は 3 日分）しか再集計できない。それより古い期間は、変更前の定義で集計した値のまま残る。集計の定義を変えたら `aggregate` Job を保持期間分さかのぼって再実行し、変更日を `docs/` か本ファイルに記録する
 
 ### データ量の目安
 
@@ -303,7 +303,7 @@ pnpm fixtures:record           # 実 API からフィクスチャを記録（数
 | `MBTA_API_KEY` | 任意。設定すると `x-api-key` ヘッダーで送る |
 | `MBTA_FIXTURE_MODE` | `1` で MBTA API の代わりにフィクスチャを使う |
 | `APP_ENV` | `local` / `dev` / `prod`。画面に環境バッジを出すためだけに使う（§10.1） |
-| `RAW_RETENTION_DAYS` | 生データの保持日数（dev 14 / prod 28） |
+| `RAW_RETENTION_DAYS` | 生データの保持日数（dev 3 / prod 28） |
 
 `.env.local` はコミットしない。`.env.example` を用意して最新に保つ。
 
@@ -320,7 +320,7 @@ pnpm fixtures:record           # 実 API からフィクスチャを記録（数
 | GCP プロジェクト | `<dev-project-id>`（未定） | `<prod-project-id>`（未定） |
 | デプロイ | main への push で**自動**（承認なし） | dev へのデプロイ成功後、**承認されてから** |
 | collector の間隔 | **5 分**（`*/5 * * * *`） | **1 分**（`* * * * *`） |
-| 生データの保持 | 14 日 | 28 日 |
+| 生データの保持 | 3 日 | 28 日 |
 | Cloud SQL | `db-f1-micro`、バックアップ 1 日、`deletion_protection=false` | `db-f1-micro`、バックアップ 7 日、`deletion_protection=true` |
 | IAP で許可するユーザー | 開発者 | 利用者（開発者を含む） |
 | MBTA API キー | dev 用のキー | prod 用のキー |
