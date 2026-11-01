@@ -84,15 +84,30 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 | collector | `GET /predictions` | 毎分 | `filter[route]=<同上>`（predictions は stop/route/trip/位置のいずれかでのフィルタが必須） |
 | collector | `GET /alerts` | 毎分 | `filter[route]=<同上>`（`filter[route_type]=0,1` でも同じ結果になることを確認済み） |
 | sync-static | `GET /routes` | 毎日 | `filter[type]=0,1`（8 路線を確認済み） |
-| sync-static | `GET /stops` | 毎日 | `filter[route_type]=0,1&include=parent_station` |
+| sync-static | `GET /stops` ① | 毎日 | `filter[route_type]=0,1&include=parent_station`（ホームと親駅） |
+| sync-static | `GET /stops` ② | 毎日 | `filter[id]=<①で得た親駅 125 件>&include=child_stops`（終点駅の番線などを補う。圧縮後 約 140KB） |
 | sync-static | `GET /route_patterns` | 毎日 | `filter[route]=<同上>&include=representative_trip.shape,representative_trip.stops&fields[stop]=name,parent_station` |
 
 #### 実測で確認したレスポンスの性質（2026-11-01）
 
 - **`/routes`**: `color` は Red と Mattapan が `DA291C`、Green 4 支線はすべて `00843D`、Orange が `ED8B00`、Blue が `003DA5`。`direction_names` は Red / Orange が `South / North`、Green / Blue が `West / East`、Mattapan が `Outbound / Inbound`。`direction_destinations` もあり（例: Green-D は `Riverside / Union Square`）
 - **`/stops`**: `data` に入るのは**ホーム（`location_type=0`）だけで 265 件**。親駅（`location_type=1`, `place-xxxx`）は `include=parent_station` を付けたときの `included` にだけ入る（125 件）。すべてのホームに親駅がある。`filter[location_type]` は不要
+  - ただし**終点駅の番線などの 12 件はこの結果に含まれない**（`Alewife-01/02`, `Braintree-01/02`, `Forest Hills-01/02`, `Oak Grove-01/02`, `Union Square-01/02`, `Government Center-Brattle`, `71199`）。車両と予測の `stop` には実際にこれらが出てくる。そこで ② で親駅の `child_stops` を取得し、`location_type=0` かつ `vehicle_type` が 0 / 1 のものを追加する（child_stops にはバス停・通勤鉄道・出入口なども含まれるので、この条件で絞る）
+  - それでも `stops` にない ID を collector が見つけたら、ログに残して `unknown_stop_ids` に記録し、次の sync-static で `filter[id]=` を使って取得する
 - **`/route_patterns`**: 対象路線で絞っても、**臨時の代行バス路線（`Shuttle-*`, `typicality=4`）のパターンが混ざる**。`route_id` が対象 8 路線のものだけを残す。通常運行のパターンは `typicality=1`（`canonical=true`）の 18 件で、Red は方向ごとに Ashmont 行きと Braintree 行きの 2 パターンがある。停車順は `representative_trip.stops` で取れる（ホームの ID）。形状は `shape.polyline`（encoded polyline）。1 回のリクエストで全路線分が取れる（圧縮後 約 23KB）
 - **`/alerts`**: フィードには **`lifecycle=UPCOMING`（まだ始まっていない予告）も含まれる**。「現在有効か」はフィードにあるかどうかではなく、`active_period` で判定する（`end` は `null` のことがある）。`informed_entity` の要素は `route`, `route_type`, `stop`（ホームと親駅の両方が出る）, `direction_id`（ないこともある）, `activities`。`header` 以外に `short_header`, `service_effect`, `timeframe` があり、UI の表示に使える
+- **`/predictions`**（日曜 05:48 ET、運行中の車両 23 両の時点）: **416 件、非圧縮 251KB / 圧縮後 10KB**。平日の日中はこの数倍になる見込みだが、1 回のリクエストで問題なく取得できる（平日ピークの実測は §13）
+  - 始発駅では `arrival_time` が `null` で、`departure_time` だけが入る
+  - `schedule_relationship`: `null`（時刻表どおり）, `ADDED`（時刻表にない便。この時点では過半数）, `CANCELLED`（`arrival_time` と `departure_time` がどちらも `null`）, `SKIPPED`
+  - `update_type` と不確かさ（`arrival_uncertainty` / `departure_uncertainty`、秒）は対応している: `MID_TRIP` = 60, `AT_TERMINAL` = 120, `REVERSE_TRIP`（終点で折り返した後の次の便の予測）= 360
+  - `status` はほぼ `null`（まれに `Stopped 3 stops away` などの文字列）。`trip_headsign` は `null`。`last_trip`, `revenue` もある
+  - trip ID には `ADDED-…` や `NONREV-…` で始まる、時刻表（GTFS）にない ID が多い
+- **`/vehicles`**: 属性は `bearing`, `current_status`, `current_stop_sequence`, `direction_id`, `label`, `latitude`, `longitude`, `revenue`, `speed`, `occupancy_status`, `carriages[]`（車両ごとの `label` / `occupancy_status` / `occupancy_percentage`）, `updated_at`。リレーションは `route`, `stop`, `trip`
+  - `stop` が `null` の車両がある
+  - **`updated_at` が 25〜30 分前のまま更新されていない車両がある**（終点で待機中の Red Line の 2 両）
+  - `speed` が入るのは Green と Mattapan だけ。`occupancy_status` は `null`、`carriages[].occupancy_status` は `NO_DATA_AVAILABLE`
+  - 車両 ID は `R-…`, `O-…`, `G-…` の形式
+- 日時は `2026-11-01T05:23:46-05:00` のような**オフセット付き**の文字列（夏時間の間は `-04:00`）。必ずオフセットを考慮してパースする
 
 - route_type: `0` = Light Rail（Green 各支線, Mattapan）、`1` = Heavy Rail（Red, Orange, Blue）
 - 予算: collector は **1 回あたり 3 リクエスト**、sync-static は 1 日あたり十数リクエスト。合計で常に **5 req/分以下** に収める
@@ -123,8 +138,8 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 ### 4.2 現在値テーブル（collector が毎分、トランザクション内で入れ替え）
 
-- `vehicles_current` — `vehicle_id` PK, `route_id`, `trip_id`, `direction_id`, `lat`, `lon`, `bearing`, `current_status`（`INCOMING_AT` / `STOPPED_AT` / `IN_TRANSIT_TO`）, `stop_id`, `current_stop_sequence`, `label`, `occupancy_status`, `updated_at`, `polled_at`
-- `predictions_current` — `id` PK, `route_id`, `trip_id`, `stop_id`, `direction_id`, `stop_sequence`, `arrival_time`, `departure_time`, `status`, `schedule_relationship`, `vehicle_id`, `polled_at`
+- `vehicles_current` — `vehicle_id` PK, `route_id`, `trip_id`, `direction_id`, `lat`, `lon`, `bearing`, `current_status`（`INCOMING_AT` / `STOPPED_AT` / `IN_TRANSIT_TO`）, `stop_id`, `current_stop_sequence`, `label`, `revenue`, `speed`, `carriages` jsonb, `updated_at`, `polled_at`
+- `predictions_current` — `id` PK, `route_id`, `trip_id`, `stop_id`, `direction_id`, `stop_sequence`, `arrival_time`, `departure_time`, `status`, `schedule_relationship`, `update_type`, `uncertainty_sec`, `vehicle_id`, `polled_at`
 - `alerts` — `id` PK, `effect`, `cause`, `severity`（整数）, `header`, `short_header`, `service_effect`, `timeframe`, `description`, `lifecycle`, `active_period` jsonb, `informed_entity` jsonb, `created_at`, `updated_at`, `first_seen_at`, `last_seen_at`, `in_feed`
   - アラートは削除せず upsert。フィードから消えたら `in_feed=false` にする
   - 「現在有効か」は列として持たず、`active_period` と現在時刻から計算する（UPCOMING のアラートがフィードに含まれるため）
@@ -135,15 +150,16 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 日単位のパーティション（PostgreSQL の宣言的パーティショニング）にして、保持期間の削除はパーティションごと `DROP` する。**集計が成功していない運行日のパーティションは、保持期間を過ぎても削除しない**（`aggregate` Job が数日失敗し続けても、集計前の生データを失わないようにするため。保持期間の短い dev で特に効く）。Drizzle はパーティションを扱えないので、`drizzle/` 配下に手書き SQL のマイグレーションとして作る。
 
 - `vehicle_positions` — `vehicle_id`, `updated_at`, `polled_at`, `route_id`, `trip_id`, `direction_id`, `lat`, `lon`, `bearing`, `current_status`, `stop_id`, `current_stop_sequence`。PK (`vehicle_id`, `updated_at`)。`updated_at` が前回と同じ車両は保存しない
-- `prediction_samples` — `service_date`, `trip_id`, `stop_id`, `lead_bucket_min`, `route_id`, `direction_id`, `predicted_arrival_at`, `observed_at`。PK (`service_date`, `trip_id`, `stop_id`, `lead_bucket_min`)
+- `prediction_samples` — `service_date`, `trip_id`, `stop_id`, `lead_bucket_min`, `route_id`, `direction_id`, `update_type`, `uncertainty_sec`, `predicted_arrival_at`, `observed_at`。PK (`service_date`, `trip_id`, `stop_id`, `lead_bucket_min`)
   - 全予測を毎分保存すると 28 日でも数千万行規模になるので、**リード時間バケット `[1, 3, 5, 10, 15]` 分ごとに 1 件だけ**保存する（§5.2）
 - `arrival_events` — `service_date`, `trip_id`, `stop_id`（親駅）, `route_id`, `direction_id`, `vehicle_id`, `arrived_at`, `source`（`stopped_at` / `predicted_last` / `interpolated`）, `precision_sec`。PK (`service_date`, `trip_id`, `stop_id`)
 - `collector_runs` — `id`, `job`, `started_at`, `finished_at`, `status`, `counts` jsonb, `ratelimit_remaining`, `error`
+- `unknown_stop_ids` — `stop_id` PK, `first_seen_at`, `resolved_at`（`stops` にない ID を collector が見つけたときに記録する。§3）
 
 ### 4.4 集計テーブル（aggregate が毎日作成。無期限保持）
 
 - `daily_headway_stats` — `service_date`, `route_id`（`Green` 合算を含む）, `direction_id`, `stop_id`, `hour`（0–23, ET）, `n`, `mean_sec`, `p50_sec`, `p90_sec`, `max_sec`, `bunching_count`, `gap_count`
-- `daily_prediction_accuracy` — `service_date`, `route_id`, `direction_id`, `lead_bucket_min`, `hour`, `n`, `mean_error_sec`, `mean_abs_error_sec`, `p90_abs_error_sec`, `within_60s_ratio`
+- `daily_prediction_accuracy` — `service_date`, `route_id`, `direction_id`, `lead_bucket_min`, `update_type`, `hour`, `n`, `mean_error_sec`, `mean_abs_error_sec`, `p90_abs_error_sec`, `within_60s_ratio`
 - `daily_alert_stats` — `service_date`, `route_id`, `effect`, `cause`, `alert_count`, `active_minutes`
 
 曜日 × 時間帯のヒートマップは、これらのテーブルの `service_date` の曜日と `hour` から作る。
@@ -164,7 +180,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 ### 5.1 実到着の検出（`arrival_events`）
 
-collector は毎回、前回の `vehicles_current` と今回の取得結果を比べて到着を検出する。
+collector は毎回、前回の `vehicles_current` と今回の取得結果を比べて到着を検出する。`updated_at` が 3 分以上前の車両（更新が止まっている車両）と `revenue != REVENUE` の車両は対象にしない。
 
 1. 車両が `STOPPED_AT` で駅 S にいて、(trip, S) のイベントがまだない → `arrived_at = vehicle.updated_at`, `source = stopped_at`
 2. `current_stop_sequence` が k から m（m > k）に進み、途中の駅にイベントがない → 前回の `predictions_current` にあるその (trip, 駅) の `arrival_time` を使う。`source = predicted_last`
@@ -177,6 +193,8 @@ collector は毎回、前回の `vehicles_current` と今回の取得結果を�
 - 各回の予測について、リード時間 `lead = predicted_arrival - observed_at` を計算する。`lead` 以上で最小のバケット b ∈ `[1, 3, 5, 10, 15]` 分に `INSERT ... ON CONFLICT DO NOTHING` で保存する（各バケットで最初の観測を残す）
 - `error_sec = actual_arrival - predicted_arrival`（**正の値 = 予測より遅く到着**）
 - 実到着は `arrival_events` と (service_date, trip_id, 親駅) で突き合わせる。`source = interpolated` のイベントは精度集計から除く
+- `schedule_relationship` が `CANCELLED` / `SKIPPED` の予測と、`arrival_time` が `null` の予測（始発駅）は保存しない
+- 予測の種類によって精度は大きく違うはずなので、`update_type`（`MID_TRIP` / `AT_TERMINAL` / `REVERSE_TRIP`）別にも集計する
 - 指標: 平均誤差（バイアス）、平均絶対誤差、p90 絶対誤差、±60 秒以内の割合
 
 ### 5.3 運行間隔（Headway）
@@ -205,9 +223,9 @@ collector は毎回、前回の `vehicles_current` と今回の取得結果を�
 
 | パス | 画面 | 内容 |
 |---|---|---|
-| `/` | **Live Map** | MapLibre で路線形状を路線色で描き、車両を進行方向（bearing）に回転させた矢印で表示。路線フィルタのトグル。車両をクリックするとポップアップ（路線、行先、次の駅、状態、何秒前の情報か）。15 秒ごとに更新 |
+| `/` | **Live Map** | MapLibre で路線形状を路線色で描き、車両を進行方向（bearing）に回転させた矢印で表示。路線フィルタのトグル。車両をクリックするとポップアップ（路線、行先、次の駅、状態、何秒前の情報か）。`updated_at` が 3 分以上前の車両は灰色で表示する。15 秒ごとに更新 |
 | `/stations` | **Stations** | 駅の一覧と検索（路線別にまとめる） |
-| `/stations/[stopId]` | **Arrival Board** | 方向別に次の列車 3 本の `n min` 表示。到着予定時刻からブラウザ側でカウントダウンし、30 秒ごとに更新。その駅に関係するアラートも表示 |
+| `/stations/[stopId]` | **Arrival Board** | 方向別に次の列車 3 本の `n min` 表示。到着予定時刻からブラウザ側でカウントダウンし、30 秒ごとに更新。始発駅では `departure_time` を使う。`CANCELLED` の便は `Cancelled` と表示し、`SKIPPED` は表示しない。その駅に関係するアラートも表示 |
 | `/alerts` | **Alerts** | 有効なアラートを路線別・重要度順に表示（effect バッジ付き）。過去のアラートの検索 |
 | `/analytics/headways` | **Headways** | route / direction / station / 期間で絞り込み。運行間隔の推移グラフ、分布、bunching・gap の件数 |
 | `/analytics/predictions` | **Prediction Accuracy** | リード時間バケット別の誤差の分布、時系列、路線比較 |
@@ -428,7 +446,7 @@ push to main
 3. **Phase 2 — 本番の基盤**: GCP プロジェクト 2 つの作成、`bootstrap` の手動 apply、`modules/app` と `envs/dev`・`envs/prod`、パイプライン、IAP、MBTA API キーの取得。prod で collector を動かしてデータの蓄積を始める
 4. **Phase 3 — リアルタイム画面**: Live Map、Stations / Arrival Board、Alerts、Status
 5. **Phase 4 — 分析**: `aggregate` Job、保持期間の処理、分析画面 4 つ
-6. **Phase 5 — 改善（任意）**: 時刻表（`/schedules`）との比較による遅延指標、API キーを取得して 30 秒間隔の収集にする（到着検出の精度向上）、アラート通知
+6. **Phase 5 — 改善（任意）**: 時刻表（`/schedules`）との比較による遅延指標（`ADDED-…` / `NONREV-…` の便は時刻表にないので、trip 単位ではなく運行間隔で比べる必要がある）、API キーを取得して 30 秒間隔の収集にする（到着検出の精度向上）、アラート通知
 
 ---
 
@@ -451,6 +469,7 @@ push to main
 - [ ] MBTA API キーの取得（dev 用・prod 用）
 - [ ] 独自ドメインを使うか（使わない場合は Cloud Run の URL）
 - [x] 実 API で確認済み（2026-11-01）: `/stops` の取得方法、`/route_patterns` の中身、レート制限ヘッダー、alerts の `effect` / `cause` などの値（§3）
-- [ ] 実 API で確認すること: `/predictions` の `filter[route]` に全路線を指定したときのレスポンスサイズ、運行中の `/vehicles` の属性
+- [x] 運行中の `/predictions` と `/vehicles` の属性、終点駅の番線 ID の扱い（§3）
+- [ ] 平日の日中ピークに `/predictions` の件数とサイズを測る（日曜早朝は 416 件、非圧縮 251KB）
 - [ ] bunching / gap のしきい値（§5.3）を実データを見て調整する
 - [ ] 時刻表との比較（Phase 5）をするかどうか
