@@ -21,14 +21,14 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 | 機能 | 車両位置マップ / 駅別到着予測 / 運行アラート / 履歴・統計グラフ |
 | 技術スタック | Next.js (App Router, TypeScript) 一体型、Cloud Run 1 サービス + Cloud Run Jobs |
 | DB | Cloud SQL for PostgreSQL 16 + Drizzle ORM (drizzle-kit でマイグレーション) |
-| データ収集 | Cloud Scheduler → Cloud Run Job による **1 分間隔ポーリング** |
-| データ保持 | 生データ **90 日**、日次集計は**無期限** |
-| MBTA API キー | **当面なし**（20 req/分 制限）。環境変数で後から追加可能な設計 |
+| データ収集 | Cloud Scheduler → Cloud Run Job による定期ポーリング（prod **1 分**、dev 5 分） |
+| データ保持 | 生データ **90 日**（dev は 14 日）、日次集計は**無期限** |
+| MBTA API キー | 開発の初期はなし（20 req/分 制限）。**prod の稼働前に取得**し、dev / prod で別のキーを使う（§10.1） |
 | 画面更新 | ブラウザ → 自前 API を 15〜30 秒間隔でポーリング（DB の最新スナップショットを返す） |
 | 地図 | MapLibre GL JS + OpenFreeMap（OSM ベース、API キー不要） |
 | 認証 | IAP（Identity-Aware Proxy）で許可ユーザーのみ |
-| GCP | `us-east4`、最小構成（コスト優先） |
-| IaC / CI/CD | Terraform + GitHub Actions（Workload Identity Federation） |
+| GCP | `us-east4`、最小構成（コスト優先）。**dev / prod で別プロジェクト** |
+| IaC / CI/CD | Terraform + GitHub Actions（WIF）。main への push 1 回で CI 1 回 → CD dev（自動）→ CD prod（承認後）（§10） |
 | テスト | Vitest（単体）+ Playwright（E2E）、MBTA API はフィクスチャでモック |
 
 ---
@@ -38,7 +38,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 ```
                          ┌──────────────────────── GCP (us-east4) ────────────────────────┐
                          │                                                                │
- MBTA V3 API  ◀──GET──── │  Cloud Run Job: collector     ◀── Cloud Scheduler (毎分)        │
+ MBTA V3 API  ◀──GET──── │  Cloud Run Job: collector     ◀── Cloud Scheduler (毎分/dev 5分) │
  api-v3.mbta.com         │  Cloud Run Job: sync-static   ◀── Cloud Scheduler (毎日 04:00 ET)│
                          │  Cloud Run Job: aggregate     ◀── Cloud Scheduler (毎日 04:30 ET)│
                          │  Cloud Run Job: migrate       ◀── GitHub Actions (デプロイ時)    │
@@ -49,9 +49,11 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
                          │            │ (読み取りのみ)                                     │
  ブラウザ ──HTTPS──▶ IAP ─┼─▶ Cloud Run Service: web (Next.js: UI + Route Handlers)        │
                          │                                                                │
-                         │   Secret Manager: DB パスワード, (将来) MBTA_API_KEY              │
+                         │   Secret Manager: DB パスワード, MBTA_API_KEY                    │
                          └────────────────────────────────────────────────────────────────┘
 ```
+
+この構成を dev と prod の 2 つの GCP プロジェクトにそれぞれ作る（§10）。
 
 ### 重要な設計ルール
 
@@ -67,7 +69,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 - Base URL: `https://api-v3.mbta.com`（環境変数 `MBTA_API_BASE_URL` で上書き可）
 - 形式: JSON:API（`data[].attributes`, `data[].relationships`, `included`）
-- 認証: キーなし。`MBTA_API_KEY` が設定されていれば `x-api-key` ヘッダーで送る（キーありの上限は 1000 req/分）
+- 認証: 開発の初期はキーなし。`MBTA_API_KEY` が設定されていれば `x-api-key` ヘッダーで送る（キーありの上限は 1000 req/分）。prod の稼働前にキーを取得する（§10.1）
 - レート制限ヘッダー（2026-11 に実測で確認）: `x-ratelimit-limit: 20`、`x-ratelimit-remaining`、`x-ratelimit-reset`（**UNIX 秒**。次の分の境界）。値はログに残し、`collector_runs` に保存する
   - 注意: 連続したリクエストで `remaining` が 19→18→17→19→16→19→15 と増減した（サーバーごとに数えている模様）。`remaining` を当てにせず、§3 の予算を自前で守る
 - 応答には `last-modified` ヘッダーが付く。応答は `Accept-Encoding` に応じて圧縮される（curl では zstd が返った）。サイズの見積もりは圧縮後の転送量で行う
@@ -264,8 +266,8 @@ collector は毎回、前回の `vehicles_current` と今回の取得結果を�
 │   ├── unit/
 │   ├── e2e/
 │   └── fixtures/mbta/       # 実 API から記録した JSON
-├── infra/terraform/
-└── .github/workflows/
+├── infra/terraform/         # bootstrap/, modules/app/, envs/{dev,prod}/（§10.3）
+└── .github/workflows/       # pipeline.yml, rollback.yml（§10.4, §10.5）
 ```
 
 ---
@@ -298,6 +300,8 @@ pnpm fixtures:record           # 実 API からフィクスチャを記録（数
 | `MBTA_API_BASE_URL` | 既定値 `https://api-v3.mbta.com` |
 | `MBTA_API_KEY` | 任意。設定すると `x-api-key` ヘッダーで送る |
 | `MBTA_FIXTURE_MODE` | `1` で MBTA API の代わりにフィクスチャを使う |
+| `APP_ENV` | `local` / `dev` / `prod`。画面に環境バッジを出すためだけに使う（§10.1） |
+| `RAW_RETENTION_DAYS` | 生データの保持日数（dev 14 / prod 90） |
 
 `.env.local` はコミットしない。`.env.example` を用意して最新に保つ。
 
@@ -305,22 +309,111 @@ pnpm fixtures:record           # 実 API からフィクスチャを記録（数
 
 ## 10. インフラと CI/CD
 
-### Terraform（`infra/terraform/`）
+### 10.1 環境
 
-- state は GCS バケットに置く（バケットは初回だけ手動で作る）
-- 管理するリソース: API の有効化、Artifact Registry、Cloud SQL（PostgreSQL 16, Enterprise, `db-f1-micro`, 10GB, 自動バックアップ 7 日）、DB とユーザー、Secret Manager、サービスアカウント（web / jobs / scheduler / deployer）、Cloud Run サービス（web）、Cloud Run Jobs（collector / sync-static / aggregate / migrate）、Cloud Scheduler、Workload Identity Federation（GitHub 用）、IAP、予算アラート
+1 つのリポジトリで **dev** と **prod** の 2 環境を管理する。環境ごとに Google Cloud プロジェクトを分ける。
+
+| | dev | prod |
+|---|---|---|
+| GCP プロジェクト | `<dev-project-id>`（未定） | `<prod-project-id>`（未定） |
+| デプロイ | main への push で**自動**（承認なし） | dev へのデプロイ成功後、**承認されてから** |
+| collector の間隔 | **5 分**（`*/5 * * * *`） | **1 分**（`* * * * *`） |
+| 生データの保持 | 14 日 | 90 日 |
+| Cloud SQL | `db-f1-micro`、バックアップ 1 日、`deletion_protection=false` | `db-f1-micro`、バックアップ 7 日、`deletion_protection=true` |
+| IAP で許可するユーザー | 開発者 | 利用者（開発者を含む） |
+| MBTA API キー | dev 用のキー | prod 用のキー |
+| 予算アラート | 小さめ | 本番相当 |
+
+- dev は 5 分間隔なので、到着検出の精度はかなり低い（§5.1）。dev の分析画面は表示の確認用と割り切り、数値の妥当性は prod で確認する
+- **MBTA API キーは prod の稼働前に取得する**。Cloud Run の送信元 IP は他の GCP 利用者と共有されるため、キーなしの「IP 単位 20 req/分」を他人に使い切られて 429 になる可能性がある。dev と prod で別のキーを使い、各プロジェクトの Secret Manager に入れる
+- 環境ごとの違いは Terraform の変数（`envs/<env>/terraform.tfvars`）と Cloud Run の環境変数だけで表現する。**コードの中で環境名による分岐を書かない**（例外: `APP_ENV` を画面のヘッダーに `DEV` バッジとして表示するだけ）
+
+### 10.2 GCP のリソース配置
+
+```
+<prod-project>                                   <dev-project>
+├─ Artifact Registry: mbta-live (イメージは1つ)   │
+│    └─ dev の Cloud Run サービスエージェントに reader を付与 ──▶ 同じイメージを pull
+├─ GCS: Terraform state (prod)                  ├─ GCS: Terraform state (dev)
+├─ WIF pool/provider (GitHub)                   ├─ WIF pool/provider (GitHub)
+├─ SA: ci-builder（イメージの push だけ）          │
+├─ SA: deployer-prod                            ├─ SA: deployer-dev
+└─ アプリ一式（§2 の構成）                        └─ アプリ一式（§2 の構成）
+```
+
+- イメージは prod プロジェクトの Artifact Registry に **1 つだけ**置き、dev と prod は同じダイジェストを使う
+- Terraform state は環境ごとに、そのプロジェクトの GCS バケットに置く
+
+### 10.3 Terraform の構成（`infra/terraform/`）
+
+```
+infra/terraform/
+├── bootstrap/          # 最初に一度だけ人が手動で apply する: API の有効化、state バケット、
+│                       # Artifact Registry、WIF、deployer / ci-builder の SA
+├── modules/app/        # アプリ一式: Cloud SQL、Secret Manager、Cloud Run（web）、Cloud Run Jobs、
+│                       # Cloud Scheduler、IAP、実行用の SA、予算アラート
+└── envs/
+    ├── dev/            # backend.tf（dev の state）+ main.tf（module "app"）+ terraform.tfvars
+    └── prod/
+```
+
+- `envs/dev` と `envs/prod` は同じ `modules/app` を呼び、違いは `terraform.tfvars` だけにする
+- `terraform.tfvars` にはプロジェクト ID や間隔などの**公開してよい値だけ**を書く。**このリポジトリは public** なので、IAP で許可するメールアドレスなどは GitHub Environment の secret（`TF_VAR_iap_members`）で渡す
+- イメージのタグはパイプラインが更新するので、Terraform では `lifecycle { ignore_changes = [image] }` にする
 - web の Cloud Run は `min-instances=0`。IAP は Cloud Run に直接組み込む方式（`--iap`）を使う。使えない場合は外部 HTTPS LB + Serverless NEG + IAP にする
-- IAP で許可するユーザーのメールアドレスは `terraform.tfvars` で渡し、**コミットしない**（`*.tfvars` は gitignore。`terraform.tfvars.example` だけをコミットする）
-- イメージのタグは GitHub Actions が更新するので、Terraform 側では `lifecycle { ignore_changes = [image] }` にする
 - collector Job: タスクのタイムアウト 50 秒、リトライ 0。実行が重なったときは `pg_try_advisory_lock` で後の実行を即終了させる
 - Cloud Scheduler の時刻は `America/New_York` で指定する
 
-### GitHub Actions（`.github/workflows/`）
+### 10.4 パイプライン（`.github/workflows/pipeline.yml`）
 
-- `ci.yml`（PR と push）: pnpm install → lint → typecheck → vitest → Playwright（Postgres のサービスコンテナ + フィクスチャ）→ `terraform fmt -check` / `validate`
-- `deploy.yml`（main への push）: WIF で認証 → イメージをビルドして Artifact Registry に push → `migrate` Job を実行 → web をデプロイ → 各 Job のイメージを更新
-- `terraform.yml`: `infra/**` を変更した PR では `plan` の結果をコメントする。`apply` は `workflow_dispatch` で手動実行する
-- サービスアカウントのキー（JSON）は使わない。WIF のみ
+**main への push 1 回につき、CI を 1 回、CD を 2 回（dev → prod）実行する。** イメージは CI で 1 回だけビルドし、同じダイジェストを dev と prod に順にデプロイする（再ビルドしない）。
+
+```
+push to main
+  │
+  ├─ ci            （environment なし）
+  │    pnpm install → lint → typecheck → vitest → Playwright（Postgres サービスコンテナ + フィクスチャ）
+  │    → docker build → Artifact Registry に push（タグ = git SHA）→ outputs: image_digest
+  │    → terraform fmt -check / validate → dev と prod の terraform plan（結果をジョブサマリーに出す）
+  │
+  ├─ cd-dev        （environment: dev / 承認なし / needs: ci）
+  │    WIF で deployer-dev として認証
+  │    → terraform apply（envs/dev）
+  │    → migrate Job をそのイメージで実行
+  │    → web をデプロイし、各 Job のイメージを更新（どちらもダイジェスト指定）
+  │    → スモークテスト: collector Job を 1 回実行（--wait）して成功を確認
+  │
+  └─ cd-prod       （environment: prod / Required reviewers で承認待ち / needs: cd-dev）
+       cd-dev と同じ手順を envs/prod とプロジェクト prod で実行
+```
+
+#### GitHub の設定
+
+- Environment `dev`: 保護ルールなし。Deployment branches は `main` だけ
+- Environment `prod`: **Required reviewers**（リポジトリのオーナー）。Deployment branches は `main` だけ
+- 環境ごとの値（プロジェクト ID、WIF provider、SA のメールアドレス）は各 Environment の variables に置く。秘密の値は Environment の secrets に置く
+- `concurrency`: CI は `pipeline-main`、デプロイは `deploy-dev` / `deploy-prod` のグループにし、`cancel-in-progress: false` にする（デプロイ中のジョブを途中で止めない）
+
+#### ルール
+
+- **イメージは環境に依存させない**。`NEXT_PUBLIC_*` のようにビルド時に値が埋め込まれる環境変数に、環境ごとの値を入れない。環境ごとの設定はすべて実行時の環境変数で渡す
+- **cd-prod は、`github.sha` が現在の main の HEAD でなければ失敗させる**。承認待ちの古い run を承認して古いイメージを prod に戻してしまう事故を防ぐため。承認するのは常に最新の run にする
+- **prod の Terraform は、承認したときに見た plan と同じ内容だけを apply する**。CI で prod の plan の `resource_changes` のハッシュを出力しておき、cd-prod で plan し直したときのハッシュと違えば apply せずに失敗させる（方式は実装時に検証する）
+- plan ファイルは artifact としてアップロードしない（public リポジトリでは artifact とログを誰でも見られ、plan ファイルには秘密の値が含まれうるため）。ログに秘密の値を出さない
+- マイグレーションはデプロイ前に実行されるので、**古いバージョンのコードでも動くように**書く（expand → contract の 2 段階に分ける。列の削除やリネームは次のリリースで行う）。dev が先に通るので、壊れたマイグレーションは dev で止まる
+- CI が失敗したら dev にも prod にもデプロイしない。push する前にローカルで `pnpm lint && pnpm typecheck && pnpm test` を実行する（PR だけでは CI は走らない）
+
+#### 認証（Workload Identity Federation）
+
+- サービスアカウントのキー（JSON）は使わない
+- WIF の provider の attribute condition で `assertion.repository == "tsatolol/mbta_live"` かつ `assertion.ref == "refs/heads/main"` に限定する
+- deployer SA の `roles/iam.workloadIdentityUser` の付与は、OIDC トークンの `environment` クレームで絞る（deployer-prod は `environment == "prod"` のジョブからしか使えない）
+- ci-builder は Artifact Registry への書き込み権限だけを持つ。deployer は自分の環境のリソースだけを操作できる
+
+### 10.5 ロールバック（`.github/workflows/rollback.yml`）
+
+- `workflow_dispatch` で環境とイメージのダイジェストを指定して実行する。`environment: prod` を付けるので、prod では承認が必要
+- 行うのは web と各 Job のイメージの差し替えだけ。Terraform の apply とマイグレーションは実行しない（マイグレーションは expand → contract で書いているので、1 つ前のイメージはそのまま動く）
 
 ---
 
@@ -330,7 +423,7 @@ pnpm fixtures:record           # 実 API からフィクスチャを記録（数
 
 1. **Phase 0 — 土台**: Next.js の雛形、docker-compose、Drizzle のスキーマ、MBTA クライアント + zod スキーマ、フィクスチャの記録
 2. **Phase 1 — 収集**: `sync-static` と `collect`（現在値テーブル、履歴テーブル、到着検出）。ローカルで動作確認する
-3. **Phase 2 — 本番の基盤**: Terraform、CI/CD、IAP。collector を本番で動かしてデータの蓄積を始める
+3. **Phase 2 — 本番の基盤**: GCP プロジェクト 2 つの作成、`bootstrap` の手動 apply、`modules/app` と `envs/dev`・`envs/prod`、パイプライン、IAP、MBTA API キーの取得。prod で collector を動かしてデータの蓄積を始める
 4. **Phase 3 — リアルタイム画面**: Live Map、Stations / Arrival Board、Alerts、Status
 5. **Phase 4 — 分析**: `aggregate` Job、保持期間の処理、分析画面 4 つ
 6. **Phase 5 — 改善（任意）**: 時刻表（`/schedules`）との比較による遅延指標、API キーを取得して 30 秒間隔の収集にする（到着検出の精度向上）、アラート通知
@@ -351,8 +444,11 @@ pnpm fixtures:record           # 実 API からフィクスチャを記録（数
 
 ## 13. 未決事項・要確認
 
-- [ ] GCP プロジェクト ID、予算アラートの金額
+- [ ] dev / prod の GCP プロジェクト ID、請求先アカウント、それぞれの予算アラートの金額
+- [ ] prod の Required reviewers を誰にするか（現状はリポジトリのオーナーのみを想定）
+- [ ] MBTA API キーの取得（dev 用・prod 用）
 - [ ] 独自ドメインを使うか（使わない場合は Cloud Run の URL）
-- [ ] 実 API で確認すること: `/stops` で親駅とホームの両方を取得できるフィルタの組み合わせ、`/predictions` の `filter[route]` に複数路線を指定したときのレスポンスサイズ、レート制限ヘッダーの名前、alerts の `effect` / `cause` の値の一覧
+- [x] 実 API で確認済み（2026-11-01）: `/stops` の取得方法、`/route_patterns` の中身、レート制限ヘッダー、alerts の `effect` / `cause` などの値（§3）
+- [ ] 実 API で確認すること: `/predictions` の `filter[route]` に全路線を指定したときのレスポンスサイズ、運行中の `/vehicles` の属性
 - [ ] bunching / gap のしきい値（§5.3）を実データを見て調整する
 - [ ] 時刻表との比較（Phase 5）をするかどうか
