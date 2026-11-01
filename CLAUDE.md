@@ -68,7 +68,9 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 - Base URL: `https://api-v3.mbta.com`（環境変数 `MBTA_API_BASE_URL` で上書き可）
 - 形式: JSON:API（`data[].attributes`, `data[].relationships`, `included`）
 - 認証: キーなし。`MBTA_API_KEY` が設定されていれば `x-api-key` ヘッダーで送る（キーありの上限は 1000 req/分）
-- レート制限ヘッダー `x-ratelimit-limit` / `x-ratelimit-remaining` / `x-ratelimit-reset` をログに残し、`collector_runs` に保存する（ヘッダー名は実装時に要確認）
+- レート制限ヘッダー（2026-11 に実測で確認）: `x-ratelimit-limit: 20`、`x-ratelimit-remaining`、`x-ratelimit-reset`（**UNIX 秒**。次の分の境界）。値はログに残し、`collector_runs` に保存する
+  - 注意: 連続したリクエストで `remaining` が 19→18→17→19→16→19→15 と増減した（サーバーごとに数えている模様）。`remaining` を当てにせず、§3 の予算を自前で守る
+- 応答には `last-modified` ヘッダーが付く。応答は `Accept-Encoding` に応じて圧縮される（curl では zstd が返った）。サイズの見積もりは圧縮後の転送量で行う
 - `fields[...]`（sparse fieldsets）で必要な属性だけを取得し、レスポンスを小さくする
 - レスポンスは **必ず zod でパースして検証**する。スキーマに合わない行はスキップしてログに残し、ジョブ全体は落とさない
 
@@ -78,10 +80,17 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 |---|---|---|---|
 | collector | `GET /vehicles` | 毎分 | `filter[route]=Red,Mattapan,Orange,Blue,Green-B,Green-C,Green-D,Green-E` |
 | collector | `GET /predictions` | 毎分 | `filter[route]=<同上>`（predictions は stop/route/trip/位置のいずれかでのフィルタが必須） |
-| collector | `GET /alerts` | 毎分 | `filter[route]=<同上>`（または `filter[route_type]=0,1`） |
-| sync-static | `GET /routes` | 毎日 | `filter[type]=0,1` |
-| sync-static | `GET /stops` | 毎日 | `filter[route_type]=0,1`、`include=parent_station`（ホーム→親駅の対応を保存）※取得範囲は要確認 |
-| sync-static | `GET /route_patterns` | 毎日 | `filter[route]=...`、`include=representative_trip.shape`（地図用の路線形状と停車順） |
+| collector | `GET /alerts` | 毎分 | `filter[route]=<同上>`（`filter[route_type]=0,1` でも同じ結果になることを確認済み） |
+| sync-static | `GET /routes` | 毎日 | `filter[type]=0,1`（8 路線を確認済み） |
+| sync-static | `GET /stops` | 毎日 | `filter[route_type]=0,1&include=parent_station` |
+| sync-static | `GET /route_patterns` | 毎日 | `filter[route]=<同上>&include=representative_trip.shape,representative_trip.stops&fields[stop]=name,parent_station` |
+
+#### 実測で確認したレスポンスの性質（2026-11-01）
+
+- **`/routes`**: `color` は Red と Mattapan が `DA291C`、Green 4 支線はすべて `00843D`、Orange が `ED8B00`、Blue が `003DA5`。`direction_names` は Red / Orange が `South / North`、Green / Blue が `West / East`、Mattapan が `Outbound / Inbound`。`direction_destinations` もあり（例: Green-D は `Riverside / Union Square`）
+- **`/stops`**: `data` に入るのは**ホーム（`location_type=0`）だけで 265 件**。親駅（`location_type=1`, `place-xxxx`）は `include=parent_station` を付けたときの `included` にだけ入る（125 件）。すべてのホームに親駅がある。`filter[location_type]` は不要
+- **`/route_patterns`**: 対象路線で絞っても、**臨時の代行バス路線（`Shuttle-*`, `typicality=4`）のパターンが混ざる**。`route_id` が対象 8 路線のものだけを残す。通常運行のパターンは `typicality=1`（`canonical=true`）の 18 件で、Red は方向ごとに Ashmont 行きと Braintree 行きの 2 パターンがある。停車順は `representative_trip.stops` で取れる（ホームの ID）。形状は `shape.polyline`（encoded polyline）。1 回のリクエストで全路線分が取れる（圧縮後 約 23KB）
+- **`/alerts`**: フィードには **`lifecycle=UPCOMING`（まだ始まっていない予告）も含まれる**。「現在有効か」はフィードにあるかどうかではなく、`active_period` で判定する（`end` は `null` のことがある）。`informed_entity` の要素は `route`, `route_type`, `stop`（ホームと親駅の両方が出る）, `direction_id`（ないこともある）, `activities`。`header` 以外に `short_header`, `service_effect`, `timeframe` があり、UI の表示に使える
 
 - route_type: `0` = Light Rail（Green 各支線, Mattapan）、`1` = Heavy Rail（Red, Orange, Blue）
 - 予算: collector は **1 回あたり 3 リクエスト**、sync-static は 1 日あたり十数リクエスト。合計で常に **5 req/分以下** に収める
@@ -93,6 +102,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 - 予測と車両の `stop` は**ホーム（child stop, 例: `70061`）**を指す。分析と UI では**親駅（`place-xxxx`）**に寄せて集計する（`stops.parent_station_id` で対応づける）
 - Green Line の幹線区間（Kenmore〜Government Center など、支線が共有する駅）での運行間隔は、支線別に加えて**全支線合算（`Green`）**でも計算する
+- Red Line は Ashmont 支線と Braintree 支線が同じ route ID `Red` なので、幹線区間（Alewife〜JFK/UMass）の運行間隔は自然に両支線の合算になる。支線ごとの値が必要なときは route pattern で分ける
 - 運行日（service date）: MBTA の運行日は日付をまたぐため、`America/New_York` の時刻から **3 時間引いた日付**を運行日とする（`src/lib/time.ts` に一元化）
 
 ---
@@ -104,8 +114,8 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 ### 4.1 静的データ（sync-static が毎日 upsert）
 
 - `routes` — `id` PK, `short_name`, `long_name`, `type`, `color`, `text_color`, `direction_names` jsonb, `direction_destinations` jsonb, `sort_order`
-- `stops` — `id` PK, `name`, `lat`, `lon`, `location_type`, `parent_station_id`, `platform_name`
-- `route_patterns` — `id` PK, `route_id`, `direction_id`, `typicality`, `shape_polyline`（encoded polyline）, `stop_ids` jsonb（停車順の親駅 ID）
+- `stops` — `id` PK, `name`, `lat`, `lon`, `location_type`, `parent_station_id`, `platform_name`, `vehicle_type`（ホームと親駅の両方を保存する）
+- `route_patterns` — `id` PK, `route_id`, `direction_id`, `name`, `typicality`, `canonical`, `shape_polyline`（encoded polyline）, `platform_stop_ids` jsonb（停車順のホーム ID）, `station_ids` jsonb（停車順の親駅 ID）。保存するのは対象 8 路線のパターンだけ
 
 路線の色は API の `routes.color` を使い、コードに直接書かない。
 
@@ -113,8 +123,9 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 - `vehicles_current` — `vehicle_id` PK, `route_id`, `trip_id`, `direction_id`, `lat`, `lon`, `bearing`, `current_status`（`INCOMING_AT` / `STOPPED_AT` / `IN_TRANSIT_TO`）, `stop_id`, `current_stop_sequence`, `label`, `occupancy_status`, `updated_at`, `polled_at`
 - `predictions_current` — `id` PK, `route_id`, `trip_id`, `stop_id`, `direction_id`, `stop_sequence`, `arrival_time`, `departure_time`, `status`, `schedule_relationship`, `vehicle_id`, `polled_at`
-- `alerts` — `id` PK, `effect`, `cause`, `severity`, `header`, `description`, `lifecycle`, `active_period` jsonb, `informed_entity` jsonb, `created_at`, `updated_at`, `first_seen_at`, `last_seen_at`, `is_active`
-  - アラートは削除せず upsert。フィードから消えたら `is_active=false` にする
+- `alerts` — `id` PK, `effect`, `cause`, `severity`（整数）, `header`, `short_header`, `service_effect`, `timeframe`, `description`, `lifecycle`, `active_period` jsonb, `informed_entity` jsonb, `created_at`, `updated_at`, `first_seen_at`, `last_seen_at`, `in_feed`
+  - アラートは削除せず upsert。フィードから消えたら `in_feed=false` にする
+  - 「現在有効か」は列として持たず、`active_period` と現在時刻から計算する（UPCOMING のアラートがフィードに含まれるため）
 - `alert_routes` — (`alert_id`, `route_id`) PK（路線別集計用）
 
 ### 4.3 履歴テーブル（生データ。90 日で削除）
@@ -173,9 +184,14 @@ collector は毎回、前回の `vehicles_current` と今回の取得結果を�
 
 ### 5.4 アラート
 
-- 件数: (運行日, route, effect, cause) ごとに、その日に有効だったアラートの数
-- 継続時間: `first_seen_at`〜`last_seen_at`（または `active_period`）のうち、その日に重なる分数
-- effect の例: `DELAY`, `SHUTTLE`, `SUSPENSION`, `STATION_CLOSURE`, `DETOUR` など。値の一覧は実データで要確認。未知の値はそのまま保存する
+- 件数: (運行日, route, effect, cause) ごとに、`active_period` がその日に重なり、かつその日にフィードで観測されたアラートの数（予告だけの UPCOMING は数えない）
+- 継続時間: `active_period` と `first_seen_at`〜`last_seen_at` が重なる区間のうち、その日に含まれる分数
+- 実測で観測した値（2026-11-01 の 15 件。値は列挙型として固定せず、未知の値もそのまま保存する）
+  - effect: `NOTICE`, `STATION_ISSUE`, `STATION_CLOSURE`, `SUSPENSION`, `SHUTTLE`, `DELAY`
+  - cause: `UNKNOWN_CAUSE`, `MAINTENANCE`, `CONSTRUCTION`, `SINGLE_TRACKING`
+  - severity: `1`, `3`, `4`, `7`（整数）
+  - lifecycle: `NEW`, `ONGOING`, `UPCOMING`
+- 分析画面では、遅延系（`DELAY`, `SUSPENSION`, `SHUTTLE`, `STATION_CLOSURE`）とお知らせ系（`NOTICE`, `STATION_ISSUE` など）を分けて表示する
 
 ---
 
