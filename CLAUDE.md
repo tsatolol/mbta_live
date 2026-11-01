@@ -22,7 +22,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 | 技術スタック | Next.js (App Router, TypeScript) 一体型、Cloud Run 1 サービス + Cloud Run Jobs |
 | DB | Cloud SQL for PostgreSQL 16 + Drizzle ORM (drizzle-kit でマイグレーション) |
 | データ収集 | Cloud Scheduler → Cloud Run Job による定期ポーリング（prod **1 分**、dev 5 分） |
-| データ保持 | 生データ **90 日**（dev は 14 日）、日次集計は**無期限** |
+| データ保持 | 生データ **28 日**（dev は 14 日）、日次集計は**無期限** |
 | MBTA API キー | 開発の初期はなし（20 req/分 制限）。**prod の稼働前に取得**し、dev / prod で別のキーを使う（§10.1） |
 | 画面更新 | ブラウザ → 自前 API を 15〜30 秒間隔でポーリング（DB の最新スナップショットを返す） |
 | 地図 | MapLibre GL JS + OpenFreeMap（OSM ベース、API キー不要） |
@@ -130,13 +130,13 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
   - 「現在有効か」は列として持たず、`active_period` と現在時刻から計算する（UPCOMING のアラートがフィードに含まれるため）
 - `alert_routes` — (`alert_id`, `route_id`) PK（路線別集計用）
 
-### 4.3 履歴テーブル（生データ。90 日で削除）
+### 4.3 履歴テーブル（生データ。28 日で削除）
 
 日単位のパーティション（PostgreSQL の宣言的パーティショニング）にして、保持期間の削除はパーティションごと `DROP` する。Drizzle はパーティションを扱えないので、`drizzle/` 配下に手書き SQL のマイグレーションとして作る。
 
 - `vehicle_positions` — `vehicle_id`, `updated_at`, `polled_at`, `route_id`, `trip_id`, `direction_id`, `lat`, `lon`, `bearing`, `current_status`, `stop_id`, `current_stop_sequence`。PK (`vehicle_id`, `updated_at`)。`updated_at` が前回と同じ車両は保存しない
 - `prediction_samples` — `service_date`, `trip_id`, `stop_id`, `lead_bucket_min`, `route_id`, `direction_id`, `predicted_arrival_at`, `observed_at`。PK (`service_date`, `trip_id`, `stop_id`, `lead_bucket_min`)
-  - 全予測を毎分保存すると 90 日で数億行になるので、**リード時間バケット `[1, 3, 5, 10, 15]` 分ごとに 1 件だけ**保存する（§5.2）
+  - 全予測を毎分保存すると 28 日でも数千万行規模になるので、**リード時間バケット `[1, 3, 5, 10, 15]` 分ごとに 1 件だけ**保存する（§5.2）
 - `arrival_events` — `service_date`, `trip_id`, `stop_id`（親駅）, `route_id`, `direction_id`, `vehicle_id`, `arrived_at`, `source`（`stopped_at` / `predicted_last` / `interpolated`）, `precision_sec`。PK (`service_date`, `trip_id`, `stop_id`)
 - `collector_runs` — `id`, `job`, `started_at`, `finished_at`, `status`, `counts` jsonb, `ratelimit_remaining`, `error`
 
@@ -148,9 +148,11 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 曜日 × 時間帯のヒートマップは、これらのテーブルの `service_date` の曜日と `hour` から作る。
 
+> **注意**: 集計の定義を後から変えても、生データが残っている直近 28 日分（dev は 14 日分）しか再集計できない。それより古い期間は、変更前の定義で集計した値のまま残る。集計の定義を変えたら `aggregate` Job を保持期間分さかのぼって再実行し、変更日を `docs/` か本ファイルに記録する
+
 ### データ量の目安
 
-- `vehicle_positions`: 約 150 両 × 1,440 回/日 ≒ 20 万行/日 → 90 日で約 2,000 万行
+- `vehicle_positions`: 約 150 両 × 1,440 回/日 ≒ 20 万行/日 → 28 日で約 560 万行
 - `prediction_samples`: 到着イベント約 4 万件/日 × 5 バケット ≒ 20 万行/日
 - 最小構成の Cloud SQL（10GB）に収まる見込み。容量は `collector_runs` と Cloud Monitoring で監視する
 
@@ -182,7 +184,7 @@ collector は毎回、前回の `vehicles_current` と今回の取得結果を�
 - (route, direction, 親駅) ごとに `arrived_at` を並べ、連続する到着の差を運行間隔とする
 - 60 分を超える間隔は運休時間帯とみなして除外する
 - **団子運転（bunching）**: 間隔 < 2 分
-- **間隔の開き（gap）**: 間隔 > 同じ (route, direction, 駅, 曜日種別, hour) の過去 28 日の中央値 × 2
+- **間隔の開き（gap）**: 間隔 > 同じ (route, direction, 駅, 曜日種別, hour) の過去 28 日の中央値 × 2。基準の中央値は、生データではなく `daily_headway_stats` の `p50_sec` から求める（生データの保持期間に左右されないようにするため）
 
 ### 5.4 アラート
 
@@ -301,7 +303,7 @@ pnpm fixtures:record           # 実 API からフィクスチャを記録（数
 | `MBTA_API_KEY` | 任意。設定すると `x-api-key` ヘッダーで送る |
 | `MBTA_FIXTURE_MODE` | `1` で MBTA API の代わりにフィクスチャを使う |
 | `APP_ENV` | `local` / `dev` / `prod`。画面に環境バッジを出すためだけに使う（§10.1） |
-| `RAW_RETENTION_DAYS` | 生データの保持日数（dev 14 / prod 90） |
+| `RAW_RETENTION_DAYS` | 生データの保持日数（dev 14 / prod 28） |
 
 `.env.local` はコミットしない。`.env.example` を用意して最新に保つ。
 
@@ -318,7 +320,7 @@ pnpm fixtures:record           # 実 API からフィクスチャを記録（数
 | GCP プロジェクト | `<dev-project-id>`（未定） | `<prod-project-id>`（未定） |
 | デプロイ | main への push で**自動**（承認なし） | dev へのデプロイ成功後、**承認されてから** |
 | collector の間隔 | **5 分**（`*/5 * * * *`） | **1 分**（`* * * * *`） |
-| 生データの保持 | 14 日 | 90 日 |
+| 生データの保持 | 14 日 | 28 日 |
 | Cloud SQL | `db-f1-micro`、バックアップ 1 日、`deletion_protection=false` | `db-f1-micro`、バックアップ 7 日、`deletion_protection=true` |
 | IAP で許可するユーザー | 開発者 | 利用者（開発者を含む） |
 | MBTA API キー | dev 用のキー | prod 用のキー |
