@@ -20,7 +20,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 | 対象路線 | Rapid Transit 全線: `Red`, `Mattapan`, `Orange`, `Blue`, `Green-B`, `Green-C`, `Green-D`, `Green-E` |
 | 機能 | 車両位置マップ / 駅別到着予測 / 運行アラート / 履歴・統計グラフ |
 | 技術スタック | Next.js (App Router, TypeScript) 一体型、Cloud Run 1 サービス + Cloud Run Jobs |
-| DB | Cloud SQL for PostgreSQL 16 + Drizzle ORM (drizzle-kit でマイグレーション) |
+| DB | Cloud SQL for PostgreSQL 16 + Prisma ORM（Prisma Migrate でマイグレーション。§4.0） |
 | データ収集 | Cloud Scheduler → Cloud Run Job による定期ポーリング（prod **1 分**、dev 5 分） |
 | データ保持 | 生データ **28 日**（dev は 3 日）、日次集計は**無期限** |
 | MBTA API キー | 開発の初期はなし（20 req/分 制限）。**prod の稼働前に取得**し、dev / prod で別のキーを使う（§10.1） |
@@ -124,9 +124,25 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 ---
 
-## 4. データモデル（Drizzle / PostgreSQL）
+## 4. データモデル（Prisma / PostgreSQL）
 
-時刻はすべて `timestamptz`（UTC）で保存する。テーブル名は snake_case。
+時刻はすべて `timestamptz`（UTC）で保存する。テーブル名と列名は snake_case。
+
+### 4.0 Prisma の使い方
+
+- Prisma ORM の最新安定版を使う。DB への接続は driver adapter（`@prisma/adapter-pg` + `pg`）経由にする。Cloud Run では `pg` の接続先に Unix ソケット `/cloudsql/<INSTANCE_CONNECTION_NAME>` を指定する
+- `prisma/schema.prisma` のモデル名は PascalCase、フィールド名は camelCase で書き、`@@map` / `@map` で DB 側の snake_case に対応づける。時刻の列は `@db.Timestamptz` を付ける
+- 生成したクライアントの出力先は `src/generated/prisma`（gitignore する）。`prisma generate` は `postinstall`、CI、Docker のビルドで必ず実行する
+- **書き込み**
+  - `INSERT ... ON CONFLICT DO NOTHING` は `createMany({ skipDuplicates: true })` で書く
+  - 現在値テーブルの入れ替えは、`$transaction` の中で `deleteMany` → `createMany` を実行する
+  - 1 行ずつの `upsert` を毎分数百回呼ばない。件数が多い upsert は `$executeRaw` で 1 本の SQL にまとめる
+- **分析・集計のクエリ**（`percentile_cont`、ウィンドウ関数、`generate_series` など）は、Prisma のクエリ API では書けない。**TypedSQL**（`prisma/sql/*.sql`）で書き、型付きで呼び出す。TypedSQL が使えない場合は `$queryRaw` を使い、結果を zod で検証する
+- **パーティションを使うテーブル**（§4.3）: Prisma のスキーマでは `PARTITION BY` を表現できない
+  - 親テーブルは `schema.prisma` にモデルとして書く（読み書きの型を得るため）。実際の `CREATE TABLE ... PARTITION BY RANGE` は、`prisma migrate dev --create-only` で作ったマイグレーションの SQL を手で書き換えて作る
+  - 日ごとのパーティション（子テーブル）は、マイグレーションではなく `aggregate` Job が作成・削除する。子テーブルは別のスキーマ `partitions` に置き、Prisma の管理対象（`public`）に入れない。こうすることで、`prisma migrate dev` が子テーブルをスキーマのずれ（drift）とみなしてリセットを求めるのを防ぐ（この方式で drift が出ないことは実装時に確認する）
+- 本番とパイプラインでは `prisma migrate deploy` だけを使う。`migrate dev` と `db push` はローカル専用
+- migrate Job は同じイメージで `prisma migrate deploy` を実行するので、Prisma CLI と `prisma/` ディレクトリを実行イメージに含める
 
 ### 4.1 静的データ（sync-static が毎日 upsert）
 
@@ -147,7 +163,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit）の運行状況�
 
 ### 4.3 履歴テーブル（生データ。28 日で削除）
 
-日単位のパーティション（PostgreSQL の宣言的パーティショニング）にして、保持期間の削除はパーティションごと `DROP` する。**集計が成功していない運行日のパーティションは、保持期間を過ぎても削除しない**（`aggregate` Job が数日失敗し続けても、集計前の生データを失わないようにするため。保持期間の短い dev で特に効く）。Drizzle はパーティションを扱えないので、`drizzle/` 配下に手書き SQL のマイグレーションとして作る。
+日単位のパーティション（PostgreSQL の宣言的パーティショニング）にして、保持期間の削除はパーティションごと `DROP` する。**集計が成功していない運行日のパーティションは、保持期間を過ぎても削除しない**（`aggregate` Job が数日失敗し続けても、集計前の生データを失わないようにするため。保持期間の短い dev で特に効く）。Prisma での作り方は §4.0 を参照。
 
 - `vehicle_positions` — `vehicle_id`, `updated_at`, `polled_at`, `route_id`, `trip_id`, `direction_id`, `lat`, `lon`, `bearing`, `current_status`, `stop_id`, `current_stop_sequence`。PK (`vehicle_id`, `updated_at`)。`updated_at` が前回と同じ車両は保存しない
 - `prediction_samples` — `service_date`, `trip_id`, `stop_id`, `lead_bucket_min`, `route_id`, `direction_id`, `update_type`, `uncertainty_sec`, `predicted_arrival_at`, `observed_at`。PK (`service_date`, `trip_id`, `stop_id`, `lead_bucket_min`)
@@ -190,7 +206,7 @@ collector は毎回、前回の `vehicles_current` と今回の取得結果を�
 
 ### 5.2 予測誤差（Prediction Accuracy）
 
-- 各回の予測について、リード時間 `lead = predicted_arrival - observed_at` を計算する。`lead` 以上で最小のバケット b ∈ `[1, 3, 5, 10, 15]` 分に `INSERT ... ON CONFLICT DO NOTHING` で保存する（各バケットで最初の観測を残す）
+- 各回の予測について、リード時間 `lead = predicted_arrival - observed_at` を計算する。`lead` 以上で最小のバケット b ∈ `[1, 3, 5, 10, 15]` 分に `INSERT ... ON CONFLICT DO NOTHING`（Prisma では `createMany({ skipDuplicates: true })`）で保存する（各バケットで最初の観測を残す）
 - `error_sec = actual_arrival - predicted_arrival`（**正の値 = 予測より遅く到着**）
 - 実到着は `arrival_events` と (service_date, trip_id, 親駅) で突き合わせる。`source = interpolated` のイベントは精度集計から除く
 - `schedule_relationship` が `CANCELLED` / `SKIPPED` の予測と、`arrival_time` が `null` の予測（始発駅）は保存しない
@@ -267,14 +283,18 @@ collector は毎回、前回の `vehicles_current` と今回の取得結果を�
 ├── README.md
 ├── Dockerfile               # web と jobs 共通のイメージ（Next.js standalone + 各 Job のバンドル）
 ├── docker-compose.yml       # ローカル用 PostgreSQL 16
-├── drizzle.config.ts
-├── drizzle/                 # マイグレーション（生成分 + パーティション用の手書き SQL）
+├── prisma.config.ts
+├── prisma/
+│   ├── schema.prisma
+│   ├── migrations/          # Prisma Migrate（パーティション部分は手書き SQL。§4.0）
+│   └── sql/                 # TypedSQL（分析・集計クエリ）
 ├── src/
 │   ├── app/                 # App Router のページと api/ 配下の Route Handlers
+│   ├── generated/prisma/    # prisma generate の出力（gitignore）
 │   ├── components/          # UI コンポーネント（map/, charts/, ui/）
 │   ├── lib/
 │   │   ├── mbta/            # API クライアント、zod スキーマ、JSON:API → ドメイン型への変換（server-only）
-│   │   ├── db/              # Drizzle のスキーマ・クライアント・クエリ
+│   │   ├── db/              # Prisma Client の生成と共有、クエリ関数
 │   │   ├── metrics/         # 到着検出・運行間隔・予測誤差（純粋関数）+ constants.ts
 │   │   └── time.ts          # 運行日の計算、タイムゾーン変換
 │   └── jobs/
@@ -299,7 +319,7 @@ collector は毎回、前回の `vehicles_current` と今回の取得結果を�
 ```bash
 docker compose up -d db        # ローカル PostgreSQL を起動
 pnpm install
-pnpm db:migrate                # マイグレーションを適用
+pnpm db:migrate                # マイグレーションを適用（prisma migrate deploy）
 pnpm job:sync-static           # 静的データを取得（実 API）
 pnpm job:collect               # collector を 1 回実行（実 API。連打しない）
 pnpm dev                       # http://localhost:3000
@@ -307,7 +327,8 @@ pnpm dev                       # http://localhost:3000
 pnpm lint && pnpm typecheck    # コミット前に必ず実行
 pnpm test                      # Vitest
 pnpm test:e2e                  # Playwright（シード済み DB + フィクスチャ）
-pnpm db:generate               # スキーマ変更後にマイグレーションを生成
+pnpm db:migrate:dev            # スキーマ変更後にマイグレーションを作成（prisma migrate dev）
+pnpm db:generate               # Prisma Client を生成（prisma generate。install 時にも自動で実行）
 pnpm fixtures:record           # 実 API からフィクスチャを記録（数リクエスト）
 ```
 
@@ -441,7 +462,7 @@ push to main
 
 分析には履歴データが必要なので、**collector をできるだけ早く本番で動かし始める**。
 
-1. **Phase 0 — 土台**: Next.js の雛形、docker-compose、Drizzle のスキーマ、MBTA クライアント + zod スキーマ、フィクスチャの記録
+1. **Phase 0 — 土台**: Next.js の雛形、docker-compose、Prisma のスキーマ（パーティション方式の検証を含む）、MBTA クライアント + zod スキーマ、フィクスチャの記録
 2. **Phase 1 — 収集**: `sync-static` と `collect`（現在値テーブル、履歴テーブル、到着検出）。ローカルで動作確認する
 3. **Phase 2 — 本番の基盤**: GCP プロジェクト 2 つの作成、`bootstrap` の手動 apply、`modules/app` と `envs/dev`・`envs/prod`、パイプライン、IAP、MBTA API キーの取得。prod で collector を動かしてデータの蓄積を始める
 4. **Phase 3 — リアルタイム画面**: Live Map、Stations / Arrival Board、Alerts、Status
@@ -471,5 +492,6 @@ push to main
 - [x] 実 API で確認済み（2026-11-01）: `/stops` の取得方法、`/route_patterns` の中身、レート制限ヘッダー、alerts の `effect` / `cause` などの値（§3）
 - [x] 運行中の `/predictions` と `/vehicles` の属性、終点駅の番線 ID の扱い（§3）
 - [ ] 平日の日中ピークに `/predictions` の件数とサイズを測る（日曜早朝は 416 件、非圧縮 251KB）
+- [ ] Prisma で、パーティションの子テーブルを別スキーマに置いたときに `migrate dev` が drift を出さないか（§4.0）
 - [ ] bunching / gap のしきい値（§5.3）を実データを見て調整する
 - [ ] 時刻表との比較（Phase 5）をするかどうか
