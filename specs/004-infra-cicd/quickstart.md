@@ -5,6 +5,8 @@
 - GCP プロジェクトを 2 つ（dev / prod）作り、請求先アカウントをひも付ける
 - MBTA API キーを 2 つ（dev 用 / prod 用）取得する
 - GitHub に Environment `dev` と `prod` を作る。`prod` に Required reviewers（オーナー）を設定し、両方とも Deployment branches を `main` だけにする
+- main にブランチ保護を設定する: PR 経由のマージだけを許可、`pr-checks` の合格を必須、force push と削除を禁止（承認者の人数は 0）
+- secret scanning と Dependabot alerts を有効にする
 
 ## 2. bootstrap（最初に一度だけ）
 
@@ -23,8 +25,8 @@ terraform apply -var="dev_project_id=<dev>" -var="prod_project_id=<prod>"
 
 ## 4. 最初のデプロイ
 
-main に push すると、CI → dev へのデプロイが自動で進む。dev で確認できたら、GitHub の Actions 画面で prod へのデプロイを承認する。
+PR を作ってマージすると、CI → dev へのデプロイ → スモークテスト → dev での E2E が自動で進む。ci のジョブサマリーで、今回出るコミット・マイグレーション・インフラの変更を確認してから、GitHub の Actions 画面で prod へのデプロイを承認する。
 
 ## ロールバック
 
-GitHub の Actions 画面から `rollback.yml` を実行し、環境と戻したいイメージのダイジェストを指定する（prod では承認が必要）。
+GitHub の Actions 画面から `rollback.yml` を実行する。環境だけを指定すると web を直前のリビジョンに戻し、イメージのダイジェストも指定するとジョブも含めてそのイメージに戻す（prod では承認が必要）。

@@ -65,7 +65,8 @@
 
 - 機能の追加・変更は spec-kit の流れで進める: `/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze` → `/speckit-implement` → `/speckit-converge`
 - 仕様を変えるときは、先に該当する `specs/NNN-*/` の文書を更新してから実装する
-- main への push 1 回につき、CI を 1 回、CD を 2 回（dev は自動、prod は承認後）実行する（`specs/004-infra-cicd/`）。PR では CI が走らないので、push の前にローカルで `pnpm lint && pnpm typecheck && pnpm test` を実行する
+- main は PR 経由でだけ更新する。PR では軽いチェック（lint・型・単体テスト・秘密の値・依存関係）を行い、合格をマージの条件にする。マージ（main の更新）1 回につき、リリース用の CI を 1 回、CD を 2 回（dev は自動、prod は承認後）実行する（`specs/004-infra-cicd/`）
+- prod への承認は、CI と dev でのテスト（スモークテストと E2E）がすべて成功してから行う。prod の web はトラフィック 0% で確認してから切り替える
 - コミットメッセージは英語の Conventional Commits（`feat:`, `fix:`, `chore:`, `docs:` …）
 
 ## 運用ルール（Governance）
@@ -82,4 +83,4 @@
 - 中身の薄い任意の文書（`data-model.md`, `contracts/`, `research.md`, `quickstart.md`）は作らない。`spec.md` と `plan.md` は必須
 - テストは `spec.md` の要件（Testing Requirements）として明記する。`/speckit-tasks` は spec で求められたテストしかタスクにしないため
 
-**バージョン**: 1.1.0 | **制定日**: 2026-11-01 | **最終改定日**: 2026-11-02
+**バージョン**: 1.2.0 | **制定日**: 2026-11-01 | **最終改定日**: 2026-11-02

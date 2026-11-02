@@ -21,7 +21,7 @@ pnpm job:collect               # collector を 1 回
 pnpm job:aggregate             # 前の運行日を集計
 pnpm job:aggregate --from 2026-11-01 --to 2026-11-03   # 期間を指定して再集計
 
-pnpm lint && pnpm typecheck && pnpm test   # push の前に必ず実行（PR では CI が走らない）
+pnpm lint && pnpm typecheck && pnpm test   # PR を出す前に実行（PR では軽いチェックだけが走る）
 pnpm test:unit                 # 純粋関数
 pnpm test:integration          # 本物の PostgreSQL を使うテスト（docker compose の DB）
 pnpm test:replay               # 記録した連続ポーリングを collector に流すテスト

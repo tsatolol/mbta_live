@@ -14,7 +14,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit 8 路線）の運�
 | `specs/001-data-collection/` | 収集ジョブ（collector / sync-static）、DB スキーマ、到着検出、MBTA API の利用方法と実測した応答の性質（`contracts/mbta-api.md`） |
 | `specs/002-live-dashboard/` | 地図・駅・アラート・稼働状況の画面と内部 API |
 | `specs/003-analytics/` | 日次集計と 4 つの分析画面、指標の定義 |
-| `specs/004-infra-cicd/` | dev / prod の GCP 環境、Terraform、パイプライン（CI 1 回 → CD dev → 承認 → CD prod） |
+| `specs/004-infra-cicd/` | dev / prod の GCP 環境、Terraform、パイプライン（PR で軽いチェック → マージで CI 1 回 → CD dev → 承認 → CD prod） |
 
 各 feature のディレクトリには `spec.md`（何を・なぜ。テスト要件を含む）と `plan.md`（どう作るか）が必ずあり、必要な feature だけに `research.md`（決定と理由）、`data-model.md`、`contracts/`、`quickstart.md` がある。`tasks.md` は `/speckit-tasks` で作る。
 
@@ -43,7 +43,7 @@ Next.js（App Router, TypeScript）/ Prisma ORM + PostgreSQL 16（Cloud SQL）/ 
 docker compose up -d db && pnpm install && pnpm db:migrate
 pnpm dev                       # http://localhost:3000
 pnpm job:collect               # 実 API を使う。連打しない。普段は MBTA_FIXTURE_MODE=1
-pnpm lint && pnpm typecheck && pnpm test   # push の前に必ず実行（PR では CI が走らない）
+pnpm lint && pnpm typecheck && pnpm test   # PR を出す前に実行（PR では軽いチェックだけが走る）
 pnpm test:e2e
 ```
 
