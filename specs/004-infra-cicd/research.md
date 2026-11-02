@@ -107,3 +107,20 @@
 - `prisma` CLI は migrate Job のために実行イメージに入るので、開発用の依存として無視はできない。リリース用の CI（T026）の `pnpm audit --audit-level high` でも失敗する
 - 対応: `package.json` の `pnpm.overrides` で `lodash` を `>=4.18.0`（4.18.1 に）、`minimatch@<11.0.1` を `>=11.0.1`（11.0.4 に）上げた。`pnpm audit` が 0 件になり、lint・型チェック・全テスト（148 件）が通ることを確かめた。上流（Prisma Studio、ESLint）が修正版に追従したら、この overrides を外す
 
+## bootstrap の範囲: GCP プロジェクトと GitHub の設定まで含める（2026-11-02）
+
+- **決定**: bootstrap の Terraform で、GCP プロジェクト（dev / prod）の作成と請求先アカウントのひも付け、GitHub の Environment（Required reviewers、Deployment branches）・variables・secrets、main のルールセット、Dependency graph などのセキュリティ設定まで作る。人の手作業は次の 3 つだけにする
+  1. 請求先アカウントの ID を確かめ、プロジェクト ID を決める
+  2. MBTA API キーを取得し、Secret Manager に入れる（キーを発行する API がない。Terraform の変数で渡すと値が state に残る）
+  3. ご自身の Google アカウントと GitHub のトークンで、bootstrap を一度だけ apply する
+- **理由**: 手作業を減らし、設定をコードとして残せる。特に bootstrap の出力（WIF provider、SA のメールアドレス、Artifact Registry のパス）を GitHub の variables に手で写す作業がなくなり、写し間違いが起きない
+- **考えたこと**
+  - **state の鶏と卵**: bootstrap 自身の state は、bootstrap が作るバケットに最初からは置けない。初回はローカルの state で apply し、作ったバケットに `terraform init -migrate-state` で移す
+  - **権限**: 個人アカウントなので組織（Organization）がなく、プロジェクトは「組織なし」で作られる。apply には、請求先アカウントのユーザー権限がある Google アカウントでの `gcloud auth application-default login` と、GitHub の fine-grained personal access token（このリポジトリだけ、Administration・Environments・Secrets・Variables の読み書き）が要る。トークンは apply が終わったら削除する
+  - **削除の事故**: プロジェクトを Terraform で管理すると `terraform destroy` で消せてしまうので、`deletion_policy = "PREVENT"` と `prevent_destroy` を付ける
+  - **secrets の値**: GitHub の Environment の secrets（IAP で許可するメールアドレス、通知先のメールアドレス）は bootstrap の sensitive な変数で渡すので、bootstrap の state に値が残る。state のバケットは公開アクセスを禁止し、読めるのは人と deployer に限る
+  - **画面で作った設定**: T021 で画面から作った main のルールセットと、T022 の前に画面で有効にした Dependency graph などは、`import` ブロックで取り込む
+  - **`WEB_URL`**: web の URL は envs の apply（Cloud Run）で決まり、bootstrap の時点では分からない。パイプラインは `gcloud run services describe` で取得するので、GitHub の variables には登録しない
+- **検討した代替案**: GCP プロジェクトと GitHub の設定は画面で作る（当初案。手作業と写し間違いが多い）
+- **未確認**: 開発環境からは Terraform のレジストリに接続できず、GitHub プロバイダの最新版と、ルールセットや `security_and_analysis` の書式を手元で `terraform validate` できない（Google プロバイダはローカルのミラーで検証できる）。T009 は GitHub プロバイダのドキュメントに沿って書き、T010 の apply の前の `terraform plan` で確かめる
+

@@ -10,7 +10,7 @@ description: "004 インフラと CI/CD の実装タスク"
 
 **テスト**: spec.md のテスト要件（TR-001〜TR-008）に基づいてタスクを含める。インフラとパイプラインは、自動テスト（CI で毎回動くもの）と、実装後に一度ずつ実際に試して確かめる手動の確認（「確認」と書いたタスク）に分かれる。
 
-**構成**: ユーザーストーリーごとに分ける。`（人が行う）` と書いたタスクは、GCP や GitHub の画面での操作など、Claude Code では実行できないもの。
+**構成**: ユーザーストーリーごとに分ける。`（人が行う）` と書いたタスクは、Claude Code では実行できないもの（MBTA API キーの取得、ご自身の権限での bootstrap の apply など）。GCP プロジェクトの作成と GitHub の Environment・variables・secrets・ルールセットの設定は bootstrap の Terraform に含める（research.md の「bootstrap の範囲」）。
 
 **002 との関係**: 実装の順番は 004 → 002 なので、004 の時点では 002 の画面と内部 API がない。`/api/health` だけは Cloud Run のヘルスチェックと監視に必要なので 004 で先に作り（T013）、主要 API のスモークテストと dev の E2E は「002 の完了後」のタスク（T048〜T049）に分ける。
 
@@ -23,32 +23,32 @@ description: "004 インフラと CI/CD の実装タスク"
 
 ## フェーズ 1: セットアップ（共通の土台）
 
-**目的**: Terraform とワークフローのディレクトリ、人が行う事前準備
+**目的**: Terraform とワークフローのディレクトリ、人が行う事前準備（bootstrap で自動化できないものだけ）
 
 - [X] T001 Terraform のディレクトリを作る: `infra/terraform/{bootstrap,modules/app,envs/dev,envs/prod}/`。各ディレクトリに `versions.tf`（Terraform と Google provider の最新安定版を `required_version` / `required_providers` で固定）を置く。`.terraform/`、`*.tfstate*`、`*.tfvars`（`terraform.tfvars.example` と `envs/*/terraform.tfvars` は除く）を `.gitignore` に追加する
 - [X] T002 [P] Terraform の書式と静的検査のコマンドを用意する: `pnpm infra:fmt`（`terraform fmt -recursive -check infra/terraform`）と `pnpm infra:validate`（各ディレクトリで `terraform init -backend=false && terraform validate`）: `package.json`、`scripts/infra-validate.sh`
-- [ ] T003 （人が行う）GCP プロジェクトを 2 つ（dev / prod）作り、請求先アカウントをひも付ける。プロジェクト ID を `docs/architecture.md` の「環境の違い」と CLAUDE.md の未決事項に反映する
-- [ ] T004 （人が行う）MBTA API キーを 2 つ（dev 用 / prod 用）取得する（https://api-v3.mbta.com で登録）
-- [ ] T005 （人が行う）GitHub に Environment `dev` と `prod` を作る。`prod` に Required reviewers（オーナー）を設定し、両方とも Deployment branches を `main` だけにする。secret scanning と Dependabot alerts を有効にする
+- [ ] T003 （人が行う）bootstrap の apply に必要な値を決める: 請求先アカウントの ID（Cloud Console の「お支払い」で確かめる）、dev / prod のプロジェクト ID（GCP 全体で一意。例: `mbta-live-dev-xxxx`）。プロジェクト ID を `docs/architecture.md` の「環境の違い」と CLAUDE.md の未決事項に反映する（請求先アカウントの ID はコミットしない）
+- [ ] T004 （人が行う）MBTA API キーを 2 つ（dev 用 / prod 用）取得する（https://api-v3.mbta.com で登録。キーを発行する API はないので自動化できない）。値は、envs の初回の apply でシークレットの入れ物ができた後に `gcloud secrets versions add` で入れる（Terraform の変数で渡すと state に値が残るため）
 
 ---
 
 ## フェーズ 2: 基盤（すべてのストーリーの前提）
 
-**目的**: イメージ、bootstrap、アプリ一式のモジュール、両環境の定義
+**目的**: イメージ、bootstrap（GCP プロジェクトと GitHub の設定を含む）、アプリ一式のモジュール、両環境の定義
 
 **⚠️ 重要**: このフェーズが終わるまで、CD のユーザーストーリー（US2〜US6）は始められない。US1（PR チェック）はこのフェーズに依存しない
 
 ### コンテナイメージ
 
-- [ ] T006 Dockerfile を作る: マルチステージで `pnpm install --frozen-lockfile` → `prisma generate` → `next build`（standalone）。実行イメージには Next.js の standalone 出力、`src/jobs/` の各ジョブ（`tsx --conditions=react-server` で起動できる形、または esbuild でバンドルしたもの）、Prisma CLI と `prisma/` ディレクトリ（migrate Job 用）を入れる。非 root ユーザーで動かす。ビルド時に環境ごとの値を入れない（`NEXT_PUBLIC_*` を使わない）: `Dockerfile`、`.dockerignore`
-- [ ] T007 イメージの起動コマンドを決める: web は `node server.js`、ジョブは `pnpm job:collect` などと同じ処理を呼ぶ `node` の起動コマンド、migrate は `prisma migrate deploy`。Cloud Run Job で上書きするコマンドを docs/architecture.md に記録する
+- [ ] T005 Dockerfile を作る: マルチステージで `pnpm install --frozen-lockfile` → `prisma generate` → `next build`（standalone）。実行イメージには Next.js の standalone 出力、`src/jobs/` の各ジョブ（`tsx --conditions=react-server` で起動できる形、または esbuild でバンドルしたもの）、Prisma CLI と `prisma/` ディレクトリ（migrate Job 用）を入れる。非 root ユーザーで動かす。ビルド時に環境ごとの値を入れない（`NEXT_PUBLIC_*` を使わない）: `Dockerfile`、`.dockerignore`
+- [ ] T006 イメージの起動コマンドを決める: web は `node server.js`、ジョブは `pnpm job:collect` などと同じ処理を呼ぶ `node` の起動コマンド、migrate は `prisma migrate deploy`。Cloud Run Job で上書きするコマンドを docs/architecture.md に記録する
 
-### bootstrap（最初に一度だけ人が apply する）
+### bootstrap（GCP プロジェクトと GitHub の設定まで作る。最初に一度だけ人が apply する）
 
-- [ ] T008 bootstrap の Terraform を書く: 両プロジェクトの API の有効化（Cloud Run、Cloud SQL Admin、Secret Manager、Artifact Registry、Cloud Scheduler、IAP、IAM Credentials、Monitoring、Logging）、Terraform state の GCS バケット（環境ごと、バージョニング有効）、prod プロジェクトの Artifact Registry `mbta-live`（`us-east4`）: `infra/terraform/bootstrap/main.tf`、`variables.tf`、`outputs.tf`
-- [ ] T009 bootstrap に WIF とサービスアカウントを追加する: 各プロジェクトの WIF pool / provider（attribute condition: `assertion.repository == "tsatolol/mbta_live" && assertion.ref == "refs/heads/main"`。PR 用の provider は作らない）、SA `ci-builder`（prod。Artifact Registry への書き込みだけ）、`deployer-dev` / `deployer-prod`（`roles/iam.workloadIdentityUser` の付与は OIDC トークンの `environment` クレームで `dev` / `prod` に限定）、`smoke-tester`（環境ごと）。deployer に `smoke-tester` の ID トークンを発行する権限（`roles/iam.serviceAccountOpenIdTokenCreator`）を付ける。dev プロジェクトの Cloud Run サービスエージェントに、prod の Artifact Registry の reader を付ける: `infra/terraform/bootstrap/iam.tf`、`wif.tf`
-- [ ] T010 （人が行う）bootstrap を apply し、出力（WIF provider、各 SA のメールアドレス、Artifact Registry のパス）を GitHub の Environment / リポジトリの variables に登録する（`contracts/pipeline.md` の「GitHub の設定」）
+- [ ] T007 bootstrap の GCP の Terraform を書く: `google_project` で dev / prod のプロジェクトを作り（組織なし、`billing_account` で請求先アカウントをひも付ける、`deletion_policy = "PREVENT"` と `lifecycle { prevent_destroy = true }` で削除を防ぐ）、両プロジェクトの API の有効化（Cloud Run、Cloud SQL Admin、Secret Manager、Artifact Registry、Cloud Scheduler、IAP、IAM Credentials、Monitoring、Logging、Cloud Billing Budget）、Terraform state の GCS バケット（環境ごと + bootstrap 用、バージョニング有効、公開アクセス禁止）、prod プロジェクトの Artifact Registry `mbta-live`（`us-east4`）。変数はプロジェクト ID と請求先アカウントの ID（`TF_VAR_billing_account` かコミットしない `bootstrap/terraform.tfvars` で渡す）。backend は最初はローカルにし、移行先の GCS の設定を `backend.tf.example` に置く: `infra/terraform/bootstrap/{main.tf,projects.tf,variables.tf,outputs.tf,backend.tf.example,terraform.tfvars.example}`
+- [ ] T008 bootstrap に WIF とサービスアカウントを追加する: 各プロジェクトの WIF pool / provider（attribute condition: `assertion.repository == "tsatolol/mbta_live" && assertion.ref == "refs/heads/main"`。PR 用の provider は作らない）、SA `ci-builder`（prod。Artifact Registry への書き込みだけ）、`deployer-dev` / `deployer-prod`（`roles/iam.workloadIdentityUser` の付与は OIDC トークンの `environment` クレームで `dev` / `prod` に限定）、`smoke-tester`（環境ごと）。deployer に `smoke-tester` の ID トークンを発行する権限（`roles/iam.serviceAccountOpenIdTokenCreator`）と、自分の環境の state バケットへの読み書き権限を付ける。dev プロジェクトの Cloud Run サービスエージェントに、prod の Artifact Registry の reader を付ける: `infra/terraform/bootstrap/{iam.tf,wif.tf}`
+- [ ] T009 bootstrap に GitHub の設定を追加する（GitHub プロバイダ `integrations/github` の最新安定版。トークンは環境変数 `GITHUB_TOKEN`）: Environment `dev` と `prod`（`prod` は Required reviewers にリポジトリのオーナー、両方とも Deployment branches は `main` だけ）、各 Environment の variables（`GCP_PROJECT_ID`、`WIF_PROVIDER`、`DEPLOYER_SA`、`SMOKE_TESTER_SA`。値は T007〜T008 のリソースから取る）、リポジトリの variables（`ARTIFACT_REGISTRY`、`CI_BUILDER_SA`、`CI_WIF_PROVIDER`）、各 Environment の secrets（`TF_VAR_iap_members`、`TF_VAR_alert_email`。値は sensitive な変数で渡す）、main のルールセット（T021 で画面から作ったものを `import` ブロックで取り込む）、Dependency graph・Dependabot alerts・secret scanning と push protection の設定: `infra/terraform/bootstrap/{github.tf,imports.tf}`、`versions.tf`
+- [ ] T010 （人が行う）bootstrap を apply する: (1) `gcloud auth application-default login`（請求先アカウントのユーザー権限があるアカウント）、(2) GitHub の fine-grained personal access token を作り `GITHUB_TOKEN` に入れる（対象はこのリポジトリだけ、権限は Administration・Environments・Secrets・Variables の読み書き）、(3) `terraform init && terraform apply`（ローカルの state）、(4) `backend.tf.example` を `backend.tf` にして `terraform init -migrate-state` で state を GCS に移す、(5) `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64` でロックファイルを作ってコミットする（PR で）、(6) トークンを削除する（bootstrap を変更するときに作り直す）。Claude Code は手順を案内し、plan の結果を一緒に確かめる
 
 ### アプリ一式のモジュール
 
@@ -179,10 +179,10 @@ description: "004 インフラと CI/CD の実装タスク"
 
 ### フェーズの依存関係
 
-- **セットアップ（フェーズ 1）**: 依存なし。T003〜T005（人が行う）は早めに始める
-- **基盤（フェーズ 2）**: セットアップの完了が前提。T010 は T008〜T009 と T003 が前提
+- **セットアップ（フェーズ 1）**: 依存なし。T003〜T004（人が行う）は早めに始める
+- **基盤（フェーズ 2）**: セットアップの完了が前提。T010（bootstrap の apply）は T007〜T009 と T003 が前提
 - **US1（フェーズ 3）**: 基盤に依存しない。セットアップの T001〜T002 の後すぐ始められる（GCP がなくてもよい）
-- **US2（フェーズ 4）**: 基盤の完了と T010（bootstrap の apply と variables の登録）が前提
+- **US2（フェーズ 4）**: 基盤の完了と T010（bootstrap の apply。GitHub の variables もここで登録される）が前提
 - **US3（フェーズ 5）**: US2 の完了が前提（同じ `pipeline.yml` の後段）
 - **US4〜US6**: US2 の完了が前提。互いには独立
 - **仕上げ（フェーズ 9）**: US1〜US6 の完了が前提。T048〜T049 は 002 の完了が前提
@@ -204,8 +204,8 @@ description: "004 インフラと CI/CD の実装タスク"
 
 ### 並行して進められるもの
 
-- セットアップの T002 と、人が行う T003〜T005
-- 基盤の T006〜T007（イメージ）、T008〜T009（bootstrap）、T011〜T016（モジュール。ファイルが分かれている）、T013（`/api/health`）
+- セットアップの T002 と、人が行う T003〜T004
+- 基盤の T005〜T006（イメージ）、T007〜T009（bootstrap。ファイルが分かれている）、T011〜T016（モジュール。ファイルが分かれている）、T013（`/api/health`）
 - US2 のテスト（T023〜T025）
 - US2 の完了後、US4・US5・US6 は並行して進められる
 
@@ -214,8 +214,8 @@ description: "004 インフラと CI/CD の実装タスク"
 ## 並行実行の例: 基盤
 
 ```bash
-タスク: "Dockerfile（T006）"
-タスク: "bootstrap の Terraform（T008〜T009）"
+タスク: "Dockerfile（T005）"
+タスク: "bootstrap の Terraform（T007〜T009）"
 タスク: "modules/app の Cloud SQL・Secret Manager・Jobs・Scheduler（T011、T012、T015、T016）"
 タスク: "/api/health と結合テスト（T013）"
 ```
@@ -240,7 +240,7 @@ description: "004 インフラと CI/CD の実装タスク"
 
 ### 段階的な追加
 
-1. 人が行う準備（T003〜T005）と基盤（フェーズ 2）→ bootstrap の apply（T010）
+1. 人が行う準備（T003〜T004）と基盤（フェーズ 2）→ bootstrap の apply（T010）
 2. US2 → dev で収集が始まる
 3. US3 → prod で収集が始まる（**001 の目的「分析用のデータをできるだけ早く貯め始める」はここで達成**）。prod の稼働前に MBTA API キー（T004）を Secret Manager に入れておく
 4. US6（監視）→ US4（ロールバック）→ US5（権限と予算の確認）
