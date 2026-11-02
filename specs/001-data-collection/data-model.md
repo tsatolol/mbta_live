@@ -58,6 +58,9 @@ PostgreSQL 16（Cloud SQL）。時刻はすべて `timestamptz`（UTC）。テ�
 - `vehicle_positions` は `updated_at` が前回と同じ車両を保存しない。collector は前日・当日・翌日の運行日のパーティションを毎回作り、`updated_at` がそれ以外の運行日になる車両（数日前から更新の止まった車両など）の位置は保存しない（件数は `collector_runs.counts.positionsSkipped`）
 - `vehicles_current.carriages` は `[{ label, occupancyStatus, occupancyPercentage }]` の形の JSON
 - 保持期間の削除はパーティションごと `DROP` する。**集計が済んでいない運行日のパーティションは、保持期間を過ぎても削除しない**
+- 保持期間の数え方: 今日を含めて直近 `RAW_RETENTION_DAYS` 運行日分を残す。運行日 d が `今日 − RAW_RETENTION_DAYS` 日以前なら期限切れ（prod の 28 日なら、11-10 の時点で 10-14 は残り 10-13 は期限切れ）。`RAW_RETENTION_DAYS` が未設定なら 28 日
+- パーティションは、collector が前日・当日・翌日の分を、aggregate ジョブが当日から 3 日先までの分を毎回作る。期限切れの削除は aggregate ジョブが行い、集計が済んでいるかは `aggregate_runs.status = success` で判定する（`aggregate_runs` は 003 で定義したテーブルだが、この判定に必要なので 001 で作った）
+- 注意: 集計（003）を実装するまでは `aggregate_runs` に行が入らないので、生データは保持期間を過ぎても削除されない
 
 ## 運用記録
 

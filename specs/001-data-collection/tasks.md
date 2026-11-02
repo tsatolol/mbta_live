@@ -166,13 +166,13 @@ description: "001 データ収集の実装タスク"
 
 ### ユーザーストーリー 5 のテスト
 
-- [ ] T052 [P] [US5] 保持期間の結合テストを書く（TR-007）: 今日から 3 日先までのパーティションが作られる、保持期間を過ぎて `aggregate_runs.status = success` の運行日のパーティションは削除される、保持期間を過ぎても集計が済んでいない運行日は残る、保持期間内のものは残る: `tests/integration/retention.test.ts`
+- [X] T052 [P] [US5] 保持期間の結合テストを書く（TR-007）: 今日から 3 日先までのパーティションが作られる、保持期間を過ぎて `aggregate_runs.status = success` の運行日のパーティションは削除される、保持期間を過ぎても集計が済んでいない運行日は残る、保持期間内のものは残る: `tests/integration/retention.test.ts`
 
 ### ユーザーストーリー 5 の実装
 
-- [ ] T053 [US5] `aggregate_runs` テーブル（`service_date` PK, `status`, `finished_at`, `definition_version`。定義は `specs/003-analytics/data-model.md`）を `prisma/schema.prisma` に追加し、マイグレーションを作る（保持期間の判定に必要なため 001 で先に作る）
-- [ ] T054 [US5] 期限切れのパーティションの削除を実装する: `dropExpiredPartitions(now, retentionDays)` が、保持期間を過ぎ、`aggregate_runs.status = success` の運行日の子テーブルだけを `DROP TABLE` する: `src/lib/db/partitions.ts`
-- [ ] T055 [US5] aggregate ジョブの土台を作り、今はパーティションの管理だけを行う: `ensurePartitions`（今日から 3 日先まで）→ `dropExpiredPartitions` → `runJob` で記録（`job = aggregate`）。集計は 003 で追加する: `src/jobs/aggregate.ts`
+- [X] T053 [US5] `aggregate_runs` テーブル（`service_date` PK, `status`, `finished_at`, `definition_version`。定義は `specs/003-analytics/data-model.md`）を `prisma/schema.prisma` に追加し、マイグレーションを作る（保持期間の判定に必要なため 001 で先に作る）
+- [X] T054 [US5] 期限切れのパーティションの削除を実装する: `dropExpiredPartitions(now, retentionDays)` が、保持期間を過ぎ、`aggregate_runs.status = success` の運行日の子テーブルだけを `DROP TABLE` する: `src/lib/db/partitions.ts`
+- [X] T055 [US5] aggregate ジョブの土台を作り、今はパーティションの管理だけを行う: `ensurePartitions`（今日から 3 日先まで）→ `dropExpiredPartitions` → `runJob` で記録（`job = aggregate`）。集計は 003 で追加する: `src/jobs/aggregate.ts`
 
 **チェックポイント**: すべてのユーザーストーリーが単独で動く
 
