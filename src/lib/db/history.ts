@@ -1,5 +1,7 @@
 // 履歴テーブル（生データ）への書き込み
+import type { ArrivalEventRow } from "@/lib/metrics/arrivals";
 import type { Vehicle } from "@/lib/mbta/schemas/vehicle";
+import { serviceDateToDbDate } from "@/lib/time";
 import type { DbTx } from "./types";
 
 /**
@@ -26,6 +28,32 @@ export async function insertVehiclePositions(
       currentStatus: v.currentStatus,
       stopId: v.stopId,
       currentStopSequence: v.currentStopSequence,
+    })),
+    skipDuplicates: true,
+  });
+  return result.count;
+}
+
+/**
+ * 到着イベントを保存する。同じ（運行日, 便, 親駅）が既にあれば入れない（最初に記録した到着を残す）。
+ * 保存した件数を返す。
+ */
+export async function insertArrivalEvents(
+  tx: DbTx,
+  events: readonly ArrivalEventRow[],
+): Promise<number> {
+  if (events.length === 0) return 0;
+  const result = await tx.arrivalEvent.createMany({
+    data: events.map((e) => ({
+      serviceDate: serviceDateToDbDate(e.serviceDate),
+      tripId: e.tripId,
+      stopId: e.stopId,
+      routeId: e.routeId,
+      directionId: e.directionId,
+      vehicleId: e.vehicleId,
+      arrivedAt: e.arrivedAt,
+      source: e.source,
+      precisionSec: e.precisionSec,
     })),
     skipDuplicates: true,
   });
