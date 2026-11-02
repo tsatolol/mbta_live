@@ -206,3 +206,14 @@ model UnknownStopId {
 
   @@map("unknown_stop_ids")
 }
+
+// ---------- 集計の実行記録（定義は specs/003-analytics/data-model.md。保持期間の判定に使うため 001 で作る） ----------
+
+model AggregateRun {
+  serviceDate       DateTime  @id @map("service_date") @db.Date
+  status            String
+  finishedAt        DateTime? @map("finished_at") @db.Timestamptz
+  definitionVersion Int       @map("definition_version")
+
+  @@map("aggregate_runs")
+}
