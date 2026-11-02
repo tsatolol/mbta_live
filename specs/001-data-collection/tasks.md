@@ -143,16 +143,16 @@ description: "001 データ収集の実装タスク"
 
 ### ユーザーストーリー 4 のテスト
 
-- [ ] T045 [P] [US4] 静的データの解析テストを書く（TR-001 の一部）: `/routes` が 8 路線、`/stops` ① がホーム 265 件と親駅 125 件、② の `child_stops` を `location_type = 0` かつ `vehicle_type` が 0 / 1 で絞ると 12 件（`Alewife-01/02`, `Braintree-01/02`, `Forest Hills-01/02`, `Oak Grove-01/02`, `Union Square-01/02`, `Government Center-Brattle`, `71199`）が加わる、`/route_patterns` から `Shuttle-*` が除かれる: `tests/unit/mbta/static.test.ts`
-- [ ] T046 [P] [US4] sync-static の結合テストを書く: 件数どおりに保存される、2 回実行しても件数が変わらない、`unknown_stop_ids` の未解決の ID が ③ で取得されて `resolved_at` が入る: `tests/integration/sync-static.test.ts`
+- [X] T045 [P] [US4] 静的データの解析テストを書く（TR-001 の一部）: `/routes` が 8 路線、`/stops` ① がホーム 265 件と親駅 125 件、② の `child_stops` を `location_type = 0` かつ `vehicle_type` が 0 / 1 で絞ると 12 件（`Alewife-01/02`, `Braintree-01/02`, `Forest Hills-01/02`, `Oak Grove-01/02`, `Union Square-01/02`, `Government Center-Brattle`, `71199`）が加わる、`/route_patterns` から `Shuttle-*` が除かれる: `tests/unit/mbta/static.test.ts`
+- [X] T046 [P] [US4] sync-static の結合テストを書く: 件数どおりに保存される、2 回実行しても件数が変わらない、`unknown_stop_ids` の未解決の ID が ③ で取得されて `resolved_at` が入る: `tests/integration/sync-static.test.ts`
 
 ### ユーザーストーリー 4 の実装
 
-- [ ] T047 [P] [US4] 路線・駅・路線パターンの zod スキーマと変換を実装する（路線パターンの `station_ids` はホームから親駅に変換して作る）: `src/lib/mbta/schemas/route.ts`、`src/lib/mbta/schemas/stop.ts`、`src/lib/mbta/schemas/route-pattern.ts`
-- [ ] T048 [US4] 静的データの取得を実装する: `/routes`、`/stops` ①②、`/route_patterns`、未解決の駅 ID があれば `/stops` ③（`filter[id]=`）: `src/lib/mbta/static.ts`
-- [ ] T049 [US4] 静的データの upsert を実装する（`$executeRaw` でテーブルごとに 1 本の SQL）: `src/lib/db/static.ts`
-- [ ] T050 [US4] sync-static のジョブを実装する: `withAdvisoryLock` → 取得 → upsert → 解決した `unknown_stop_ids` に `resolved_at` を入れる → `runJob` で記録（`job = sync-static`）: `src/jobs/sync-static.ts`
-- [ ] T051 [US4] collector で未知の駅 ID を記録する: 車両・予測の `stop` が `stops` にない場合、ログに出して `unknown_stop_ids` に `ON CONFLICT DO NOTHING` で入れる: `src/jobs/collect.ts`
+- [X] T047 [P] [US4] 路線・駅・路線パターンの zod スキーマと変換を実装する（路線パターンの `station_ids` はホームから親駅に変換して作る）: `src/lib/mbta/schemas/route.ts`、`src/lib/mbta/schemas/stop.ts`、`src/lib/mbta/schemas/route-pattern.ts`
+- [X] T048 [US4] 静的データの取得を実装する: `/routes`、`/stops` ①②、`/route_patterns`、未解決の駅 ID があれば `/stops` ③（`filter[id]=`）: `src/lib/mbta/static.ts`
+- [X] T049 [US4] 静的データの upsert を実装する（`$executeRaw` でテーブルごとに 1 本の SQL）: `src/lib/db/static.ts`
+- [X] T050 [US4] sync-static のジョブを実装する: `withAdvisoryLock` → 取得 → upsert → 解決した `unknown_stop_ids` に `resolved_at` を入れる → `runJob` で記録（`job = sync-static`）: `src/jobs/sync-static.ts`
+- [X] T051 [US4] collector で未知の駅 ID を記録する: 車両・予測の `stop` が `stops` にない場合、ログに出して `unknown_stop_ids` に `ON CONFLICT DO NOTHING` で入れる: `src/jobs/collect.ts`
 
 **チェックポイント**: US1〜US4 が動く
 
