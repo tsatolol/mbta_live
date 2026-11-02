@@ -4,7 +4,7 @@
 
 ## 前提
 
-- Node.js Active LTS（24.x。`.nvmrc` あり）、pnpm、Docker（ローカルの PostgreSQL 16 に使う。Docker がなければ、PostgreSQL 16 を直接起動して `DATABASE_URL` と `TEST_DATABASE_URL` を向けてもよい）
+- Node.js Active LTS（24.x。`.nvmrc` あり）、pnpm、Docker、Terraform 1.17（インフラを触るとき）（ローカルの PostgreSQL 16 に使う。Docker がなければ、PostgreSQL 16 を直接起動して `DATABASE_URL` と `TEST_DATABASE_URL` を向けてもよい）
 
 ## コマンド（予定）
 
@@ -29,6 +29,9 @@ pnpm test:e2e                  # Playwright
 pnpm fixtures:record           # 実 API から 1 回分のフィクスチャを記録（7 リクエスト）
 pnpm fixtures:cases            # 記録済みのフィクスチャから特殊ケースのフィクスチャを作る（API は呼ばない）
 pnpm fixtures:record-sequence  # 実 API から連続ポーリングを記録（再生テスト用。1 分ごとに 3 リクエスト）
+
+pnpm infra:fmt                 # Terraform の書式の検査（terraform fmt -check）
+pnpm infra:validate            # Terraform の各ディレクトリで init（backend なし）と validate
 ```
 
 `pnpm test` は unit + integration + replay を実行する。

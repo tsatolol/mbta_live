@@ -75,3 +75,11 @@
 
 - **決定**: dev は collector 5 分間隔、生データ 3 日保持、Cloud SQL のバックアップ 1 日
 - **理由**: dev の分析画面は表示の確認用と割り切り、数値の妥当性は prod で確認する
+
+## ツールとバージョン（2026-11-02 時点）
+
+- **決定**: Terraform 1.17（`~> 1.17`）、Google プロバイダ 8.9（`~> 8.9`）、random プロバイダ 3.9（`~> 3.9`）。それぞれ 2026-11-02 時点の最新安定版
+- **ロックファイル**: `.terraform.lock.hcl` は、bootstrap と envs を最初に `terraform init` するとき（T010、T017）に、Linux と macOS の両方のハッシュを入れて（`terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`）コミットする。`pnpm infra:validate` は一時ディレクトリのコピーで実行するので、ロックファイルをリポジトリに残さない
+- **GitHub Actions**: `actions/checkout@v5`、`actions/setup-node@v5`、`pnpm/action-setup@v4`、`gitleaks/gitleaks-action@v2`、`actions/dependency-review-action@v4` をメジャーバージョンのタグで指定した。開発環境から GitHub のリリースを参照できず、最新版の確認とコミットの SHA での固定ができなかったため。Dependabot の version updates（`github-actions`）で更新を追うか、SHA で固定するかは T047 で見直す
+- **Gitleaks**: 開発環境では Gitleaks を実行できなかった（GitHub のリリースから取得できないため）。`.gitleaks.toml` の動作は、PR チェックの初回の実行と T022 の確認で確かめる
+
