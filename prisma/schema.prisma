@@ -1,0 +1,208 @@
+// DB スキーマ。定義の出典は specs/001-data-collection/data-model.md。
+// 履歴テーブル（VehiclePosition / PredictionSample / ArrivalEvent）は、マイグレーションの SQL で
+// 宣言的パーティショニングにしている（Prisma のスキーマでは PARTITION BY を表現できないため）。
+// 日ごとの子テーブルはスキーマ "partitions" に置き、Prisma の管理対象に入れない。
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- 静的データ（sync-static が毎日 upsert） ----------
+
+model Route {
+  id                    String @id
+  shortName             String @map("short_name")
+  longName              String @map("long_name")
+  type                  Int
+  color                 String
+  textColor             String @map("text_color")
+  directionNames        Json   @map("direction_names")
+  directionDestinations Json   @map("direction_destinations")
+  sortOrder             Int    @map("sort_order")
+
+  @@map("routes")
+}
+
+model Stop {
+  id              String  @id
+  name            String
+  lat             Float?
+  lon             Float?
+  locationType    Int     @map("location_type")
+  parentStationId String? @map("parent_station_id")
+  platformName    String? @map("platform_name")
+  vehicleType     Int?    @map("vehicle_type")
+
+  @@index([parentStationId])
+  @@map("stops")
+}
+
+model RoutePattern {
+  id              String  @id
+  routeId         String  @map("route_id")
+  directionId     Int     @map("direction_id")
+  name            String
+  typicality      Int
+  canonical       Boolean
+  shapePolyline   String? @map("shape_polyline")
+  platformStopIds Json    @map("platform_stop_ids")
+  stationIds      Json    @map("station_ids")
+
+  @@index([routeId, directionId])
+  @@map("route_patterns")
+}
+
+// ---------- 現在値（collector が毎回、トランザクション内で入れ替え） ----------
+
+model VehicleCurrent {
+  vehicleId           String   @id @map("vehicle_id")
+  routeId             String   @map("route_id")
+  tripId              String?  @map("trip_id")
+  directionId         Int?     @map("direction_id")
+  lat                 Float
+  lon                 Float
+  bearing             Int?
+  currentStatus       String   @map("current_status")
+  stopId              String?  @map("stop_id")
+  currentStopSequence Int?     @map("current_stop_sequence")
+  label               String?
+  revenue             String?
+  speed               Float?
+  carriages           Json?
+  updatedAt           DateTime @map("updated_at") @db.Timestamptz
+  polledAt            DateTime @map("polled_at") @db.Timestamptz
+
+  @@map("vehicles_current")
+}
+
+model PredictionCurrent {
+  id                   String    @id
+  routeId              String    @map("route_id")
+  tripId               String    @map("trip_id")
+  stopId               String    @map("stop_id")
+  directionId          Int       @map("direction_id")
+  stopSequence         Int?      @map("stop_sequence")
+  arrivalTime          DateTime? @map("arrival_time") @db.Timestamptz
+  departureTime        DateTime? @map("departure_time") @db.Timestamptz
+  status               String?
+  scheduleRelationship String?   @map("schedule_relationship")
+  updateType           String?   @map("update_type")
+  uncertaintySec       Int?      @map("uncertainty_sec")
+  vehicleId            String?   @map("vehicle_id")
+  polledAt             DateTime  @map("polled_at") @db.Timestamptz
+
+  @@index([stopId])
+  @@index([tripId])
+  @@map("predictions_current")
+}
+
+model Alert {
+  id             String    @id
+  effect         String
+  cause          String
+  severity       Int
+  header         String
+  shortHeader    String?   @map("short_header")
+  serviceEffect  String?   @map("service_effect")
+  timeframe      String?
+  description    String?
+  lifecycle      String
+  activePeriod   Json      @map("active_period")
+  informedEntity Json      @map("informed_entity")
+  createdAt      DateTime? @map("created_at") @db.Timestamptz
+  updatedAt      DateTime? @map("updated_at") @db.Timestamptz
+  firstSeenAt    DateTime  @map("first_seen_at") @db.Timestamptz
+  lastSeenAt     DateTime  @map("last_seen_at") @db.Timestamptz
+  inFeed         Boolean   @map("in_feed")
+
+  @@map("alerts")
+}
+
+model AlertRoute {
+  alertId String @map("alert_id")
+  routeId String @map("route_id")
+
+  @@id([alertId, routeId])
+  @@index([routeId])
+  @@map("alert_routes")
+}
+
+// ---------- 履歴（生データ。運行日ごとのパーティション） ----------
+
+model VehiclePosition {
+  vehicleId           String   @map("vehicle_id")
+  updatedAt           DateTime @map("updated_at") @db.Timestamptz
+  polledAt            DateTime @map("polled_at") @db.Timestamptz
+  routeId             String   @map("route_id")
+  tripId              String?  @map("trip_id")
+  directionId         Int?     @map("direction_id")
+  lat                 Float
+  lon                 Float
+  bearing             Int?
+  currentStatus       String   @map("current_status")
+  stopId              String?  @map("stop_id")
+  currentStopSequence Int?     @map("current_stop_sequence")
+
+  @@id([vehicleId, updatedAt])
+  @@map("vehicle_positions")
+}
+
+model PredictionSample {
+  serviceDate        DateTime @map("service_date") @db.Date
+  tripId             String   @map("trip_id")
+  stopId             String   @map("stop_id")
+  leadBucketMin      Int      @map("lead_bucket_min") @db.SmallInt
+  routeId            String   @map("route_id")
+  directionId        Int      @map("direction_id")
+  updateType         String?  @map("update_type")
+  uncertaintySec     Int?     @map("uncertainty_sec")
+  predictedArrivalAt DateTime @map("predicted_arrival_at") @db.Timestamptz
+  observedAt         DateTime @map("observed_at") @db.Timestamptz
+
+  @@id([serviceDate, tripId, stopId, leadBucketMin])
+  @@map("prediction_samples")
+}
+
+model ArrivalEvent {
+  serviceDate  DateTime @map("service_date") @db.Date
+  tripId       String   @map("trip_id")
+  stopId       String   @map("stop_id")
+  routeId      String   @map("route_id")
+  directionId  Int      @map("direction_id")
+  vehicleId    String?  @map("vehicle_id")
+  arrivedAt    DateTime @map("arrived_at") @db.Timestamptz
+  source       String
+  precisionSec Int      @map("precision_sec")
+
+  @@id([serviceDate, tripId, stopId])
+  @@map("arrival_events")
+}
+
+// ---------- 運用記録 ----------
+
+model CollectorRun {
+  id                 Int       @id @default(autoincrement())
+  job                String
+  startedAt          DateTime  @map("started_at") @db.Timestamptz
+  finishedAt         DateTime? @map("finished_at") @db.Timestamptz
+  status             String
+  counts             Json?
+  ratelimitRemaining Int?      @map("ratelimit_remaining")
+  error              String?
+
+  @@index([job, startedAt])
+  @@map("collector_runs")
+}
+
+model UnknownStopId {
+  stopId      String    @id @map("stop_id")
+  firstSeenAt DateTime  @map("first_seen_at") @db.Timestamptz
+  resolvedAt  DateTime? @map("resolved_at") @db.Timestamptz
+
+  @@map("unknown_stop_ids")
+}
