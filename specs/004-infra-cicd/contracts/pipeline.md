@@ -1,4 +1,4 @@
-# Contract: パイプライン（`.github/workflows/pipeline.yml`）とロールバック（`rollback.yml`）
+# 契約: パイプライン（`.github/workflows/pipeline.yml`）とロールバック（`rollback.yml`）
 
 ## pipeline.yml
 

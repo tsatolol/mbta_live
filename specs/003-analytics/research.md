@@ -1,39 +1,39 @@
-# Research: 分析
+# 調査と決定: 分析
 
 ## 集計のタイミング
 
-- **Decision**: aggregate ジョブを毎日 04:30 ET に実行し、前の運行日を集計する。同じジョブで 001 のパーティションの作成と削除も行う
-- **Rationale**: 運行日は ET の 03:00 に切り替わる（運行日 = ET の時刻 − 3 時間）。sync-static（04:00 ET）の後に動かす
+- **決定**: aggregate ジョブを毎日 04:30 ET に実行し、前の運行日を集計する。同じジョブで 001 のパーティションの作成と削除も行う
+- **理由**: 運行日は ET の 03:00 に切り替わる（運行日 = ET の時刻 − 3 時間）。sync-static（04:00 ET）の後に動かす
 
 ## 当日のデータ
 
-- **Decision**: 当日の分は API のリクエスト時に生データから計算する
-- **Rationale**: 集計は 1 日 1 回なので、当日の状況を見るには生データを使うしかない。1 日分なら計算量は小さい
+- **決定**: 当日の分は API のリクエスト時に生データから計算する
+- **理由**: 集計は 1 日 1 回なので、当日の状況を見るには生データを使うしかない。1 日分なら計算量は小さい
 
 ## 間隔の開き（gap）の基準
 
-- **Decision**: 過去 28 日の中央値を、生データではなく `daily_headway_stats.p50_sec` から求める
-- **Rationale**: 生データの保持期間（prod 28 日 / dev 3 日）に左右されないようにするため
+- **決定**: 過去 28 日の中央値を、生データではなく `daily_headway_stats.p50_sec` から求める
+- **理由**: 生データの保持期間（prod 28 日 / dev 3 日）に左右されないようにするため
 
 ## 補間した到着の扱い
 
-- **Decision**: `source = interpolated` の到着イベントは予測精度の集計から除く。運行間隔には含める
-- **Rationale**: 補間は予測精度の評価には粗すぎる。運行間隔は到着イベントが欠けるほうが歪みが大きい
+- **決定**: `source = interpolated` の到着イベントは予測精度の集計から除く。運行間隔には含める
+- **理由**: 補間は予測精度の評価には粗すぎる。運行間隔は到着イベントが欠けるほうが歪みが大きい
 
 ## 予測の種類での分割
 
-- **Decision**: 予測精度を `update_type`（`MID_TRIP` / `AT_TERMINAL` / `REVERSE_TRIP`）ごとにも集計する
-- **Rationale**: 実測で、API が示す不確かさが種類ごとに 60 / 120 / 360 秒と大きく違った。まとめて集計すると精度の違いが見えなくなる
+- **決定**: 予測精度を `update_type`（`MID_TRIP` / `AT_TERMINAL` / `REVERSE_TRIP`）ごとにも集計する
+- **理由**: 実測で、API が示す不確かさが種類ごとに 60 / 120 / 360 秒と大きく違った。まとめて集計すると精度の違いが見えなくなる
 
 ## グラフ: Apache ECharts
 
-- **Decision**: Apache ECharts
-- **Rationale**: ヒートマップと大量の時系列を扱いやすい。仮の選定で、変更してよい
+- **決定**: Apache ECharts
+- **理由**: ヒートマップと大量の時系列を扱いやすい。仮の選定で、変更してよい
 
 ## 集計クエリ: TypedSQL
 
-- **Decision**: `percentile_cont` やウィンドウ関数を使う集計は、Prisma の TypedSQL（`prisma/sql/*.sql`）で書く。使えない場合は `$queryRaw` + zod
-- **Rationale**: Prisma のクエリ API では表現できないため（`specs/001-data-collection/research.md`）
+- **決定**: `percentile_cont` やウィンドウ関数を使う集計は、Prisma の TypedSQL（`prisma/sql/*.sql`）で書く。使えない場合は `$queryRaw` + zod
+- **理由**: Prisma のクエリ API では表現できないため（`specs/001-data-collection/research.md`）
 
 ## 未解決
 

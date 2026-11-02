@@ -1,4 +1,4 @@
-# Contract: リアルタイム画面の内部 API（Next.js Route Handlers）
+# 契約: リアルタイム画面の内部 API（Next.js Route Handlers）
 
 - すべて GET、読み取り専用。DB だけを読み、MBTA API は呼ばない
 - クエリパラメータは zod で検証し、不正な値には `400 { "error": string }` を返す

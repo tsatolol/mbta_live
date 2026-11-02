@@ -1,4 +1,4 @@
-# Contract: MBTA V3 API の利用
+# 契約: MBTA V3 API の利用
 
 収集ジョブ（collector / sync-static）が MBTA V3 API をどう呼び、応答をどう解釈するかの約束事。応答の性質は 2026-11-01 に実 API で確認した。
 

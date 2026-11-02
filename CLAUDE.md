@@ -2,7 +2,7 @@
 
 MBTA V3 API を使い、ボストン地下鉄（Rapid Transit 8 路線）の運行状況をリアルタイムで監視し、収集データを蓄積して運行品質（運行間隔・予測精度・アラート傾向）を分析するダッシュボード。
 
-このリポジトリは [GitHub Spec Kit](https://github.com/github/spec-kit) の構成で仕様を管理している。**コードを書く前に、constitution と該当する feature の文書を読むこと。** 仕様を変えるときは、先に文書を更新してから実装する。
+このリポジトリは [GitHub Spec Kit](https://github.com/github/spec-kit) の構成で仕様を管理している。**コードを書く前に、憲章 と該当する feature の文書を読むこと。** 仕様を変えるときは、先に文書を更新してから実装する。
 
 ## 文書の場所
 
@@ -20,7 +20,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit 8 路線）の運�
 
 文書の保守は flow-back 方式: 分かったことはどの文書からでも反映し、`/speckit-analyze` で食い違いを点検する。feature をまたぐ情報は `docs/` にだけ書く。DB スキーマの正は、実装後は `prisma/schema.prisma`。
 
-## 最重要ルール（詳細は constitution）
+## 最重要ルール（詳細は 憲章）
 
 - MBTA API を呼ぶのは収集ジョブだけ。Web とブラウザは DB だけを読む。1 環境あたり 5 req/分以下
 - DB に書くのはジョブだけ。Web は読み取り専用

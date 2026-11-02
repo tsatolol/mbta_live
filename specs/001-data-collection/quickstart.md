@@ -1,4 +1,4 @@
-# Quickstart: データ収集をローカルで動かす
+# クイックスタート: データ収集をローカルで動かす
 
 ローカル環境の準備、コマンド、環境変数は [docs/development.md](../../docs/development.md) を参照。
 

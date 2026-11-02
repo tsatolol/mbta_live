@@ -1,36 +1,36 @@
-# Implementation Plan: データ収集（Data Collection）
+# 実装計画: データ収集（Data Collection）
 
-**Branch**: `001-data-collection` | **Date**: 2026-11-01 | **Spec**: [spec.md](./spec.md)
+**ブランチ**: `001-data-collection` | **日付**: 2026-11-01 | **仕様**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/001-data-collection/spec.md`
+**入力**: `/specs/001-data-collection/spec.md` の機能仕様
 
-## Summary
+## 概要（Summary）
 
 MBTA V3 API から対象 8 路線の車両・予測・アラートを定期的に取得する collector ジョブと、路線・駅・路線パターンを毎日同期する sync-static ジョブを作る。取得のたびに現在値を入れ替え、実到着の推定と予測のサンプリングを行って履歴に残す。生データは日ごとのパーティションに入れ、保持期間を過ぎたら削除する。
 
 システム全体の構成は [docs/architecture.md](../../docs/architecture.md) を参照。
 
-## Technical Context
+## 技術的な前提（Technical Context）
 
-**Language/Version**: TypeScript（strict）、Node.js Active LTS（24.x）
+**言語/バージョン**: TypeScript（strict）、Node.js Active LTS（24.x）
 
-**Primary Dependencies**: Prisma ORM（`@prisma/adapter-pg` + `pg`）、zod、date-fns + @date-fns/tz
+**主な依存関係**: Prisma ORM（`@prisma/adapter-pg` + `pg`）、zod、date-fns + @date-fns/tz
 
-**Storage**: PostgreSQL 16（Cloud SQL）。履歴テーブルは宣言的パーティショニング
+**ストレージ**: PostgreSQL 16（Cloud SQL）。履歴テーブルは宣言的パーティショニング
 
-**Testing**: Vitest + fast-check（単体・プロパティベース）、本物の PostgreSQL 16 を使う結合テスト、連続ポーリングの記録を流す再生テスト（`tests/replay/`）。MBTA API は `tests/fixtures/mbta/` のフィクスチャ。要件は spec.md の Testing Requirements
+**テスト**: Vitest + fast-check（単体・プロパティベース）、本物の PostgreSQL 16 を使う結合テスト、連続ポーリングの記録を流す再生テスト（`tests/replay/`）。MBTA API は `tests/fixtures/mbta/` のフィクスチャ。要件は spec.md のテスト要件（Testing Requirements）
 
-**Target Platform**: Cloud Run Jobs（`us-east4`）。起動は Cloud Scheduler（`America/New_York`）
+**実行環境**: Cloud Run Jobs（`us-east4`）。起動は Cloud Scheduler（`America/New_York`）
 
-**Project Type**: Web アプリ（Next.js）と同じリポジトリ・同じイメージに入るバッチジョブ
+**プロジェクトの種類**: Web アプリ（Next.js）と同じリポジトリ・同じイメージに入るバッチジョブ
 
-**Performance Goals**: 収集 1 回 50 秒未満（Job のタスクタイムアウト 50 秒、リトライ 0）
+**性能目標**: 収集 1 回 50 秒未満（Job のタスクタイムアウト 50 秒、リトライ 0）
 
-**Constraints**: MBTA API は 1 環境あたり 5 req/分以下。キーなしの上限は送信元 IP 単位 20 req/分
+**制約**: MBTA API は 1 環境あたり 5 req/分以下。キーなしの上限は送信元 IP 単位 20 req/分
 
-**Scale/Scope**: 車両 約 150 両、予測 数百〜数千件/回、到着イベント 約 4 万件/日
+**規模/範囲**: 車両 約 150 両、予測 数百〜数千件/回、到着イベント 約 4 万件/日
 
-## Constitution Check
+## 憲章との適合確認（Constitution Check）
 
 | 原則 | 適合 |
 |---|---|
@@ -42,9 +42,9 @@ MBTA V3 API から対象 8 路線の車両・予測・アラートを定期的�
 | VI. 1 つのイメージ | ✅ Web と同じイメージで、起動コマンドだけを変える |
 | VII. 後方互換のマイグレーション | ✅ |
 
-## Project Structure
+## プロジェクト構成（Project Structure）
 
-### Documentation (this feature)
+### 文書（この feature）
 
 ```text
 specs/001-data-collection/
@@ -58,7 +58,7 @@ specs/001-data-collection/
 └── tasks.md             # /speckit-tasks で作成
 ```
 
-### Source Code (repository root)
+### ソースコード（リポジトリのルートから）
 
 リポジトリ全体の構成は [docs/architecture.md](../../docs/architecture.md) を参照。この feature で使う部分:
 
@@ -75,10 +75,10 @@ tests/{unit,integration,replay}/
 tests/fixtures/mbta/
 ```
 
-**Structure Decision**: ジョブは `src/jobs/` に置き、Web と同じイメージにバンドルする。現在時刻は `src/lib/clock.ts` から取り、テストで差し替えられるようにする。
+**構成の決定**: ジョブは `src/jobs/` に置き、Web と同じイメージにバンドルする。現在時刻は `src/lib/clock.ts` から取り、テストで差し替えられるようにする。
 
-## Complexity Tracking
+## 複雑さの記録（Complexity Tracking）
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
+| 原則からの逸脱 | 必要な理由 | より単純な案を採らなかった理由 |
 |---|---|---|
 | パーティションを手書き SQL で管理 | 28 日分の生データを速く・肥大化させずに削除するため | `DELETE` は遅く、テーブルが肥大化する。Prisma のスキーマでは表現できない |

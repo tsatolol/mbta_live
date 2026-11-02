@@ -1,4 +1,4 @@
-# Architecture — mbta_live
+# アーキテクチャ — mbta_live
 
 システムが**今どうなっているか**をまとめた文書。feature（`specs/NNN-*/`）をまたぐ情報はここにだけ書き、各 feature の `plan.md` からはこのファイルを参照する。feature で構成を変えたら、この文書も更新する。
 
@@ -82,7 +82,7 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 ├── infra/terraform/         # 004
 ├── .github/workflows/       # 004
 ├── docs/                    # システム全体の文書（このファイル、development.md）
-├── .specify/                # spec-kit（constitution、テンプレート、スクリプト）
+├── .specify/                # spec-kit（憲章、テンプレート、スクリプト）
 └── specs/                   # spec-kit の feature ごとの文書
 ```
 

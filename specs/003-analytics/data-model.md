@@ -1,4 +1,4 @@
-# Data Model: 分析
+# データモデル: 分析
 
 入力は 001 の `arrival_events`, `prediction_samples`, `alerts`, `alert_routes`（`specs/001-data-collection/data-model.md`）。集計の SQL は TypedSQL（`prisma/sql/*.sql`）で書く。指標の定数は `src/lib/metrics/constants.ts` に集める。
 

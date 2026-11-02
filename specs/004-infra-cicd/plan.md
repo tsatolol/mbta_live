@@ -1,30 +1,30 @@
-# Implementation Plan: インフラと CI/CD
+# 実装計画: インフラと CI/CD
 
-**Branch**: `004-infra-cicd` | **Date**: 2026-11-01 | **Spec**: [spec.md](./spec.md)
+**ブランチ**: `004-infra-cicd` | **日付**: 2026-11-01 | **仕様**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/004-infra-cicd/spec.md`
+**入力**: `/specs/004-infra-cicd/spec.md` の機能仕様
 
-## Summary
+## 概要（Summary）
 
 Terraform で dev / prod の 2 つの GCP プロジェクトにアプリ一式を作り、GitHub Actions の 1 本のパイプラインで、main への push ごとに CI を 1 回、CD を dev（自動）→ prod（承認後）の 2 回実行する。
 
-## Technical Context
+## 技術的な前提（Technical Context）
 
-**Language/Version**: Terraform（HCL）、GitHub Actions（YAML）、Dockerfile
+**言語/バージョン**: Terraform（HCL）、GitHub Actions（YAML）、Dockerfile
 
-**Primary Dependencies**: Google provider、google-github-actions/auth（WIF）、gcloud
+**主な依存関係**: Google provider、google-github-actions/auth（WIF）、gcloud
 
-**Storage**: Terraform state は各環境のプロジェクトの GCS バケット
+**ストレージ**: Terraform state は各環境のプロジェクトの GCS バケット
 
-**Testing**: `terraform fmt -check` / `validate` / `plan`、デプロイ後のスモークテスト（collector を 1 回実行）、マイグレーションの互換性テスト。要件は spec.md の Testing Requirements
+**テスト**: `terraform fmt -check` / `validate` / `plan`、デプロイ後のスモークテスト（collector を 1 回実行）、マイグレーションの互換性テスト。要件は spec.md のテスト要件（Testing Requirements）
 
-**Target Platform**: Google Cloud（`us-east4`）: Cloud Run（サービス + Jobs）、Cloud SQL（PostgreSQL 16）、Cloud Scheduler、Secret Manager、Artifact Registry、IAP
+**実行環境**: Google Cloud（`us-east4`）: Cloud Run（サービス + Jobs）、Cloud SQL（PostgreSQL 16）、Cloud Scheduler、Secret Manager、Artifact Registry、IAP
 
-**Project Type**: インフラ / CI/CD
+**プロジェクトの種類**: インフラ / CI/CD
 
-**Constraints**: 最小構成。public リポジトリなので秘密の値をログ・artifact・tfvars に置かない
+**制約**: 最小構成。public リポジトリなので秘密の値をログ・artifact・tfvars に置かない
 
-**Scale/Scope**: 2 環境 × アプリ一式
+**規模/範囲**: 2 環境 × アプリ一式
 
 ### 環境の違い
 
@@ -59,7 +59,7 @@ dev と prod の違い（間隔、保持期間、Cloud SQL の設定など）は
    Secret Manager (DB パスワード, MBTA_API_KEY), IAP
 ```
 
-## Constitution Check
+## 憲章との適合確認（Constitution Check）
 
 | 原則 | 適合 |
 |---|---|
@@ -67,9 +67,9 @@ dev と prod の違い（間隔、保持期間、Cloud SQL の設定など）は
 | VII. 後方互換のマイグレーション | ✅ ロールバックはイメージの差し替えだけ |
 | 公開リポジトリ | ✅ 秘密の値は Environment の secrets と Secret Manager。plan ファイルを artifact にしない |
 
-## Project Structure
+## プロジェクト構成（Project Structure）
 
-### Documentation (this feature)
+### 文書（この feature）
 
 ```text
 specs/004-infra-cicd/
@@ -82,7 +82,7 @@ specs/004-infra-cicd/
 └── tasks.md             # /speckit-tasks で作成
 ```
 
-### Source Code (repository root)
+### ソースコード（リポジトリのルートから）
 
 ```text
 infra/terraform/
@@ -99,10 +99,10 @@ infra/terraform/
 Dockerfile
 ```
 
-**Structure Decision**: パイプラインの前提（state バケット、WIF、SA、Artifact Registry）は `bootstrap/` に分け、人が一度だけ apply する。それ以外はパイプラインが apply する。
+**構成の決定**: パイプラインの前提（state バケット、WIF、SA、Artifact Registry）は `bootstrap/` に分け、人が一度だけ apply する。それ以外はパイプラインが apply する。
 
-## Complexity Tracking
+## 複雑さの記録（Complexity Tracking）
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
+| 原則からの逸脱 | 必要な理由 | より単純な案を採らなかった理由 |
 |---|---|---|
 | prod の plan のハッシュ比較 | 承認者が見た変更と違うものを prod に適用しないため | plan ファイルを artifact で渡す方法は、public リポジトリでは秘密の値が漏れうる |

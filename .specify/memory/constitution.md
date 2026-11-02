@@ -1,10 +1,10 @@
-# mbta_live Constitution
+# mbta_live 憲章（Constitution）
 
 ボストン地下鉄（MBTA Rapid Transit）の運行を監視・分析するダッシュボード「mbta_live」の開発原則。すべての spec / plan / tasks / 実装はこの原則に従う。
 
-## Core Principles
+## 基本原則
 
-### I. MBTA API はサーバー側のジョブからだけ呼ぶ（NON-NEGOTIABLE）
+### I. MBTA API はサーバー側のジョブからだけ呼ぶ（譲れない原則）
 
 - MBTA V3 API を呼んでよいのは、バッチジョブ（collector / sync-static）だけ。Web アプリとブラウザは MBTA API を直接呼ばず、DB だけを読む
 - MBTA API へのリクエストは、1 つの環境あたり**常に 5 req/分以下**に収める。新しいエンドポイントを使う、または頻度を上げるときは、`specs/001-data-collection/contracts/mbta-api.md` の予算表を先に更新する
@@ -53,7 +53,7 @@
 - マイグレーションはデプロイの前に実行されるので、1 つ前のバージョンのコードでも動くように書く（expand → contract。列の削除やリネームは次のリリースで行う）
 - これにより、ロールバックはイメージの差し替えだけで済む
 
-## Additional Constraints
+## 追加の制約
 
 - **技術スタック**: Next.js（App Router, TypeScript）、Prisma ORM、PostgreSQL 16（Cloud SQL）、Cloud Run（サービス 1 つ + Jobs）、`us-east4`、MapLibre GL JS、Terraform、GitHub Actions。詳細と理由は各 feature の `plan.md` / `research.md` を参照
 - **公開リポジトリ**: このリポジトリは public。秘密の値（パスワード、API キー、IAP の許可ユーザーのメールアドレスなど）をコミットしない。CI のログや artifact に秘密の値を出さない
@@ -61,16 +61,16 @@
 - **UI 言語**: 画面は英語。コード内のコメントとドキュメントは日本語でよい
 - **コスト**: 最小構成を基本にする。常時起動のインスタンス（`min-instances > 0`）を使う場合は、plan の Complexity Tracking で理由を示す
 
-## Development Workflow
+## 開発の進め方
 
 - 機能の追加・変更は spec-kit の流れで進める: `/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze` → `/speckit-implement` → `/speckit-converge`
 - 仕様を変えるときは、先に該当する `specs/NNN-*/` の文書を更新してから実装する
 - main への push 1 回につき、CI を 1 回、CD を 2 回（dev は自動、prod は承認後）実行する（`specs/004-infra-cicd/`）。PR では CI が走らないので、push の前にローカルで `pnpm lint && pnpm typecheck && pnpm test` を実行する
 - コミットメッセージは英語の Conventional Commits（`feat:`, `fix:`, `chore:`, `docs:` …）
 
-## Governance
+## 運用ルール（Governance）
 
-- この constitution は他のすべての文書と慣習に優先する。plan の Constitution Check で各原則への適合を確認し、違反する場合は Complexity Tracking に理由を書く
+- この 憲章 は他のすべての文書と慣習に優先する。plan の Constitution Check で各原則への適合を確認し、違反する場合は Complexity Tracking に理由を書く
 - 原則の変更は、この文書を更新し、バージョンを上げ（原則の追加・削除は MAJOR、変更は MINOR、文言の修正は PATCH）、影響を受ける spec / plan を見直してから行う
 - 日々の開発で参照するガイドは `CLAUDE.md`、システム全体の現在の構成は `docs/architecture.md`
 
@@ -82,4 +82,4 @@
 - 中身の薄い任意の文書（`data-model.md`, `contracts/`, `research.md`, `quickstart.md`）は作らない。`spec.md` と `plan.md` は必須
 - テストは `spec.md` の要件（Testing Requirements）として明記する。`/speckit-tasks` は spec で求められたテストしかタスクにしないため
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-02
+**バージョン**: 1.1.0 | **制定日**: 2026-11-01 | **最終改定日**: 2026-11-02

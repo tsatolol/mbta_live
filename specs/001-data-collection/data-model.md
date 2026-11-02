@@ -1,4 +1,4 @@
-# Data Model: データ収集
+# データモデル: データ収集
 
 PostgreSQL 16（Cloud SQL）。時刻はすべて `timestamptz`（UTC）。テーブル名と列名は snake_case。集計テーブルは `specs/003-analytics/data-model.md` を参照。
 

@@ -1,4 +1,4 @@
-# Development — mbta_live
+# 開発ガイド — mbta_live
 
 ローカル開発の手順と環境変数。feature ごとの確認手順は各 feature の `quickstart.md` を参照。
 
