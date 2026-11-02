@@ -67,8 +67,22 @@ PostgreSQL 16（Cloud SQL）。時刻はすべて `timestamptz`（UTC）。テ�
 collector は毎回、前回の `vehicles_current` と今回の取得結果を比べて到着を検出する。`updated_at` が 3 分以上前の車両と、`revenue != REVENUE` の車両は対象にしない。
 
 1. 車両が `STOPPED_AT` で駅 S にいて、(trip, S) のイベントがまだない → `arrived_at = vehicle.updated_at`, `source = stopped_at`
-2. `current_stop_sequence` が k から m（m > k）に進み、途中の駅にイベントがない → 前回の `predictions_current` にあるその (trip, 駅) の `arrival_time` を使う。`source = predicted_last`
+2. `current_stop_sequence` が k から m（m > k）に進み、途中の駅にイベントがない → 前回の `predictions_current` にあるその (trip, 駅) の `arrival_time`（なければ `departure_time`）を使う。`source = predicted_last`
 3. 前回の予測もない → 前後の観測時刻から線形補間する。`source = interpolated`
+
+実装（`src/lib/metrics/arrivals.ts`）の詳細:
+
+- 「進んだ区間の駅」は、路線パターンの停車順（親駅）で前回の駅と今回の駅の間にある駅。前回が停車中なら前回の駅は含めず、向かっている途中なら含める。今回の駅は含めない（今回停車中なら 1. で記録する）。該当する路線パターンがなければ、前回の予測の `stop_sequence` の順を使う
+- 便が変わった車両（折り返しなど）は、進んだ区間を推定しない
+- 前回の予測で `SKIPPED` / `CANCELLED` の駅は、到着を記録しない
+- `predicted_last` の時刻は、前回と今回の `updated_at` の間に収める。区間の中では停車順に沿って時刻が減らないようにする
+- 補間は、前回と今回の `updated_at` の間を「区間の駅の数 + 1」で等分する
+- `precision_sec`: `stopped_at` と `predicted_last` は前回の収集からの経過秒数（前回がなければ 60）、`interpolated` は前回と今回の `updated_at` の差
+- 駅の索引にない stop ID は記録せず、件数を `collector_runs.counts.unknownStopIds` に残す
+- 同じ便・親駅の到着は、DB の主キーにより最初に記録したものが残る
+- 既知の制約: 始発駅で発車を待っている車両も `STOPPED_AT` なので、始発駅には「その便で最初に停車を観測した時刻」が到着として記録される（実際の到着ではない）
+
+2026-11-02 の平日 12:28 ET からの 4 回分の実データでは、`stopped_at` が 130 件、`predicted_last` が 26 件で、`interpolated` は 0 件だった
 
 > 1 分間隔では短い停車（30〜60 秒）を取りこぼすため、精度は ±60 秒程度。改善策は API キーを取得して 30 秒間隔にすること。
 

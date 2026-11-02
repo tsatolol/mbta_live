@@ -25,7 +25,8 @@
     "job:sync-static": "tsx --conditions=react-server src/jobs/sync-static.ts",
     "job:aggregate": "tsx --conditions=react-server src/jobs/aggregate.ts",
     "fixtures:record": "tsx --conditions=react-server scripts/record-fixtures.ts",
-    "fixtures:cases": "tsx scripts/build-case-fixtures.ts"
+    "fixtures:cases": "tsx scripts/build-case-fixtures.ts",
+    "fixtures:record-sequence": "tsx --conditions=react-server scripts/record-sequence.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

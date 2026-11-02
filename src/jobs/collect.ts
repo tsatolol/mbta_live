@@ -4,10 +4,12 @@ import { pathToFileURL } from "node:url";
 import { systemClock, type Clock } from "@/lib/clock";
 import { createDb, type Db } from "@/lib/db/client";
 import { requireDatabaseUrl } from "@/lib/db/connection";
-import { insertVehiclePositions } from "@/lib/db/history";
+import { insertArrivalEvents, insertVehiclePositions } from "@/lib/db/history";
 import { replaceCurrent } from "@/lib/db/current";
 import { upsertAlerts } from "@/lib/db/alerts";
 import { ensurePartitions } from "@/lib/db/partitions";
+import { loadStopIndex } from "@/lib/db/stop-index";
+import { detectArrivals } from "@/lib/metrics/arrivals";
 import { logger } from "@/lib/log";
 import { mbtaClientFromEnv, type MbtaClient } from "@/lib/mbta/client";
 import { fetchRealtime } from "@/lib/mbta/realtime";
@@ -51,12 +53,42 @@ export async function collect({
   // パーティションのない運行日（数日前から更新の止まった車両など）の位置は履歴に入れない
   const knownDates = new Set(serviceDates);
   const positions = snapshot.vehicles.filter((v) => knownDates.has(serviceDateOf(v.updatedAt)));
+  const stopIndex = await loadStopIndex(db);
 
-  const positionsInserted = await db.$transaction(
+  const written = await db.$transaction(
     async (tx) => {
+      // 到着検出のため、入れ替える前の現在値（前回の収集結果）を読む
+      const prevVehicles = await tx.vehicleCurrent.findMany();
+      const prevPredictions = await tx.predictionCurrent.findMany({
+        select: {
+          tripId: true,
+          stopId: true,
+          stopSequence: true,
+          arrivalTime: true,
+          departureTime: true,
+          scheduleRelationship: true,
+        },
+      });
+      const arrivals = detectArrivals({
+        prevVehicles,
+        prevPredictions,
+        prevPolledAt: prevVehicles[0]?.polledAt ?? null,
+        currVehicles: snapshot.vehicles,
+        index: stopIndex,
+        now: polledAt,
+      });
+      const arrivalRows = arrivals.events.filter((e) => knownDates.has(e.serviceDate));
+
       await replaceCurrent(tx, snapshot.vehicles, snapshot.predictions, polledAt);
       await upsertAlerts(tx, snapshot.alerts, polledAt);
-      return insertVehiclePositions(tx, positions, polledAt);
+      const positionsInserted = await insertVehiclePositions(tx, positions, polledAt);
+      const arrivalsInserted = await insertArrivalEvents(tx, arrivalRows);
+      return {
+        positionsInserted,
+        arrivalsDetected: arrivals.events.length,
+        arrivalsInserted,
+        unknownStopIds: arrivals.unknownStopIds.length,
+      };
     },
     { timeout: TX_TIMEOUT_MS },
   );
@@ -68,8 +100,11 @@ export async function collect({
       predictions: snapshot.predictions.length,
       alerts: snapshot.alerts.length,
       rejectedRows,
-      positionsInserted,
+      positionsInserted: written.positionsInserted,
       positionsSkipped: snapshot.vehicles.length - positions.length,
+      arrivalsDetected: written.arrivalsDetected,
+      arrivalsInserted: written.arrivalsInserted,
+      unknownStopIds: written.unknownStopIds,
     },
     ratelimitRemaining: client.lastRateLimit?.remaining ?? null,
   };
