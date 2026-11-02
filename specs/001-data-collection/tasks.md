@@ -101,15 +101,15 @@ description: "001 データ収集の実装タスク"
 
 ### ユーザーストーリー 2 のテスト
 
-- [ ] T035 [P] [US2] 到着検出の単体テストを、入力と期待値の表で書く（TR-002）: `STOPPED_AT` で `source = stopped_at`（`arrived_at = updated_at`）、複数駅を進んだときに前回の予測で `predicted_last`、予測もないときに `interpolated`、`updated_at` が 180 秒以上前の車両と `revenue != REVENUE` の車両は対象外、`stop` が `null` の車両、ホーム（`Alewife-01` などの番線を含む）から親駅への変換、同じ便・親駅を 2 回検出しても 1 件: `tests/unit/metrics/arrivals.test.ts`
-- [ ] T036 [P] [US2] 「便と親駅の組で到着は 1 件」「同じ便の到着時刻は停車順に単調に増える」をプロパティベーステスト（fast-check）で確かめる（TR-002）: `tests/unit/metrics/arrivals.property.test.ts`
-- [ ] T037 [P] [US2] collector の結合テストを書く: 2 回分のフィクスチャを順に流すと、期待どおりの `arrival_events` が入る: `tests/integration/collect-arrivals.test.ts`
+- [X] T035 [P] [US2] 到着検出の単体テストを、入力と期待値の表で書く（TR-002）: `STOPPED_AT` で `source = stopped_at`（`arrived_at = updated_at`）、複数駅を進んだときに前回の予測で `predicted_last`、予測もないときに `interpolated`、`updated_at` が 180 秒以上前の車両と `revenue != REVENUE` の車両は対象外、`stop` が `null` の車両、ホーム（`Alewife-01` などの番線を含む）から親駅への変換、同じ便・親駅を 2 回検出しても 1 件: `tests/unit/metrics/arrivals.test.ts`
+- [X] T036 [P] [US2] 「便と親駅の組で到着は 1 件」「同じ便の到着時刻は停車順に単調に増える」をプロパティベーステスト（fast-check）で確かめる（TR-002）: `tests/unit/metrics/arrivals.property.test.ts`
+- [X] T037 [P] [US2] collector の結合テストを書く: 2 回分のフィクスチャを順に流すと、期待どおりの `arrival_events` が入る: `tests/integration/collect-arrivals.test.ts`
 
 ### ユーザーストーリー 2 の実装
 
-- [ ] T038 [P] [US2] 駅の索引を読み込む関数を実装する: ホーム → 親駅の対応、路線パターンごとの停車順（`platform_stop_ids`）: `src/lib/db/stop-index.ts`
-- [ ] T039 [US2] 到着検出の純粋関数を実装する（T035、T036 を通す）: 入力は前回の車両と予測、今回の車両、駅の索引、時計。進んだ区間の駅は前回の予測（その便の `stop_sequence` → 駅）から、なければ路線パターンの停車順から求める。出力は `arrival_events` の行（`service_date` は `arrived_at` の運行日、`precision_sec` 付き）: `src/lib/metrics/arrivals.ts`
-- [ ] T040 [US2] collector に組み込む: 現在値を入れ替える前に前回の `vehicles_current` と `predictions_current` を読み、到着イベントを `createMany({ skipDuplicates: true })` で書き込む（同じトランザクション内）: `src/jobs/collect.ts`
+- [X] T038 [P] [US2] 駅の索引を読み込む関数を実装する: ホーム → 親駅の対応、路線パターンごとの停車順（`platform_stop_ids`）: `src/lib/db/stop-index.ts`
+- [X] T039 [US2] 到着検出の純粋関数を実装する（T035、T036 を通す）: 入力は前回の車両と予測、今回の車両、駅の索引、時計。進んだ区間の駅は前回の予測（その便の `stop_sequence` → 駅）から、なければ路線パターンの停車順から求める。出力は `arrival_events` の行（`service_date` は `arrived_at` の運行日、`precision_sec` 付き）: `src/lib/metrics/arrivals.ts`
+- [X] T040 [US2] collector に組み込む: 現在値を入れ替える前に前回の `vehicles_current` と `predictions_current` を読み、到着イベントを `createMany({ skipDuplicates: true })` で書き込む（同じトランザクション内）: `src/jobs/collect.ts`
 
 **チェックポイント**: US1 と US2 が動く
 
@@ -182,7 +182,7 @@ description: "001 データ収集の実装タスク"
 
 **目的**: 複数のストーリーにまたがる確認と文書の反映
 
-- [ ] T056 [P] 連続ポーリングを記録するスクリプトを作る（`pnpm fixtures:record-sequence --count 30`）: 60 秒ごとに `/vehicles`・`/predictions`・`/alerts` を取得し（3 req/分）、`tests/fixtures/mbta/sequences/<YYYYMMDD-HHmm>/<NNN>-<endpoint>.json` に保存する: `scripts/record-sequence.ts`
+- [X] T056 [P] 連続ポーリングを記録するスクリプトを作る（`pnpm fixtures:record-sequence --count 30`）: 60 秒ごとに `/vehicles`・`/predictions`・`/alerts` を取得し（3 req/分）、`tests/fixtures/mbta/sequences/<YYYYMMDD-HHmm>/<NNN>-<endpoint>.json.gz`（容量を抑えるため gzip）と `index.json`（各回の記録時刻）に保存する: `scripts/record-sequence.ts`（フェーズ 4 の T037 のために先に作った。4 回分の記録 `sequences/20261102-1228/` を T037 で使っている）
 - [ ] T057 平日に連続ポーリングを 2 本記録してコミットする: 運行開始の時間帯（05:00 ET ごろから 30 回以上）と日中（30 回以上）。日中の記録から `/predictions` の件数とサイズを測り、`contracts/mbta-api.md` と CLAUDE.md の未決事項を更新する（flow-back）
 - [ ] T058 再生テストを書く（TR-005）: T057 の記録を時計を固定して collector に順に流し、`arrival_events`・`prediction_samples`・`vehicle_positions` の最終状態を期待値と比べる。期待値は件数と、目で確かめた代表的な便の到着時刻に絞る。同じ回を 2 回流しても行が増えないことも確かめる: `tests/replay/collector-replay.test.ts`
 - [ ] T059 [P] 性能を確かめる（SC-004）: 日中のピークの記録で collector 1 回が 50 秒を大きく下回ることを、結合テストで所要時間を測って確かめる: `tests/integration/collect-performance.test.ts`
