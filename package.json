@@ -61,6 +61,10 @@
       "esbuild",
       "prisma",
       "@prisma/engines"
-    ]
+    ],
+    "overrides": {
+      "lodash": ">=4.18.0",
+      "minimatch@<11.0.1": ">=11.0.1"
+    }
   }
 }

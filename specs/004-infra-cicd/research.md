@@ -105,5 +105,5 @@
 
 - `pnpm audit` で 5 件（high 1、moderate 4）。どれも間接的な依存: `prisma` → `@prisma/studio-core` → `@visx/responsive` → `lodash`（4.17.23 以下）、`eslint` → `minimatch`（11.0.1 未満）
 - `prisma` CLI は migrate Job のために実行イメージに入るので、開発用の依存として無視はできない。リリース用の CI（T026）の `pnpm audit --audit-level high` でも失敗する
-- 対応案: `package.json` の `pnpm.overrides` で `lodash` を `>=4.18.0`、`minimatch@<11.0.1` を `>=11.0.1` に上げる。開発環境で試し、`pnpm audit` が 0 件になり、lint・型チェック・Prisma のスキーマ検証が通ることを確かめた（未コミット。適用は別の PR で行う）
+- 対応: `package.json` の `pnpm.overrides` で `lodash` を `>=4.18.0`（4.18.1 に）、`minimatch@<11.0.1` を `>=11.0.1`（11.0.4 に）上げた。`pnpm audit` が 0 件になり、lint・型チェック・全テスト（148 件）が通ることを確かめた。上流（Prisma Studio、ESLint）が修正版に追従したら、この overrides を外す
 
