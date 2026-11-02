@@ -25,6 +25,10 @@ PostgreSQL 16（Cloud SQL）。時刻はすべて `timestamptz`（UTC）。テ�
 
 ## 静的データ（sync-static が毎日 upsert）
 
+- 取得がすべて成功したときだけ、1 つのトランザクションで書き込む。路線・駅・対象の路線パターンのどれかが 0 件なら、既存のデータを守るため書き込まずに失敗にする
+- `stops` と `routes` は削除しない（過去のデータが参照しているため）。`route_patterns` は今回の応答にないものを削除する（古い停車順を到着検出に使わないため）
+- `unknown_stop_ids`: collector は、車両と予測の `stop` のうち駅の索引にないものを記録する（既にあれば `first_seen_at` を保つ）。sync-static は ①② で見つかったものを解決済みにし、残りを ③ で取得する。③ でも見つからないものは未解決のまま残し、ログに出す
+
 | テーブル | 列 | 備考 |
 |---|---|---|
 | `routes` | `id` PK, `short_name`, `long_name`, `type`, `color`, `text_color`, `direction_names` jsonb, `direction_destinations` jsonb, `sort_order` | 対象 8 路線 |

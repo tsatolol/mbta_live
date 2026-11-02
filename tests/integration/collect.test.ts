@@ -7,6 +7,7 @@ import { TARGET_ROUTE_IDS } from "@/lib/mbta/constants";
 import { runCollect } from "@/jobs/collect";
 import { createTestDb, resetData, testDatabaseUrl } from "../helpers/db";
 import { fakeMbtaFetch, type FakeMbtaOptions } from "../helpers/fake-mbta";
+import { seedStaticFromFixtures } from "../helpers/seed";
 import { readFixture, SUNDAY, WEEKDAY } from "../helpers/fixtures";
 
 const db = createTestDb();
@@ -214,5 +215,38 @@ describe("車両位置の履歴", () => {
     expect(await db.vehiclePosition.count()).toBe(106);
     const run = await db.collectorRun.findUniqueOrThrow({ where: { id: result.runId } });
     expect(run.counts).toMatchObject({ positionsInserted: 0 });
+  });
+});
+
+describe("未知の駅 ID", () => {
+  it("駅一覧にない stop ID を unknown_stop_ids に記録する（駅一覧が空なら、出てきた ID がすべて入る）", async () => {
+    const { result } = await collectWith({ bodies: await bodiesOf(SUNDAY) }, SUNDAY.recordedAt);
+    const unknown = await db.unknownStopId.findMany();
+    expect(unknown.length).toBeGreaterThan(50);
+    expect(unknown.map((u) => u.stopId)).toContain("Alewife-01");
+    expect(
+      unknown.every(
+        (u) => u.resolvedAt === null && u.firstSeenAt.getTime() === SUNDAY.recordedAt.getTime(),
+      ),
+    ).toBe(true);
+    const run = await db.collectorRun.findUniqueOrThrow({ where: { id: result.runId } });
+    expect(run.counts).toMatchObject({ unknownStopIds: unknown.length });
+  });
+
+  it("駅一覧に終点の番線まであれば、未知の駅 ID は記録されない", async () => {
+    await seedStaticFromFixtures(db);
+    await collectWith({ bodies: await bodiesOf(SUNDAY) }, SUNDAY.recordedAt);
+    expect(await db.unknownStopId.count()).toBe(0);
+  });
+
+  it("同じ ID は 1 件のまま、first_seen_at は最初の値を保つ", async () => {
+    await collectWith({ bodies: await bodiesOf(SUNDAY) }, SUNDAY.recordedAt);
+    const before = await db.unknownStopId.findUniqueOrThrow({ where: { stopId: "Alewife-01" } });
+    await collectWith(
+      { bodies: await bodiesOf(SUNDAY) },
+      new Date(SUNDAY.recordedAt.getTime() + 60_000),
+    );
+    const after = await db.unknownStopId.findUniqueOrThrow({ where: { stopId: "Alewife-01" } });
+    expect(after.firstSeenAt).toEqual(before.firstSeenAt);
   });
 });

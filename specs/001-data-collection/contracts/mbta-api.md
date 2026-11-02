@@ -29,7 +29,7 @@
 | sync-static | `GET /stops` ③ | 必要なときだけ | `filter[id]=<unknown_stop_ids の未解決分>` |
 | sync-static | `GET /route_patterns` | 毎日 | `filter[route]=<同上>&include=representative_trip.shape,representative_trip.stops&fields[stop]=name,parent_station` |
 
-collector は 1 回あたり 3 リクエスト、sync-static は 1 日あたり 4〜5 リクエスト。ローカル開発も同じ IP 制限を共有するので、普段は `MBTA_FIXTURE_MODE=1` でフィクスチャを使う。
+collector は 1 回あたり 3 リクエスト、sync-static は 1 日あたり 4 リクエスト（未解決の駅 ID があるときだけ ③ を加えて 5）。2026-11-02 に実 API で sync-static を実行し、4 リクエストで 8 路線・駅 402 件（親駅 125 + ホーム 277）・路線パターン 37 件を保存できた。ローカル開発も同じ IP 制限を共有するので、普段は `MBTA_FIXTURE_MODE=1` でフィクスチャを使う。
 
 ## 応答の性質（実測）
 
