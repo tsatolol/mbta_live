@@ -8,7 +8,7 @@
 - 形式: JSON:API（`data[].attributes`, `data[].relationships`, `included`）
 - 認証: `MBTA_API_KEY` が設定されていれば `x-api-key` ヘッダーで送る。キーありの上限は 1000 req/分、キーなしは送信元 IP 単位で 20 req/分
 - レート制限ヘッダー（実測で確認）: `x-ratelimit-limit: 20`、`x-ratelimit-remaining`、`x-ratelimit-reset`（UNIX 秒。次の分の境界）。値はログと `collector_runs` に残す
-  - 連続したリクエストで `remaining` が 19→18→17→19→16→19→15 と増減した（サーバーごとに数えている模様）。`remaining` を当てにせず、下の予算を自前で守る
+  - 2026-11-01 には連続したリクエストで `remaining` が 19→18→17→19→16→19→15 と増減した（サーバーごとに数えている模様）。2026-11-02 には 19→13 と 1 ずつ減った。どちらの場合もあるので、`remaining` を当てにせず、下の予算を自前で守る
 - 応答には `last-modified` ヘッダーが付く。応答は `Accept-Encoding` に応じて圧縮される（curl では zstd が返った）。サイズは圧縮後の転送量で見積もる
 - `fields[...]`（sparse fieldsets）で必要な属性だけを取る
 - 応答は必ず zod でパースする。スキーマに合わない行はスキップしてログに残す
@@ -61,7 +61,8 @@ collector は 1 回あたり 3 リクエスト、sync-static は 1 日あたり 
 
 ### `/predictions`
 
-- 日曜 05:48 ET（運行中の車両 23 両）の時点で 416 件、非圧縮 251KB / 圧縮後 10KB。平日の日中はこの数倍になる見込み（平日ピークの実測は未実施）
+- 日曜 05:48 ET（運行中の車両 23 両）の時点で 416 件、非圧縮 251KB / 圧縮後 10KB
+- 平日（月曜）10:20 ET（運行中の車両 106 両）の時点で 2,278 件、非圧縮 1.36MB。`SKIPPED` 32 件、`CANCELLED` 25 件、`ADDED` 81 件。1 回のリクエストで問題なく取得できた（ラッシュ時の実測は未実施）
 - 始発駅では `arrival_time` が `null` で、`departure_time` だけが入る
 - `schedule_relationship`: `null`（時刻表どおり）, `ADDED`（時刻表にない便）, `CANCELLED`（到着・出発時刻がどちらも `null`）, `SKIPPED`
 - `update_type` と不確かさ（`arrival_uncertainty` / `departure_uncertainty`、秒）が対応している: `MID_TRIP` = 60, `AT_TERMINAL` = 120, `REVERSE_TRIP`（終点で折り返した後の次の便）= 360

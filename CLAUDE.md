@@ -33,7 +33,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit 8 路線）の運�
 
 ## 技術スタック
 
-Next.js（App Router, TypeScript）/ Prisma ORM + PostgreSQL 16（Cloud SQL）/ Cloud Run（web + Jobs）, `us-east4` / MapLibre GL JS + OpenFreeMap / TanStack Query / Tailwind CSS + shadcn/ui / Apache ECharts / Vitest + Playwright / Terraform + GitHub Actions（WIF）/ pnpm, Node.js 24.x
+Next.js（App Router, TypeScript）/ Prisma ORM + PostgreSQL 16（Cloud SQL）/ Cloud Run（web + Jobs）, `us-east4` / MapLibre GL JS + OpenFreeMap / TanStack Query / Tailwind CSS + shadcn/ui / Apache ECharts / Vitest + Playwright / Terraform + GitHub Actions（WIF）/ pnpm, Node.js 24.x, TypeScript 6（typescript-eslint が 7 に未対応のため）
 
 ## コマンド（予定）
 
@@ -60,8 +60,7 @@ pnpm test:e2e
 - prod の承認者（現状はリポジトリのオーナーのみを想定）
 - MBTA API キーの取得（dev 用・prod 用）
 - 独自ドメインを使うか
-- 平日の日中ピークの `/predictions` の件数とサイズ（日曜早朝は 416 件、非圧縮 251KB）
-- Prisma で、パーティションの子テーブルを別スキーマに置いたときに `migrate dev` が drift を出さないか
+- 平日のラッシュ時の `/predictions` の件数とサイズ（日曜早朝は 416 件・非圧縮 251KB、平日 10:20 ET は 2,278 件・非圧縮 1.36MB）
 - 団子運転・間隔の開きのしきい値
 - 時刻表との比較による遅延指標を作るか
 - 将来の改善候補: API キーを取得したら収集を 30 秒間隔にする（到着検出の精度向上）、アラート通知

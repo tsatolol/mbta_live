@@ -35,7 +35,8 @@
 - **決定**: Prisma ORM（Prisma Migrate）を使う（当初案の Drizzle から、ユーザーの判断で変更）
 - **理由**: アプリ側の通常の読み書きを型安全に書ける
 - **トレードオフ**: パーティション、分析用の集計クエリ（`percentile_cont`、ウィンドウ関数）、大量の upsert は Prisma の API で表現できない。それぞれ手書きのマイグレーション SQL、TypedSQL（`prisma/sql/*.sql`）、`$executeRaw` で補う（data-model.md）
-- **未解決**: パーティションの子テーブルを別スキーマに置いたとき、`prisma migrate dev` が drift を出さないかを Phase 0 で検証する
+- **検証結果**（2026-11-02）: パーティションの子テーブルを別スキーマ `partitions` に置いても、`prisma migrate dev` は drift を出さない（「Already in sync」）。`tests/integration/prisma-drift.test.ts` で継続して確かめる
+- **バージョン**: Prisma 7.10（安定版）。npm の latest は 8.0 の RC だったので使わない
 
 ## 生データの削除方法
 
@@ -49,4 +50,9 @@
 
 ## 未解決
 
-- 平日の日中ピークに `/predictions` の件数とサイズを実測する（日曜早朝は 416 件、非圧縮 251KB）
+- 平日のラッシュ時に `/predictions` の件数とサイズを実測する（日曜早朝は 416 件・非圧縮 251KB、平日 10:20 ET は 2,278 件・非圧縮 1.36MB）
+
+## TypeScript のバージョン
+
+- **決定**: TypeScript 6（最新の 6.x）
+- **理由**: TypeScript 7.0 は typescript-eslint がまだ対応しておらず、ESLint が動かない（2026-11-02 時点）。対応したら 7 に上げる
