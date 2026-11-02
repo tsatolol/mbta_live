@@ -31,7 +31,7 @@ description: "001 データ収集の実装タスク"
 - [ ] T005 [P] `.gitignore`（`src/generated/`、`.env.local`、`node_modules/` など）と `.env.example`（docs/development.md の環境変数の表をすべて含める）を作る
 - [ ] T006 依存関係を追加する: `prisma`、`@prisma/client`、`@prisma/adapter-pg`、`pg`、`zod`、`date-fns`、`@date-fns/tz`、`server-only`、`tsx`、`fast-check`。スクリプト `postinstall`（`prisma generate`）、`db:migrate`（`prisma migrate deploy`）、`db:migrate:dev`、`db:generate`、`job:collect`、`job:sync-static`、`job:aggregate` を `package.json` に追加する
 - [ ] T007 [P] 実 API からフィクスチャを記録するスクリプトを作る（`pnpm fixtures:record`）。`/vehicles`・`/predictions`・`/alerts`・`/routes`・`/stops` ①②・`/route_patterns` を contracts/mbta-api.md のパラメータで 1 回ずつ取得し、`tests/fixtures/mbta/<endpoint>-<YYYYMMDD-HHmm>.json` に保存する。リクエストの間隔を空け、合計 7 リクエスト以内にする: `scripts/record-fixtures.ts`
-- [ ] T008 T007 のスクリプトで、運行時間中のフィクスチャを記録してコミットする。特殊ケース用のフィクスチャ（運行時間外の空の応答、`stop` が `null` の車両、`updated_at` が 30 分前の車両、`UPCOMING` のアラート、`CANCELLED` / `SKIPPED` / 始発駅の予測、`Shuttle-*` の路線パターン、スキーマに合わない行）は、記録した応答から行を抜き出して `tests/fixtures/mbta/cases/` に作る
+- [ ] T008 T007 のスクリプトで、平日の運行時間中のフィクスチャを記録してコミットする（2026-11-01 の日曜早朝に記録した初期フィクスチャが `tests/fixtures/mbta/` にある。内容は同じディレクトリの README.md）。特殊ケース用のフィクスチャ（運行時間外の空の応答、`stop` が `null` の車両、`updated_at` が 30 分前の車両、`UPCOMING` のアラート、`CANCELLED` / `SKIPPED` / 始発駅の予測、`Shuttle-*` の路線パターン、スキーマに合わない行）は、記録した応答から行を抜き出して `tests/fixtures/mbta/cases/` に作る
 
 ---
 
