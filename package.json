@@ -26,7 +26,9 @@
     "job:aggregate": "tsx --conditions=react-server src/jobs/aggregate.ts",
     "fixtures:record": "tsx --conditions=react-server scripts/record-fixtures.ts",
     "fixtures:cases": "tsx scripts/build-case-fixtures.ts",
-    "fixtures:record-sequence": "tsx --conditions=react-server scripts/record-sequence.ts"
+    "fixtures:record-sequence": "tsx --conditions=react-server scripts/record-sequence.ts",
+    "infra:fmt": "terraform fmt -recursive -check infra/terraform",
+    "infra:validate": "bash scripts/infra-validate.sh"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
