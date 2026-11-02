@@ -1,0 +1,66 @@
+# PR の軽いチェック（specs/004-infra-cicd/contracts/pipeline.md の「pr-checks.yml」）
+# - main 向けの PR で動き、合格をマージの必須条件にする（ブランチ保護で「pr-checks」を必須にする）
+# - フォークからの PR でも動くが、GCP の認証情報も Environment の secrets も使わない（pull_request_target は使わない）
+# - 5 分以内を目安にする。DB を使うテストやビルドはリリース用のパイプライン（pipeline.yml）で行う
+name: pr-checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-checks:
+    name: pr-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # Gitleaks が PR のコミットを走査するため、履歴をすべて取る
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        # postinstall で prisma generate も実行される（DB への接続は不要）
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Unit tests
+        # DB を使わない単体テストだけ（実 API は呼ばない）
+        run: pnpm test:unit
+
+      - name: Secret scan (Gitleaks)
+        # PR に含まれるコミットだけを走査する。設定は .gitleaks.toml
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+      - name: Dependency review
+        # PR で追加・更新した依存に high 以上の脆弱性があれば失敗する
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

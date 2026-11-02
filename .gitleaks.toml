@@ -1,0 +1,12 @@
+# Gitleaks の設定（PR チェックとリリース用のパイプラインで使う）
+title = "mbta_live"
+
+[extend]
+# 既定のルールをすべて使う
+useDefault = true
+
+[allowlist]
+description = "MBTA API の応答を記録したフィクスチャ（公開データ。秘密の値は含まない）"
+paths = [
+  '''^tests/fixtures/''',
+]
