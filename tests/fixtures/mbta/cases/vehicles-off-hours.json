@@ -1,0 +1,11 @@
+{
+  "data": [],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "source": "vehicles-20261101-0421.json",
+    "recordedAt": "2026-11-01T09:21:00.000Z",
+    "note": "運行時間外。data が空"
+  }
+}

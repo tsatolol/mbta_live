@@ -1,0 +1,228 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "bearing": 85,
+        "carriages": [
+          {
+            "label": "1914",
+            "occupancy_percentage": 0,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1915",
+            "occupancy_percentage": null,
+            "occupancy_status": "NO_DATA_AVAILABLE"
+          },
+          {
+            "label": "1918",
+            "occupancy_percentage": null,
+            "occupancy_status": "NO_DATA_AVAILABLE"
+          },
+          {
+            "label": "1919",
+            "occupancy_percentage": null,
+            "occupancy_status": "NO_DATA_AVAILABLE"
+          },
+          {
+            "label": "1955",
+            "occupancy_percentage": 3,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1954",
+            "occupancy_percentage": 4,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          }
+        ],
+        "current_status": "STOPPED_AT",
+        "current_stop_sequence": 1,
+        "direction_id": 0,
+        "label": "1914",
+        "latitude": 42.39621,
+        "longitude": -71.14054,
+        "occupancy_status": null,
+        "revenue": "REVENUE",
+        "speed": null,
+        "updated_at": "2026-11-01T05:17:03-05:00"
+      },
+      "id": "R-548C85FB",
+      "links": {
+        "self": "/vehicles/R-548C85FB"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Red",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "Alewife-01",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "ADDED-1585032616",
+            "type": "trip"
+          }
+        }
+      },
+      "type": "vehicle"
+    },
+    {
+      "attributes": {
+        "bearing": 185,
+        "carriages": [
+          {
+            "label": "1438",
+            "occupancy_percentage": 4,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1439",
+            "occupancy_percentage": 4,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1407",
+            "occupancy_percentage": 3,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1406",
+            "occupancy_percentage": 4,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1433",
+            "occupancy_percentage": 4,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1432",
+            "occupancy_percentage": 6,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          }
+        ],
+        "current_status": "STOPPED_AT",
+        "current_stop_sequence": 1,
+        "direction_id": 0,
+        "label": "1438",
+        "latitude": 42.43773,
+        "longitude": -71.07093,
+        "occupancy_status": null,
+        "revenue": "REVENUE",
+        "speed": null,
+        "updated_at": "2026-11-01T05:47:41-05:00"
+      },
+      "id": "O-548C85FF",
+      "links": {
+        "self": "/vehicles/O-548C85FF"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "Oak Grove-02",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706420",
+            "type": "trip"
+          }
+        }
+      },
+      "type": "vehicle"
+    },
+    {
+      "attributes": {
+        "bearing": 30,
+        "carriages": [
+          {
+            "label": "1424",
+            "occupancy_percentage": 3,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1425",
+            "occupancy_percentage": 2,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1418",
+            "occupancy_percentage": 1,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1419",
+            "occupancy_percentage": 4,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1451",
+            "occupancy_percentage": 4,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          },
+          {
+            "label": "1450",
+            "occupancy_percentage": 3,
+            "occupancy_status": "MANY_SEATS_AVAILABLE"
+          }
+        ],
+        "current_status": "STOPPED_AT",
+        "current_stop_sequence": 1,
+        "direction_id": 1,
+        "label": "1424",
+        "latitude": 42.30122,
+        "longitude": -71.11384,
+        "occupancy_status": null,
+        "revenue": "REVENUE",
+        "speed": null,
+        "updated_at": "2026-11-01T05:47:44-05:00"
+      },
+      "id": "O-548C7EDD",
+      "links": {
+        "self": "/vehicles/O-548C7EDD"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "Forest Hills-02",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80691933",
+            "type": "trip"
+          }
+        }
+      },
+      "type": "vehicle"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "source": "vehicles-20261101-0548.json",
+    "recordedAt": "2026-11-01T10:48:00.000Z",
+    "note": "stop が終点の番線 ID（Alewife-01 など。/stops の route_type 指定では返らない）"
+  }
+}

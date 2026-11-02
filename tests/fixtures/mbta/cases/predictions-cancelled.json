@@ -1,0 +1,1570 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 1,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70036-1-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70036",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 10,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70034-10-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70034",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 20,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70032-20-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70032",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 30,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70278-30-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70278",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 40,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70030-40-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70030",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 60,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70026-60-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70026",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 70,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70024-70-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70024",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 80,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70022-80-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70022",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 90,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70020-90-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70020",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 100,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70018-100-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70018",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 110,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70016-110-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70016",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 120,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70014-120-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70014",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 130,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70012-130-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70012",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 140,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70010-140-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70010",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 150,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70008-150-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70008",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 160,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70006-160-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70006",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 170,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70004-170-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70004",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 180,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70002-180-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70002",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 190,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706422-70001-190-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70001",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706422",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 1,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70001-1-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70001",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 10,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70003-10-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70003",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 20,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70005-20-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70005",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 30,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70007-30-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70007",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 40,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70009-40-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70009",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 50,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70011-50-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70011",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 60,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70013-60-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70013",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 70,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70015-70-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70015",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 80,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70017-80-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70017",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 90,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70019-90-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70019",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 100,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70021-100-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70021",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 110,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70023-110-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70023",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 120,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70025-120-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70025",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 130,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70027-130-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70027",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 150,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70031-150-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70031",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 160,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70279-160-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70279",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 170,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70033-170-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70033",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 180,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70035-180-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70035",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 1,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "CANCELLED",
+        "status": null,
+        "stop_sequence": 190,
+        "trip_headsign": null,
+        "update_type": null
+      },
+      "id": "prediction-80706415-70036-190-Orange",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Orange",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70036",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "80706415",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": null
+        }
+      },
+      "type": "prediction"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "source": "predictions-20261101-0548.json",
+    "recordedAt": "2026-11-01T10:48:00.000Z",
+    "note": "schedule_relationship が CANCELLED（arrival_time / departure_time がどちらも null）"
+  }
+}

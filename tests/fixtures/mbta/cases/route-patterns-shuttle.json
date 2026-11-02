@@ -1,0 +1,712 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "canonical": false,
+        "direction_id": 0,
+        "name": "Back Bay - Kenmore",
+        "sort_order": 626010990,
+        "time_desc": null,
+        "typicality": 4
+      },
+      "id": "Shuttle-BackBayKenmore-0-0",
+      "links": {
+        "self": "/route_patterns/Shuttle-BackBayKenmore-0-0"
+      },
+      "relationships": {
+        "representative_trip": {
+          "data": {
+            "id": "Green-B-8-Saturday-7cf6b-0-05:43:00",
+            "type": "trip"
+          }
+        },
+        "route": {
+          "data": {
+            "id": "Shuttle-BackBayKenmore",
+            "type": "route"
+          }
+        }
+      },
+      "type": "route_pattern"
+    },
+    {
+      "attributes": {
+        "canonical": false,
+        "direction_id": 1,
+        "name": "Kenmore - Back Bay",
+        "sort_order": 626011990,
+        "time_desc": null,
+        "typicality": 4
+      },
+      "id": "Shuttle-BackBayKenmore-0-1",
+      "links": {
+        "self": "/route_patterns/Shuttle-BackBayKenmore-0-1"
+      },
+      "relationships": {
+        "representative_trip": {
+          "data": {
+            "id": "Green-B-8-Saturday-7cf6b-1-05:13:00",
+            "type": "trip"
+          }
+        },
+        "route": {
+          "data": {
+            "id": "Shuttle-BackBayKenmore",
+            "type": "route"
+          }
+        }
+      },
+      "type": "route_pattern"
+    },
+    {
+      "attributes": {
+        "canonical": false,
+        "direction_id": 0,
+        "name": "Back Bay - Babcock Street",
+        "sort_order": 626020990,
+        "time_desc": null,
+        "typicality": 4
+      },
+      "id": "Shuttle-BabcockStreetBackBay-0-0",
+      "links": {
+        "self": "/route_patterns/Shuttle-BabcockStreetBackBay-0-0"
+      },
+      "relationships": {
+        "representative_trip": {
+          "data": {
+            "id": "Green-B-9-Weekday-7a16c-0-05:52:00",
+            "type": "trip"
+          }
+        },
+        "route": {
+          "data": {
+            "id": "Shuttle-BabcockStreetBackBay",
+            "type": "route"
+          }
+        }
+      },
+      "type": "route_pattern"
+    },
+    {
+      "attributes": {
+        "canonical": false,
+        "direction_id": 1,
+        "name": "Babcock Street - Back Bay",
+        "sort_order": 626021990,
+        "time_desc": null,
+        "typicality": 4
+      },
+      "id": "Shuttle-BabcockStreetBackBay-0-1",
+      "links": {
+        "self": "/route_patterns/Shuttle-BabcockStreetBackBay-0-1"
+      },
+      "relationships": {
+        "representative_trip": {
+          "data": {
+            "id": "Green-B-9-Weekday-7a16c-1-05:20:00",
+            "type": "trip"
+          }
+        },
+        "route": {
+          "data": {
+            "id": "Shuttle-BabcockStreetBackBay",
+            "type": "route"
+          }
+        }
+      },
+      "type": "route_pattern"
+    },
+    {
+      "attributes": {
+        "canonical": false,
+        "direction_id": 0,
+        "name": "Back Bay - Cleveland Circle",
+        "sort_order": 626030990,
+        "time_desc": null,
+        "typicality": 4
+      },
+      "id": "Shuttle-BackBayClevelandCircle-0-0",
+      "links": {
+        "self": "/route_patterns/Shuttle-BackBayClevelandCircle-0-0"
+      },
+      "relationships": {
+        "representative_trip": {
+          "data": {
+            "id": "Green-C-39-Weekday-7a16c-0-05:43:00",
+            "type": "trip"
+          }
+        },
+        "route": {
+          "data": {
+            "id": "Shuttle-BackBayClevelandCircle",
+            "type": "route"
+          }
+        }
+      },
+      "type": "route_pattern"
+    },
+    {
+      "attributes": {
+        "canonical": false,
+        "direction_id": 1,
+        "name": "Cleveland Circle - Back Bay",
+        "sort_order": 626031990,
+        "time_desc": null,
+        "typicality": 4
+      },
+      "id": "Shuttle-BackBayClevelandCircle-0-1",
+      "links": {
+        "self": "/route_patterns/Shuttle-BackBayClevelandCircle-0-1"
+      },
+      "relationships": {
+        "representative_trip": {
+          "data": {
+            "id": "Green-C-39-Weekday-7a16c-1-05:00:00",
+            "type": "trip"
+          }
+        },
+        "route": {
+          "data": {
+            "id": "Shuttle-BackBayClevelandCircle",
+            "type": "route"
+          }
+        }
+      },
+      "type": "route_pattern"
+    }
+  ],
+  "included": [
+    {
+      "attributes": {
+        "bikes_allowed": 0,
+        "block_id": "",
+        "direction_id": 1,
+        "headsign": "Back Bay (Shuttle)",
+        "name": "",
+        "revenue": "REVENUE",
+        "wheelchair_accessible": 1
+      },
+      "id": "Green-B-9-Weekday-7a16c-1-05:20:00",
+      "links": {
+        "self": "/trips/Green-B-9-Weekday-7a16c-1-05%3A20%3A00"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Shuttle-BabcockStreetBackBay",
+            "type": "route"
+          }
+        },
+        "route_pattern": {
+          "data": {
+            "id": "Shuttle-BabcockStreetBackBay-0-1",
+            "type": "route_pattern"
+          }
+        },
+        "service": {
+          "data": {
+            "id": "Green-B-9-Weekday-7a16c",
+            "type": "service"
+          }
+        },
+        "shape": {
+          "data": {
+            "id": "BabcockToBackBay-S",
+            "type": "shape"
+          }
+        },
+        "stops": {
+          "data": [
+            {
+              "id": "934",
+              "type": "stop"
+            },
+            {
+              "id": "938",
+              "type": "stop"
+            },
+            {
+              "id": "939",
+              "type": "stop"
+            },
+            {
+              "id": "941",
+              "type": "stop"
+            },
+            {
+              "id": "9070150",
+              "type": "stop"
+            },
+            {
+              "id": "9170152",
+              "type": "stop"
+            },
+            {
+              "id": "71855",
+              "type": "stop"
+            }
+          ]
+        }
+      },
+      "type": "trip"
+    },
+    {
+      "attributes": {
+        "bikes_allowed": 0,
+        "block_id": "",
+        "direction_id": 1,
+        "headsign": "Back Bay (Shuttle)",
+        "name": "",
+        "revenue": "REVENUE",
+        "wheelchair_accessible": 1
+      },
+      "id": "Green-C-39-Weekday-7a16c-1-05:00:00",
+      "links": {
+        "self": "/trips/Green-C-39-Weekday-7a16c-1-05%3A00%3A00"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Shuttle-BackBayClevelandCircle",
+            "type": "route"
+          }
+        },
+        "route_pattern": {
+          "data": {
+            "id": "Shuttle-BackBayClevelandCircle-0-1",
+            "type": "route_pattern"
+          }
+        },
+        "service": {
+          "data": {
+            "id": "Green-C-39-Weekday-7a16c",
+            "type": "service"
+          }
+        },
+        "shape": {
+          "data": {
+            "id": "ClevelandCircleToBackBay-S",
+            "type": "shape"
+          }
+        },
+        "stops": {
+          "data": [
+            {
+              "id": "9070238",
+              "type": "stop"
+            },
+            {
+              "id": "9070236",
+              "type": "stop"
+            },
+            {
+              "id": "9070234",
+              "type": "stop"
+            },
+            {
+              "id": "9070232",
+              "type": "stop"
+            },
+            {
+              "id": "9070230",
+              "type": "stop"
+            },
+            {
+              "id": "9070228",
+              "type": "stop"
+            },
+            {
+              "id": "9070224",
+              "type": "stop"
+            },
+            {
+              "id": "9070220",
+              "type": "stop"
+            },
+            {
+              "id": "9070218",
+              "type": "stop"
+            },
+            {
+              "id": "9070214",
+              "type": "stop"
+            },
+            {
+              "id": "9070150",
+              "type": "stop"
+            },
+            {
+              "id": "9170152",
+              "type": "stop"
+            },
+            {
+              "id": "71855",
+              "type": "stop"
+            }
+          ]
+        }
+      },
+      "type": "trip"
+    },
+    {
+      "attributes": {
+        "bikes_allowed": 0,
+        "block_id": "",
+        "direction_id": 1,
+        "headsign": "Back Bay (Shuttle)",
+        "name": "",
+        "revenue": "REVENUE",
+        "wheelchair_accessible": 1
+      },
+      "id": "Green-B-8-Saturday-7cf6b-1-05:13:00",
+      "links": {
+        "self": "/trips/Green-B-8-Saturday-7cf6b-1-05%3A13%3A00"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Shuttle-BackBayKenmore",
+            "type": "route"
+          }
+        },
+        "route_pattern": {
+          "data": {
+            "id": "Shuttle-BackBayKenmore-0-1",
+            "type": "route_pattern"
+          }
+        },
+        "service": {
+          "data": {
+            "id": "Green-B-8-Saturday-7cf6b",
+            "type": "service"
+          }
+        },
+        "shape": {
+          "data": {
+            "id": "KenmoreToBackBay-S",
+            "type": "shape"
+          }
+        },
+        "stops": {
+          "data": [
+            {
+              "id": "9070150",
+              "type": "stop"
+            },
+            {
+              "id": "9170152",
+              "type": "stop"
+            },
+            {
+              "id": "71855",
+              "type": "stop"
+            }
+          ]
+        }
+      },
+      "type": "trip"
+    },
+    {
+      "attributes": {
+        "bikes_allowed": 0,
+        "block_id": "",
+        "direction_id": 0,
+        "headsign": "Babcock Street (Shuttle)",
+        "name": "",
+        "revenue": "REVENUE",
+        "wheelchair_accessible": 1
+      },
+      "id": "Green-B-9-Weekday-7a16c-0-05:52:00",
+      "links": {
+        "self": "/trips/Green-B-9-Weekday-7a16c-0-05%3A52%3A00"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Shuttle-BabcockStreetBackBay",
+            "type": "route"
+          }
+        },
+        "route_pattern": {
+          "data": {
+            "id": "Shuttle-BabcockStreetBackBay-0-0",
+            "type": "route_pattern"
+          }
+        },
+        "service": {
+          "data": {
+            "id": "Green-B-9-Weekday-7a16c",
+            "type": "service"
+          }
+        },
+        "shape": {
+          "data": {
+            "id": "BackBayToBabcock-S",
+            "type": "shape"
+          }
+        },
+        "stops": {
+          "data": [
+            {
+              "id": "71855",
+              "type": "stop"
+            },
+            {
+              "id": "9170153",
+              "type": "stop"
+            },
+            {
+              "id": "9170151",
+              "type": "stop"
+            },
+            {
+              "id": "951",
+              "type": "stop"
+            },
+            {
+              "id": "952",
+              "type": "stop"
+            },
+            {
+              "id": "953",
+              "type": "stop"
+            },
+            {
+              "id": "956",
+              "type": "stop"
+            },
+            {
+              "id": "933",
+              "type": "stop"
+            }
+          ]
+        }
+      },
+      "type": "trip"
+    },
+    {
+      "attributes": {
+        "bikes_allowed": 0,
+        "block_id": "",
+        "direction_id": 0,
+        "headsign": "Cleveland Circle (Shuttle)",
+        "name": "",
+        "revenue": "REVENUE",
+        "wheelchair_accessible": 1
+      },
+      "id": "Green-C-39-Weekday-7a16c-0-05:43:00",
+      "links": {
+        "self": "/trips/Green-C-39-Weekday-7a16c-0-05%3A43%3A00"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Shuttle-BackBayClevelandCircle",
+            "type": "route"
+          }
+        },
+        "route_pattern": {
+          "data": {
+            "id": "Shuttle-BackBayClevelandCircle-0-0",
+            "type": "route_pattern"
+          }
+        },
+        "service": {
+          "data": {
+            "id": "Green-C-39-Weekday-7a16c",
+            "type": "service"
+          }
+        },
+        "shape": {
+          "data": {
+            "id": "BackBayToClevelandCircle-S",
+            "type": "shape"
+          }
+        },
+        "stops": {
+          "data": [
+            {
+              "id": "71855",
+              "type": "stop"
+            },
+            {
+              "id": "9170153",
+              "type": "stop"
+            },
+            {
+              "id": "9170151",
+              "type": "stop"
+            },
+            {
+              "id": "9070213",
+              "type": "stop"
+            },
+            {
+              "id": "9070217",
+              "type": "stop"
+            },
+            {
+              "id": "9070219",
+              "type": "stop"
+            },
+            {
+              "id": "9070223",
+              "type": "stop"
+            },
+            {
+              "id": "9070227",
+              "type": "stop"
+            },
+            {
+              "id": "9070229",
+              "type": "stop"
+            },
+            {
+              "id": "9070231",
+              "type": "stop"
+            },
+            {
+              "id": "9070233",
+              "type": "stop"
+            },
+            {
+              "id": "9070235",
+              "type": "stop"
+            },
+            {
+              "id": "9070238",
+              "type": "stop"
+            }
+          ]
+        }
+      },
+      "type": "trip"
+    },
+    {
+      "attributes": {
+        "bikes_allowed": 0,
+        "block_id": "",
+        "direction_id": 0,
+        "headsign": "Kenmore (Shuttle)",
+        "name": "",
+        "revenue": "REVENUE",
+        "wheelchair_accessible": 1
+      },
+      "id": "Green-B-8-Saturday-7cf6b-0-05:43:00",
+      "links": {
+        "self": "/trips/Green-B-8-Saturday-7cf6b-0-05%3A43%3A00"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Shuttle-BackBayKenmore",
+            "type": "route"
+          }
+        },
+        "route_pattern": {
+          "data": {
+            "id": "Shuttle-BackBayKenmore-0-0",
+            "type": "route_pattern"
+          }
+        },
+        "service": {
+          "data": {
+            "id": "Green-B-8-Saturday-7cf6b",
+            "type": "service"
+          }
+        },
+        "shape": {
+          "data": {
+            "id": "BackBayToKenmore-S",
+            "type": "shape"
+          }
+        },
+        "stops": {
+          "data": [
+            {
+              "id": "71855",
+              "type": "stop"
+            },
+            {
+              "id": "9170153",
+              "type": "stop"
+            },
+            {
+              "id": "9170151",
+              "type": "stop"
+            }
+          ]
+        }
+      },
+      "type": "trip"
+    },
+    {
+      "attributes": {
+        "polyline": "}fnaGpz|pLImJ?_A@u@AuICiDCwHAmAC_@Io@k@{CqB}KsGc_@bDoAJCzB_AJCXMdBo@rCiAlAc@DAL?GKSi@EQKo@GW_A_Ho@kD"
+      },
+      "id": "KenmoreToBackBay-S",
+      "links": {
+        "self": "/shapes/KenmoreToBackBay-S"
+      },
+      "type": "shape"
+    },
+    {
+      "attributes": {
+        "polyline": "odnaGt`ypL]mBmA{EKw@iBiKaDpAuAf@sBx@}@ZeFnBWLw@XpC`PlD~RfMvs@JrADlG@?BfG@VD`FFdM@T?zBF~@DVB`@BP?LB^?PJh@TzA\\lBTh@lAvGBx@`B`JVj@Jd@|BpMDz@n@jDbA|Fr@jE`AtFFVbAxFRfABHF`@tArHbBpJ`CvMH^Fb@Ll@f@tC~AnI\\nB`@pBZjBf@|BNv@^`CfAfIr@fENfABFNx@Jb@H\\V|@Pz@FPVjAZxATlATtA^tCN`BBl@Dh@HlBDrC?dGAZ?tB@R?TBXb@dDH\\?DBFF\\Lf@x@pEfDtTfAhIl@fFlAxJBXF^nAxJl@jEbBjKDj@@t@Bf@?X@HVWFaB@G?]YuBCKWeB"
+      },
+      "id": "BackBayToClevelandCircle-S",
+      "links": {
+        "self": "/shapes/BackBayToClevelandCircle-S"
+      },
+      "type": "shape"
+    },
+    {
+      "attributes": {
+        "polyline": "odnaGt`ypL]mBmA{EKw@iBiKaDpAuAf@sBx@}@ZeFnBWLw@XpC`PlD~RfMvs@JrADlG@?BfG@VD`FFdM@T?zBHx@Jn@HlA@|@sAxTAXgAbQA\\Gr@{@nNI~@i@tICnAMfB?JWdEA\\KpA[lF]vEw@xMEf@MzCe@tH?HCVg@pIK|@Q`DEd@f@F@YTqDNcBTwDBUDgA"
+      },
+      "id": "BackBayToBabcock-S",
+      "links": {
+        "self": "/shapes/BackBayToBabcock-S"
+      },
+      "type": "shape"
+    },
+    {
+      "attributes": {
+        "polyline": "odnaGt`ypL]mBmA{EKw@iBiKaDpAuAf@sBx@}@ZeFnBWLw@XpC`PlD~RfMvs@JrADlG@?BfG@VD`FFpL"
+      },
+      "id": "BackBayToKenmore-S",
+      "links": {
+        "self": "/shapes/BackBayToKenmore-S"
+      },
+      "type": "shape"
+    },
+    {
+      "attributes": {
+        "polyline": "wvnaGngaqLt@qL@e@VqDXqEFuAReDF_BZ_Fj@wHFoAt@aMHaA\\cGBU@YXqE?KFw@bAkP@[`@qHV}DH}AFk@FkAEiKAW?w@EuD?_A@u@AuICiDCwHAmAC_@Io@k@{CqB}KsGc_@bDoAJCzB_AJCXMdBo@rCiAlAc@DAL?GKSi@EQKo@GW_A_Ho@kD"
+      },
+      "id": "BabcockToBackBay-S",
+      "links": {
+        "self": "/shapes/BabcockToBackBay-S"
+      },
+      "type": "shape"
+    },
+    {
+      "attributes": {
+        "polyline": "mwkaGbjgqLc@qC}A{KYmCEYC[WiBCYc@sCqAsK?G{@uGi@mEa@oCg@iCi@qDESq@cFMo@E]g@_DWsBEk@CaA?sKA}@IcCE}@SoCIy@a@{CY_Ba@mBqBoHm@wCYcBc@wCW_CSyAGYS}AUiAU{@QaAMk@Ga@I]E]e@uCu@yDI]AKI]i@_D]eBGe@EMIe@Sy@G[yB_MsB_L_@iCm@_D[wA{@_FgCiNOg@YkA_@uBQs@CEk@}BUo@}BqMKe@Cw@aB_JWo@mAwGCo@i@yCBY@a@AYE_G?gAAW?w@EuD?_A@u@AuICiDCwHAmAC_@Io@k@{CqB}KsGc_@bDoAJCzB_AJCXMdBo@rCiAlAc@DAL?GKSi@EQKo@GW_A_Ho@kD"
+      },
+      "id": "ClevelandCircleToBackBay-S",
+      "links": {
+        "self": "/shapes/ClevelandCircleToBackBay-S"
+      },
+      "type": "shape"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "source": "route-patterns-20261101-0423.json",
+    "recordedAt": "2026-11-01T09:23:00.000Z",
+    "note": "臨時の代行バス路線（Shuttle-*, typicality=4）のパターン"
+  }
+}

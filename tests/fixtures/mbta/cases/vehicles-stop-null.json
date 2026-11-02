@@ -1,0 +1,61 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "bearing": 355,
+        "carriages": [
+          {
+            "label": "3849",
+            "occupancy_percentage": null,
+            "occupancy_status": "NO_DATA_AVAILABLE"
+          },
+          {
+            "label": "3655",
+            "occupancy_percentage": null,
+            "occupancy_status": "NO_DATA_AVAILABLE"
+          }
+        ],
+        "current_status": "IN_TRANSIT_TO",
+        "current_stop_sequence": null,
+        "direction_id": 1,
+        "label": "3849-3655",
+        "latitude": 42.34897,
+        "longitude": -71.09431,
+        "occupancy_status": null,
+        "revenue": "REVENUE",
+        "speed": null,
+        "updated_at": "2026-11-01T05:47:28-05:00"
+      },
+      "id": "G-10004",
+      "links": {
+        "self": "/vehicles/G-10004"
+      },
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Green-C",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": null
+        },
+        "trip": {
+          "data": {
+            "id": "ADDED-1585032606",
+            "type": "trip"
+          }
+        }
+      },
+      "type": "vehicle"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "source": "vehicles-20261101-0548.json",
+    "recordedAt": "2026-11-01T10:48:00.000Z",
+    "note": "stop が null の車両"
+  }
+}
