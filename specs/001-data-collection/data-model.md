@@ -51,7 +51,8 @@ PostgreSQL 16（Cloud SQL）。時刻はすべて `timestamptz`（UTC）。テ�
 | `prediction_samples` | `service_date`, `trip_id`, `stop_id`, `lead_bucket_min`, `route_id`, `direction_id`, `update_type`, `uncertainty_sec`, `predicted_arrival_at`, `observed_at` | (`service_date`, `trip_id`, `stop_id`, `lead_bucket_min`) |
 | `arrival_events` | `service_date`, `trip_id`, `stop_id`（親駅）, `route_id`, `direction_id`, `vehicle_id`, `arrived_at`, `source`, `precision_sec` | (`service_date`, `trip_id`, `stop_id`) |
 
-- `vehicle_positions` は `updated_at` が前回と同じ車両を保存しない
+- `vehicle_positions` は `updated_at` が前回と同じ車両を保存しない。collector は前日・当日・翌日の運行日のパーティションを毎回作り、`updated_at` がそれ以外の運行日になる車両（数日前から更新の止まった車両など）の位置は保存しない（件数は `collector_runs.counts.positionsSkipped`）
+- `vehicles_current.carriages` は `[{ label, occupancyStatus, occupancyPercentage }]` の形の JSON
 - 保持期間の削除はパーティションごと `DROP` する。**集計が済んでいない運行日のパーティションは、保持期間を過ぎても削除しない**
 
 ## 運用記録
