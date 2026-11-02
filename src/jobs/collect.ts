@@ -12,6 +12,7 @@ import {
 import { replaceCurrent } from "@/lib/db/current";
 import { upsertAlerts } from "@/lib/db/alerts";
 import { ensurePartitions } from "@/lib/db/partitions";
+import { recordUnknownStopIds } from "@/lib/db/static";
 import { loadStopIndex } from "@/lib/db/stop-index";
 import { detectArrivals } from "@/lib/metrics/arrivals";
 import { toPredictionSamples } from "@/lib/metrics/sampling";
@@ -59,6 +60,21 @@ export async function collect({
   const knownDates = new Set(serviceDates);
   const positions = snapshot.vehicles.filter((v) => knownDates.has(serviceDateOf(v.updatedAt)));
   const stopIndex = await loadStopIndex(db);
+  // 駅一覧にない stop ID（次の sync-static で解決する）
+  const unknownStopIds = [
+    ...new Set([
+      ...snapshot.vehicles.flatMap((v) => (v.stopId ? [v.stopId] : [])),
+      ...snapshot.predictions.map((p) => p.stopId),
+    ]),
+  ]
+    .filter((id) => stopIndex.parentOf(id) === null)
+    .sort();
+  if (unknownStopIds.length > 0) {
+    logger.warn("駅一覧にない stop ID があります", {
+      job: "collect",
+      unknownStopIds: unknownStopIds.slice(0, 50),
+    });
+  }
   const samples = toPredictionSamples(snapshot.predictions, polledAt, stopIndex).filter((s) =>
     knownDates.has(s.serviceDate),
   );
@@ -92,11 +108,11 @@ export async function collect({
       const positionsInserted = await insertVehiclePositions(tx, positions, polledAt);
       const arrivalsInserted = await insertArrivalEvents(tx, arrivalRows);
       const samplesInserted = await insertPredictionSamples(tx, samples);
+      await recordUnknownStopIds(tx, unknownStopIds, polledAt);
       return {
         positionsInserted,
         arrivalsDetected: arrivals.events.length,
         arrivalsInserted,
-        unknownStopIds: arrivals.unknownStopIds.length,
         samplesInserted,
       };
     },
@@ -114,7 +130,7 @@ export async function collect({
       positionsSkipped: snapshot.vehicles.length - positions.length,
       arrivalsDetected: written.arrivalsDetected,
       arrivalsInserted: written.arrivalsInserted,
-      unknownStopIds: written.unknownStopIds,
+      unknownStopIds: unknownStopIds.length,
       samplesInserted: written.samplesInserted,
     },
     ratelimitRemaining: client.lastRateLimit?.remaining ?? null,
