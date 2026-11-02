@@ -123,13 +123,13 @@ description: "001 データ収集の実装タスク"
 
 ### ユーザーストーリー 3 のテスト
 
-- [ ] T041 [P] [US3] サンプリングの単体テストを書く（TR-003）: 16 分前から 0 分前まで 1 分ごとの予測で、バケット `[1, 3, 5, 10, 15]` ごとに最初の 1 件だけになる、リード時間が 15 分を超える予測と 0 以下の予測は対象外、`CANCELLED` / `SKIPPED` / `arrival_time` が `null` の予測は保存しない: `tests/unit/metrics/sampling.test.ts`
-- [ ] T042 [P] [US3] collector の結合テストを書く: 連続した複数回の実行で、`prediction_samples` の行がバケットごとに 1 件のまま増えない: `tests/integration/collect-samples.test.ts`
+- [X] T041 [P] [US3] サンプリングの単体テストを書く（TR-003）: 16 分前から 0 分前まで 1 分ごとの予測で、バケット `[1, 3, 5, 10, 15]` ごとに最初の 1 件だけになる、リード時間が 15 分を超える予測と 0 以下の予測は対象外、`CANCELLED` / `SKIPPED` / `arrival_time` が `null` の予測は保存しない: `tests/unit/metrics/sampling.test.ts`
+- [X] T042 [P] [US3] collector の結合テストを書く: 連続した複数回の実行で、`prediction_samples` の行がバケットごとに 1 件のまま増えない: `tests/integration/collect-samples.test.ts`
 
 ### ユーザーストーリー 3 の実装
 
-- [ ] T043 [US3] サンプリングの純粋関数を実装する（T041 を通す）: `lead = predicted_arrival - observed_at` に対して `lead` 以上で最小のバケットを返す関数と、予測から `prediction_samples` の行（`stop_id` は親駅、`service_date` は予測到着時刻の運行日、`update_type`、`uncertainty_sec`）を作る関数: `src/lib/metrics/sampling.ts`
-- [ ] T044 [US3] collector に組み込む: `prediction_samples` に `createMany({ skipDuplicates: true })` で書き込む（同じトランザクション内）: `src/jobs/collect.ts`
+- [X] T043 [US3] サンプリングの純粋関数を実装する（T041 を通す）: `lead = predicted_arrival - observed_at` に対して `lead` 以上で最小のバケットを返す関数と、予測から `prediction_samples` の行（`stop_id` は親駅、`service_date` は予測到着時刻の運行日、`update_type`、`uncertainty_sec`）を作る関数: `src/lib/metrics/sampling.ts`
+- [X] T044 [US3] collector に組み込む: `prediction_samples` に `createMany({ skipDuplicates: true })` で書き込む（同じトランザクション内）: `src/jobs/collect.ts`
 
 **チェックポイント**: US1〜US3 が動く
 

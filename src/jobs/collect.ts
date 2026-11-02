@@ -4,12 +4,17 @@ import { pathToFileURL } from "node:url";
 import { systemClock, type Clock } from "@/lib/clock";
 import { createDb, type Db } from "@/lib/db/client";
 import { requireDatabaseUrl } from "@/lib/db/connection";
-import { insertArrivalEvents, insertVehiclePositions } from "@/lib/db/history";
+import {
+  insertArrivalEvents,
+  insertPredictionSamples,
+  insertVehiclePositions,
+} from "@/lib/db/history";
 import { replaceCurrent } from "@/lib/db/current";
 import { upsertAlerts } from "@/lib/db/alerts";
 import { ensurePartitions } from "@/lib/db/partitions";
 import { loadStopIndex } from "@/lib/db/stop-index";
 import { detectArrivals } from "@/lib/metrics/arrivals";
+import { toPredictionSamples } from "@/lib/metrics/sampling";
 import { logger } from "@/lib/log";
 import { mbtaClientFromEnv, type MbtaClient } from "@/lib/mbta/client";
 import { fetchRealtime } from "@/lib/mbta/realtime";
@@ -54,6 +59,9 @@ export async function collect({
   const knownDates = new Set(serviceDates);
   const positions = snapshot.vehicles.filter((v) => knownDates.has(serviceDateOf(v.updatedAt)));
   const stopIndex = await loadStopIndex(db);
+  const samples = toPredictionSamples(snapshot.predictions, polledAt, stopIndex).filter((s) =>
+    knownDates.has(s.serviceDate),
+  );
 
   const written = await db.$transaction(
     async (tx) => {
@@ -83,11 +91,13 @@ export async function collect({
       await upsertAlerts(tx, snapshot.alerts, polledAt);
       const positionsInserted = await insertVehiclePositions(tx, positions, polledAt);
       const arrivalsInserted = await insertArrivalEvents(tx, arrivalRows);
+      const samplesInserted = await insertPredictionSamples(tx, samples);
       return {
         positionsInserted,
         arrivalsDetected: arrivals.events.length,
         arrivalsInserted,
         unknownStopIds: arrivals.unknownStopIds.length,
+        samplesInserted,
       };
     },
     { timeout: TX_TIMEOUT_MS },
@@ -105,6 +115,7 @@ export async function collect({
       arrivalsDetected: written.arrivalsDetected,
       arrivalsInserted: written.arrivalsInserted,
       unknownStopIds: written.unknownStopIds,
+      samplesInserted: written.samplesInserted,
     },
     ratelimitRemaining: client.lastRateLimit?.remaining ?? null,
   };

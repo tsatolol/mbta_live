@@ -1,5 +1,6 @@
 // 履歴テーブル（生データ）への書き込み
 import type { ArrivalEventRow } from "@/lib/metrics/arrivals";
+import type { PredictionSampleRow } from "@/lib/metrics/sampling";
 import type { Vehicle } from "@/lib/mbta/schemas/vehicle";
 import { serviceDateToDbDate } from "@/lib/time";
 import type { DbTx } from "./types";
@@ -54,6 +55,33 @@ export async function insertArrivalEvents(
       arrivedAt: e.arrivedAt,
       source: e.source,
       precisionSec: e.precisionSec,
+    })),
+    skipDuplicates: true,
+  });
+  return result.count;
+}
+
+/**
+ * 予測サンプルを保存する。同じ（運行日, 便, 親駅, バケット）が既にあれば入れない（各バケットで最初の観測を残す）。
+ * 保存した件数を返す。
+ */
+export async function insertPredictionSamples(
+  tx: DbTx,
+  samples: readonly PredictionSampleRow[],
+): Promise<number> {
+  if (samples.length === 0) return 0;
+  const result = await tx.predictionSample.createMany({
+    data: samples.map((s) => ({
+      serviceDate: serviceDateToDbDate(s.serviceDate),
+      tripId: s.tripId,
+      stopId: s.stopId,
+      leadBucketMin: s.leadBucketMin,
+      routeId: s.routeId,
+      directionId: s.directionId,
+      updateType: s.updateType,
+      uncertaintySec: s.uncertaintySec,
+      predictedArrivalAt: s.predictedArrivalAt,
+      observedAt: s.observedAt,
     })),
     skipDuplicates: true,
   });

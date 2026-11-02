@@ -90,6 +90,8 @@ collector は毎回、前回の `vehicles_current` と今回の取得結果を�
 
 - 各回の予測について `lead = predicted_arrival - observed_at` を計算し、`lead` 以上で最小のバケット b ∈ `[1, 3, 5, 10, 15]` 分に `createMany({ skipDuplicates: true })` で保存する（各バケットで最初の観測が残る）
 - `schedule_relationship` が `CANCELLED` / `SKIPPED` の予測と、`arrival_time` が `null` の予測（始発駅）は保存しない
+- 実装（`src/lib/metrics/sampling.ts`）の詳細: `stop_id` は親駅、`service_date` は予測到着時刻の運行日（到着イベントと突き合わせるため）。リード時間が 0 以下か 15 分を超える予測、駅の索引にないホームの予測は保存しない。`ADDED`（時刻表にない便）は保存する
+- 2026-11-02 の平日 12:28 ET からの 4 回分の実データでは、1 回目が 610 件（それまでの分がまとめて入る）、2 回目以降は 1 分あたり 150〜213 件だった（1 日の運行時間に換算して約 20 万行）
 
 ## データ量の目安
 
