@@ -13,7 +13,7 @@ PostgreSQL 16（Cloud SQL）。時刻はすべて `timestamptz`（UTC）。テ�
   - 1 行ずつの `upsert` を毎分数百回呼ばない。件数の多い upsert は `$executeRaw` で 1 本の SQL にまとめる
 - パーティションを使うテーブル（下の「履歴」）
   - Prisma のスキーマでは `PARTITION BY` を表現できない。親テーブルは `schema.prisma` にモデルとして書き、実際の `CREATE TABLE ... PARTITION BY RANGE` は `prisma migrate dev --create-only` で作ったマイグレーション SQL を手で書き換えて作る
-  - 日ごとの子テーブルはマイグレーションではなく `aggregate` ジョブが作成・削除する。子テーブルはスキーマ `partitions` に置き、Prisma の管理対象（`public`）に入れない。`prisma migrate dev` が子テーブルを drift とみなさないようにするため（**この方式で drift が出ないかは Phase 0 で検証する**）
+  - 日ごとの子テーブルはマイグレーションではなく `aggregate` ジョブが作成・削除する。子テーブルはスキーマ `partitions` に置き、Prisma の管理対象（`public`）に入れない。`prisma migrate dev` が子テーブルを drift とみなさないようにするため。この方式で drift が出ないことは確認済み（2026-11-02。`prisma migrate dev` が「Already in sync」、`prisma migrate diff` が「No difference detected」。`tests/integration/prisma-drift.test.ts` で継続して確かめる）
 - 本番とパイプラインでは `prisma migrate deploy` だけを使う。`migrate dev` と `db push` はローカル専用
 
 ## ID と日付の扱い

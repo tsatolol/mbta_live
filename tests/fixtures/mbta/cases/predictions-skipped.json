@@ -1,0 +1,100 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "SKIPPED",
+        "status": null,
+        "stop_sequence": 330,
+        "trip_headsign": null,
+        "update_type": "REVERSE_TRIP"
+      },
+      "id": "prediction-ADDED-1585032626-70213-330-Green-C",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Green-C",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70213",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "ADDED-1585032626",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": {
+            "id": "G-10004",
+            "type": "vehicle"
+          }
+        }
+      },
+      "type": "prediction"
+    },
+    {
+      "attributes": {
+        "arrival_time": null,
+        "arrival_uncertainty": null,
+        "departure_time": null,
+        "departure_uncertainty": null,
+        "direction_id": 0,
+        "last_trip": false,
+        "revenue": "REVENUE",
+        "schedule_relationship": "SKIPPED",
+        "status": null,
+        "stop_sequence": 350,
+        "trip_headsign": null,
+        "update_type": "REVERSE_TRIP"
+      },
+      "id": "prediction-ADDED-1585032626-70217-350-Green-C",
+      "relationships": {
+        "route": {
+          "data": {
+            "id": "Green-C",
+            "type": "route"
+          }
+        },
+        "stop": {
+          "data": {
+            "id": "70217",
+            "type": "stop"
+          }
+        },
+        "trip": {
+          "data": {
+            "id": "ADDED-1585032626",
+            "type": "trip"
+          }
+        },
+        "vehicle": {
+          "data": {
+            "id": "G-10004",
+            "type": "vehicle"
+          }
+        }
+      },
+      "type": "prediction"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "source": "predictions-20261101-0548.json",
+    "recordedAt": "2026-11-01T10:48:00.000Z",
+    "note": "schedule_relationship が SKIPPED"
+  }
+}

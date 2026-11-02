@@ -2,7 +2,9 @@
 
 実 API（`https://api-v3.mbta.com`、API キーなし）から取得した応答をそのまま保存したもの。テストではこれらを使い、実 API は呼ばない。
 
-ファイル名の時刻はボストン時間（ET）。2026-11-01（日曜）は夏時間の終了日で、取得時は EST（UTC−5）。
+ファイル名の時刻はボストン時間（ET）。2026-11-01（日曜）は夏時間の終了日で、取得時は EST（UTC−5）。2026-11-02 以降のファイルは `pnpm fixtures:record`（`scripts/record-fixtures.ts`）で記録した。`/routes` と `/route_patterns` は 11-02 の応答が 11-01 と完全に同じだったので、11-01 のものだけを置いている。
+
+フィクスチャモード（`MBTA_FIXTURE_MODE=1`）では、接頭辞ごとに最も新しいファイルが使われる。
 
 | ファイル | リクエスト | 取得時の状況 |
 |---|---|---|
@@ -16,5 +18,10 @@
 | `predictions-20261101-0548.json` | `GET /predictions?filter[route]=<同上>` | 416 件。`CANCELLED` / `SKIPPED` / `ADDED`、始発駅（`arrival_time` が `null`）、`REVERSE_TRIP` を含む |
 | `stops-child-stops-20261101-0549.json` | `GET /stops?filter[id]=<親駅 125 件>&include=child_stops` | `included` に 2,567 件（バス停・出入口などを含む） |
 | `stops-by-id-20261101-0549.json` | `GET /stops?filter[id]=Alewife-01,Forest Hills-02,Oak Grove-02` | 終点の番線 3 件 |
+| `vehicles-20261102-1020.json` | `GET /vehicles?filter[route]=<同上>` | 平日（月曜）の日中。106 両 |
+| `predictions-20261102-1020.json` | `GET /predictions?filter[route]=<同上>` | 平日の日中。2,278 件（非圧縮 1.36MB）。`SKIPPED` 32 件、`CANCELLED` 25 件、`ADDED` 81 件 |
+| `alerts-20261102-1020.json` | `GET /alerts?filter[route]=<同上>` | 平日の日中。12 件（`UPCOMING` 3 件） |
+| `stops-route-type-20261102-1020.json` | `GET /stops?filter[route_type]=0,1&include=parent_station` | 平日の日中。件数は日曜と同じで、中身の一部が違う |
+| `stops-child-stops-20261102-1020.json` | `GET /stops?filter[id]=<親駅 125 件>&include=child_stops` | 平日の日中。中身の一部が日曜と違う |
 
-応答の性質のまとめは `specs/001-data-collection/contracts/mbta-api.md` を参照。特殊ケースだけを抜き出したフィクスチャは `cases/` に作る（`specs/001-data-collection/tasks.md` の T008）。
+応答の性質のまとめは `specs/001-data-collection/contracts/mbta-api.md` を参照。特殊ケースだけを抜き出したフィクスチャは `cases/` にある（`cases/README.md`）。

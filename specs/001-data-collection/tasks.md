@@ -24,14 +24,14 @@ description: "001 データ収集の実装タスク"
 
 **目的**: プロジェクトの初期化と基本構成
 
-- [ ] T001 Next.js（App Router、TypeScript `strict`、`output: "standalone"`）のプロジェクトを pnpm と Node.js 24.x で作る: `package.json`、`tsconfig.json`、`next.config.ts`、`src/app/layout.tsx`、`src/app/page.tsx`（仮の 1 ページだけ）
-- [ ] T002 [P] ESLint と Prettier を設定し、`pnpm lint` と `pnpm typecheck`（`tsc --noEmit`）のスクリプトを追加する: `eslint.config.mjs`、`.prettierrc`、`package.json`
-- [ ] T003 [P] Vitest を unit / integration / replay の 3 つのプロジェクトに分けて設定し、`pnpm test`（3 つすべて）、`pnpm test:unit`、`pnpm test:integration`、`pnpm test:replay` を追加する: `vitest.config.ts`、`package.json`
-- [ ] T004 [P] ローカル用 PostgreSQL 16 の `docker-compose.yml` を作る（サービス名 `db`、開発用 DB `mbta_live` とテスト用 DB `mbta_live_test` を作成する初期化 SQL を含む）: `docker-compose.yml`、`docker/postgres/init.sql`
-- [ ] T005 [P] `.gitignore`（`src/generated/`、`.env.local`、`node_modules/` など）と `.env.example`（docs/development.md の環境変数の表をすべて含める）を作る
-- [ ] T006 依存関係を追加する: `prisma`、`@prisma/client`、`@prisma/adapter-pg`、`pg`、`zod`、`date-fns`、`@date-fns/tz`、`server-only`、`tsx`、`fast-check`。スクリプト `postinstall`（`prisma generate`）、`db:migrate`（`prisma migrate deploy`）、`db:migrate:dev`、`db:generate`、`job:collect`、`job:sync-static`、`job:aggregate` を `package.json` に追加する
-- [ ] T007 [P] 実 API からフィクスチャを記録するスクリプトを作る（`pnpm fixtures:record`）。`/vehicles`・`/predictions`・`/alerts`・`/routes`・`/stops` ①②・`/route_patterns` を contracts/mbta-api.md のパラメータで 1 回ずつ取得し、`tests/fixtures/mbta/<endpoint>-<YYYYMMDD-HHmm>.json` に保存する。リクエストの間隔を空け、合計 7 リクエスト以内にする: `scripts/record-fixtures.ts`
-- [ ] T008 T007 のスクリプトで、平日の運行時間中のフィクスチャを記録してコミットする（2026-11-01 の日曜早朝に記録した初期フィクスチャが `tests/fixtures/mbta/` にある。内容は同じディレクトリの README.md）。特殊ケース用のフィクスチャ（運行時間外の空の応答、`stop` が `null` の車両、`updated_at` が 30 分前の車両、`UPCOMING` のアラート、`CANCELLED` / `SKIPPED` / 始発駅の予測、`Shuttle-*` の路線パターン、スキーマに合わない行）は、記録した応答から行を抜き出して `tests/fixtures/mbta/cases/` に作る
+- [X] T001 Next.js（App Router、TypeScript `strict`、`output: "standalone"`）のプロジェクトを pnpm と Node.js 24.x で作る: `package.json`、`tsconfig.json`、`next.config.ts`、`src/app/layout.tsx`、`src/app/page.tsx`（仮の 1 ページだけ）
+- [X] T002 [P] ESLint と Prettier を設定し、`pnpm lint` と `pnpm typecheck`（`tsc --noEmit`）のスクリプトを追加する: `eslint.config.mjs`、`.prettierrc`、`package.json`
+- [X] T003 [P] Vitest を unit / integration / replay の 3 つのプロジェクトに分けて設定し、`pnpm test`（3 つすべて）、`pnpm test:unit`、`pnpm test:integration`、`pnpm test:replay` を追加する: `vitest.config.ts`、`package.json`
+- [X] T004 [P] ローカル用 PostgreSQL 16 の `docker-compose.yml` を作る（サービス名 `db`、開発用 DB `mbta_live` とテスト用 DB `mbta_live_test` を作成する初期化 SQL を含む）: `docker-compose.yml`、`docker/postgres/init.sql`
+- [X] T005 [P] `.gitignore`（`src/generated/`、`.env.local`、`node_modules/` など）と `.env.example`（docs/development.md の環境変数の表をすべて含める）を作る
+- [X] T006 依存関係を追加する: `prisma`、`@prisma/client`、`@prisma/adapter-pg`、`pg`、`zod`、`date-fns`、`@date-fns/tz`、`server-only`、`tsx`、`fast-check`。スクリプト `postinstall`（`prisma generate`）、`db:migrate`（`prisma migrate deploy`）、`db:migrate:dev`、`db:generate`、`job:collect`、`job:sync-static`、`job:aggregate` を `package.json` に追加する
+- [X] T007 [P] 実 API からフィクスチャを記録するスクリプトを作る（`pnpm fixtures:record`）。`/vehicles`・`/predictions`・`/alerts`・`/routes`・`/stops` ①②・`/route_patterns` を contracts/mbta-api.md のパラメータで 1 回ずつ取得し、`tests/fixtures/mbta/<endpoint>-<YYYYMMDD-HHmm>.json` に保存する。リクエストの間隔を空け、合計 7 リクエスト以内にする: `scripts/record-fixtures.ts`
+- [X] T008 T007 のスクリプトで、平日の運行時間中のフィクスチャを記録してコミットする（2026-11-01 の日曜早朝に記録した初期フィクスチャが `tests/fixtures/mbta/` にある。内容は同じディレクトリの README.md）。特殊ケース用のフィクスチャ（運行時間外の空の応答、`stop` が `null` の車両、`updated_at` が 30 分前の車両、`UPCOMING` のアラート、`CANCELLED` / `SKIPPED` / 始発駅の予測、`Shuttle-*` の路線パターン、スキーマに合わない行）は、記録した応答から行を抜き出して `tests/fixtures/mbta/cases/` に作る
 
 ---
 
@@ -43,25 +43,25 @@ description: "001 データ収集の実装タスク"
 
 ### 基盤のテスト
 
-- [ ] T009 [P] 運行日と時刻のテストを書く（TR-004）: 深夜 0〜3 時（ET）は前日の運行日、夏時間の開始日（2027-03-14）と終了日（2026-11-01）の運行日の境界と長さ（23 / 25 時間）、`-04:00` / `-05:00` のオフセット付き文字列のパース: `tests/unit/time.test.ts`
-- [ ] T010 [P] MBTA クライアントのテストを書く（TR-008 の一部）: `MBTA_API_KEY` があれば `x-api-key` ヘッダーを送り、なければ送らない、レート制限ヘッダー（`x-ratelimit-limit` / `x-ratelimit-remaining` / `x-ratelimit-reset`）を読む、429 で `RateLimitedError` を投げてリトライしない、リクエスト数を数える、`MBTA_FIXTURE_MODE=1` でフィクスチャを返す。`fetch` は引数で差し替える: `tests/unit/mbta/client.test.ts`
-- [ ] T011 [P] JSON:API の解析のテストを書く: スキーマに合わない行はスキップされ、件数が返る（ジョブは失敗しない）: `tests/unit/mbta/jsonapi.test.ts`
+- [X] T009 [P] 運行日と時刻のテストを書く（TR-004）: 深夜 0〜3 時（ET）は前日の運行日、夏時間の開始日（2027-03-14）と終了日（2026-11-01）の運行日の境界と長さ（23 / 25 時間）、`-04:00` / `-05:00` のオフセット付き文字列のパース: `tests/unit/time.test.ts`
+- [X] T010 [P] MBTA クライアントのテストを書く（TR-008 の一部）: `MBTA_API_KEY` があれば `x-api-key` ヘッダーを送り、なければ送らない、レート制限ヘッダー（`x-ratelimit-limit` / `x-ratelimit-remaining` / `x-ratelimit-reset`）を読む、429 で `RateLimitedError` を投げてリトライしない、リクエスト数を数える、`MBTA_FIXTURE_MODE=1` でフィクスチャを返す。`fetch` は引数で差し替える: `tests/unit/mbta/client.test.ts`
+- [X] T011 [P] JSON:API の解析のテストを書く: スキーマに合わない行はスキップされ、件数が返る（ジョブは失敗しない）: `tests/unit/mbta/jsonapi.test.ts`
 
 ### 基盤の実装
 
-- [ ] T012 [P] 運行日と時刻の関数を実装する: `serviceDateOf(instant)`（`America/New_York` の時刻から 3 時間引いた日付）、`serviceDayRange(serviceDate)`（その運行日の開始と終了の UTC 時刻。ET の 03:00 区切り）、`parseMbtaDateTime(string)`（オフセット付き）、表示用の ET 変換: `src/lib/time.ts`
-- [ ] T013 [P] 時計を実装する: `Clock` インターフェース、`systemClock`、テスト用の `fixedClock(instant)`: `src/lib/clock.ts`
-- [ ] T014 [P] 定数を定義する: 対象 8 路線の ID（`Red`, `Mattapan`, `Orange`, `Blue`, `Green-B`, `Green-C`, `Green-D`, `Green-E`）、route_type（`0`, `1`）: `src/lib/mbta/constants.ts`。リード時間のバケット `[1, 3, 5, 10, 15]` 分、更新の止まった車両とみなす秒数 `180`: `src/lib/metrics/constants.ts`
-- [ ] T015 MBTA API クライアントを実装する（T010 を通す）: Base URL は `MBTA_API_BASE_URL`（既定値 `https://api-v3.mbta.com`）、`MBTA_API_KEY` は任意、`fields[...]` と `filter[...]` の組み立て、レート制限ヘッダーの読み取り、429 で `RateLimitedError`、リクエスト数のカウンタ、フィクスチャモード。`import "server-only"` を付ける: `src/lib/mbta/client.ts`
-- [ ] T016 JSON:API の共通の zod スキーマと、行ごとに `safeParse` して `{ rows, rejected }` を返す関数を実装する（T011 を通す）: `src/lib/mbta/jsonapi.ts`
-- [ ] T017 [P] 構造化ログ（JSON を標準出力へ。件数、解析に失敗した行数、未解決の駅 ID の数を出す。004 のログベースの指標で使う）: `src/lib/log.ts`
-- [ ] T018 Prisma の設定と DB クライアントを作る: `prisma.config.ts`、`prisma/schema.prisma` の datasource と generator（出力先 `src/generated/prisma`）、`src/lib/db/client.ts`（`@prisma/adapter-pg` + `pg`。`DATABASE_URL` があればそれを、なければ Unix ソケット `/cloudsql/<INSTANCE_CONNECTION_NAME>` と `DB_NAME` / `DB_USER` / `DB_PASSWORD` を使う。`import "server-only"`）
-- [ ] T019 data-model.md の 001 のテーブルをすべて `prisma/schema.prisma` にモデルとして書く: `routes`, `stops`, `route_patterns`, `vehicles_current`, `predictions_current`, `alerts`, `alert_routes`, `vehicle_positions`, `prediction_samples`, `arrival_events`, `collector_runs`, `unknown_stop_ids`。モデル名は PascalCase、フィールド名は camelCase で `@@map` / `@map` により snake_case に対応づけ、時刻の列には `@db.Timestamptz` を付ける。主キーは data-model.md のとおり（`vehicle_positions` は (`vehicle_id`, `updated_at`)、`prediction_samples` は (`service_date`, `trip_id`, `stop_id`, `lead_bucket_min`)、`arrival_events` は (`service_date`, `trip_id`, `stop_id`)）
-- [ ] T020 初期マイグレーションを `prisma migrate dev --create-only` で作り、SQL を手で書き換える: スキーマ `partitions` を作成し、`vehicle_positions` を `PARTITION BY RANGE (updated_at)`、`prediction_samples` と `arrival_events` を `PARTITION BY RANGE (service_date)` にする: `prisma/migrations/<timestamp>_init/migration.sql`
-- [ ] T021 パーティションの作成関数を実装する: `ensurePartitions(serviceDates)` が 3 つの履歴テーブルについて、運行日ごとの子テーブルを `partitions` スキーマに `CREATE TABLE IF NOT EXISTS ... PARTITION OF` で作る。`vehicle_positions` の範囲は `serviceDayRange()` の UTC 時刻、他の 2 つは `service_date` の 1 日: `src/lib/db/partitions.ts`
-- [ ] T022 テスト用 DB の補助関数を作る: テスト用 DB にマイグレーションを適用し、テストごとにテーブルを空にし、フィクスチャから静的データ（路線・駅・路線パターン）を投入する: `tests/helpers/db.ts`、`tests/helpers/seed.ts`
-- [ ] T023 Prisma の drift の検証テストを書いて実行する（research.md の未解決事項）: テスト用 DB に子テーブルを作った後、`prisma migrate diff`（DB とスキーマの比較、`--exit-code`）で差分が出ないことを確かめる。差分が出たら方式を見直し、data-model.md と research.md と CLAUDE.md の未決事項を更新する: `tests/integration/prisma-drift.test.ts`
-- [ ] T024 ジョブの共通部分を実装する: `runJob(name, fn)` が `collector_runs` に開始・終了時刻、成否（`success` / `failed` / `skipped`）、件数、レート制限の残量、エラーを記録して終了コードを決める。`withAdvisoryLock(key, fn)` は `pg_try_advisory_lock` が取れなければ `skipped` ですぐ終わる: `src/jobs/runner.ts`
+- [X] T012 [P] 運行日と時刻の関数を実装する: `serviceDateOf(instant)`（`America/New_York` の時刻から 3 時間引いた日付）、`serviceDayRange(serviceDate)`（その運行日の開始と終了の UTC 時刻。ET の 03:00 区切り）、`parseMbtaDateTime(string)`（オフセット付き）、表示用の ET 変換: `src/lib/time.ts`
+- [X] T013 [P] 時計を実装する: `Clock` インターフェース、`systemClock`、テスト用の `fixedClock(instant)`: `src/lib/clock.ts`
+- [X] T014 [P] 定数を定義する: 対象 8 路線の ID（`Red`, `Mattapan`, `Orange`, `Blue`, `Green-B`, `Green-C`, `Green-D`, `Green-E`）、route_type（`0`, `1`）: `src/lib/mbta/constants.ts`。リード時間のバケット `[1, 3, 5, 10, 15]` 分、更新の止まった車両とみなす秒数 `180`: `src/lib/metrics/constants.ts`
+- [X] T015 MBTA API クライアントを実装する（T010 を通す）: Base URL は `MBTA_API_BASE_URL`（既定値 `https://api-v3.mbta.com`）、`MBTA_API_KEY` は任意、`fields[...]` と `filter[...]` の組み立て、レート制限ヘッダーの読み取り、429 で `RateLimitedError`、リクエスト数のカウンタ、フィクスチャモード。`import "server-only"` を付ける: `src/lib/mbta/client.ts`
+- [X] T016 JSON:API の共通の zod スキーマと、行ごとに `safeParse` して `{ rows, rejected }` を返す関数を実装する（T011 を通す）: `src/lib/mbta/jsonapi.ts`
+- [X] T017 [P] 構造化ログ（JSON を標準出力へ。件数、解析に失敗した行数、未解決の駅 ID の数を出す。004 のログベースの指標で使う）: `src/lib/log.ts`
+- [X] T018 Prisma の設定と DB クライアントを作る: `prisma.config.ts`、`prisma/schema.prisma` の datasource と generator（出力先 `src/generated/prisma`）、`src/lib/db/client.ts`（`@prisma/adapter-pg` + `pg`。`DATABASE_URL` があればそれを、なければ Unix ソケット `/cloudsql/<INSTANCE_CONNECTION_NAME>` と `DB_NAME` / `DB_USER` / `DB_PASSWORD` を使う。`import "server-only"`）
+- [X] T019 data-model.md の 001 のテーブルをすべて `prisma/schema.prisma` にモデルとして書く: `routes`, `stops`, `route_patterns`, `vehicles_current`, `predictions_current`, `alerts`, `alert_routes`, `vehicle_positions`, `prediction_samples`, `arrival_events`, `collector_runs`, `unknown_stop_ids`。モデル名は PascalCase、フィールド名は camelCase で `@@map` / `@map` により snake_case に対応づけ、時刻の列には `@db.Timestamptz` を付ける。主キーは data-model.md のとおり（`vehicle_positions` は (`vehicle_id`, `updated_at`)、`prediction_samples` は (`service_date`, `trip_id`, `stop_id`, `lead_bucket_min`)、`arrival_events` は (`service_date`, `trip_id`, `stop_id`)）
+- [X] T020 初期マイグレーションを `prisma migrate dev --create-only` で作り、SQL を手で書き換える: スキーマ `partitions` を作成し、`vehicle_positions` を `PARTITION BY RANGE (updated_at)`、`prediction_samples` と `arrival_events` を `PARTITION BY RANGE (service_date)` にする: `prisma/migrations/<timestamp>_init/migration.sql`
+- [X] T021 パーティションの作成関数を実装する: `ensurePartitions(serviceDates)` が 3 つの履歴テーブルについて、運行日ごとの子テーブルを `partitions` スキーマに `CREATE TABLE IF NOT EXISTS ... PARTITION OF` で作る。`vehicle_positions` の範囲は `serviceDayRange()` の UTC 時刻、他の 2 つは `service_date` の 1 日: `src/lib/db/partitions.ts`
+- [X] T022 テスト用 DB の補助関数を作る: テスト用 DB にマイグレーションを適用し、テストごとにテーブルを空にし、フィクスチャから静的データ（路線・駅・路線パターン）を投入する: `tests/helpers/db.ts`、`tests/helpers/seed.ts`
+- [X] T023 Prisma の drift の検証テストを書いて実行する（research.md の未解決事項）: テスト用 DB に子テーブルを作った後、`prisma migrate diff`（DB とスキーマの比較、`--exit-code`）で差分が出ないことを確かめる。差分が出たら方式を見直し、data-model.md と research.md と CLAUDE.md の未決事項を更新する: `tests/integration/prisma-drift.test.ts`
+- [X] T024 ジョブの共通部分を実装する: `runJob(name, fn)` が `collector_runs` に開始・終了時刻、成否（`success` / `failed` / `skipped`）、件数、レート制限の残量、エラーを記録して終了コードを決める。`withAdvisoryLock(key, fn)` は `pg_try_advisory_lock` が取れなければ `skipped` ですぐ終わる: `src/jobs/runner.ts`
 
 **チェックポイント**: 基盤が完成。ここからユーザーストーリーに入れる
 
