@@ -25,3 +25,12 @@
 | `stops-child-stops-20261102-1020.json` | `GET /stops?filter[id]=<親駅 125 件>&include=child_stops` | 平日の日中。中身の一部が日曜と違う |
 
 応答の性質のまとめは `specs/001-data-collection/contracts/mbta-api.md` を参照。特殊ケースだけを抜き出したフィクスチャは `cases/` にある（`cases/README.md`）。
+
+## 連続ポーリングの記録（`sequences/`）
+
+`pnpm fixtures:record-sequence --count N`（`scripts/record-sequence.ts`）で、collector と同じ 3 リクエストを 60 秒ごとに記録したもの。容量を抑えるため、各応答は gzip で圧縮している（`<NNN>-<endpoint>.json.gz`）。`index.json` に各回の記録時刻（`polledAt`、UTC）がある。
+
+| ディレクトリ | 内容 |
+|---|---|
+| `sequences/20261102-1228/` | 平日（月曜）12:28 ET から 4 回分。到着検出の結合テスト（`tests/integration/collect-arrivals.test.ts`）で使う |
+
