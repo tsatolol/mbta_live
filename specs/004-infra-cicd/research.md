@@ -81,5 +81,29 @@
 - **決定**: Terraform 1.17（`~> 1.17`）、Google プロバイダ 8.9（`~> 8.9`）、random プロバイダ 3.9（`~> 3.9`）。それぞれ 2026-11-02 時点の最新安定版
 - **ロックファイル**: `.terraform.lock.hcl` は、bootstrap と envs を最初に `terraform init` するとき（T010、T017）に、Linux と macOS の両方のハッシュを入れて（`terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`）コミットする。`pnpm infra:validate` は一時ディレクトリのコピーで実行するので、ロックファイルをリポジトリに残さない
 - **GitHub Actions**: `actions/checkout@v5`、`actions/setup-node@v5`、`pnpm/action-setup@v4`、`gitleaks/gitleaks-action@v2`、`actions/dependency-review-action@v4` をメジャーバージョンのタグで指定した。開発環境から GitHub のリリースを参照できず、最新版の確認とコミットの SHA での固定ができなかったため。Dependabot の version updates（`github-actions`）で更新を追うか、SHA で固定するかは T047 で見直す
-- **Gitleaks**: 開発環境では Gitleaks を実行できなかった（GitHub のリリースから取得できないため）。`.gitleaks.toml` の動作は、PR チェックの初回の実行と T022 の確認で確かめる
+- **Gitleaks**: 開発環境では Gitleaks を実行できなかった（GitHub のリリースから取得できないため）。PR チェックの実行と T022 の確認で動作を確かめた（`gitleaks-action@v2` が入れるのは Gitleaks 8.24.3）
+  - 既定のルールは、汎用的な形の秘密の値（`api_key = "<16 進数 32 文字>"` など）を検出しなかった。特定のサービスの形式や秘密鍵のような、形の決まった値を検出する道具と考える。汎用的な値の混入は、`.env.local` をコミットしない運用（`.gitignore`）と、秘密の値を Secret Manager / GitHub の secrets にだけ置くルールで防ぐ
+  - 秘密鍵のブロック（`-----BEGIN RSA PRIVATE KEY-----`）は、ルール `private-key` で検出された。ログでは値が伏せ字（REDACTED）になる
+
+## T022 の確認結果（2026-11-02）
+
+テスト用の PR を 3 つ作り、ブランチ保護（ルールセット）と `pr-checks` の動作を確かめた。確認後に PR は閉じた。
+
+| PR | 内容 | `pr-checks` | マージ API |
+|---|---|---|---|
+| tsatolol/mbta_live#11 | 型エラー | 型チェックで失敗 | 「Required status check "pr-checks" is failing」で拒否 |
+| tsatolol/mbta_live#12 | 秘密の値 | 汎用の `api_key`（16 進数）は検出されず成功。ダミーの秘密鍵のブロックを足すと Gitleaks が検出して失敗 | 同上で拒否 |
+| tsatolol/mbta_live#13 | 既知の脆弱性を持つ依存（`lodash@4.17.20`） | 依存関係の検査が high の脆弱性（GHSA-35jh-r3h4-6jhm など）を検出して失敗 | 同上で拒否 |
+
+- チェックの実行中にマージしようとしても「Required status check "pr-checks" is in progress」で拒否された
+- `pr-checks` の所要時間は 30〜60 秒程度
+- 初回の実行は、リポジトリの Dependency graph が無効だったため、依存関係の検査が「Dependency review is not supported on this repository」で失敗した。Dependency graph を有効にして解消した（quickstart.md の事前準備に含まれる）
+- main への直接 push が拒否されることは、GitHub のルールセットの画面で確認する（Claude Code からは試さない）
+- テスト用のブランチ（`test/t022-*`）は、開発環境のプロキシがブランチの削除を拒否したため、GitHub の画面で削除する
+
+## main の依存の脆弱性（2026-11-02 に判明）
+
+- `pnpm audit` で 5 件（high 1、moderate 4）。どれも間接的な依存: `prisma` → `@prisma/studio-core` → `@visx/responsive` → `lodash`（4.17.23 以下）、`eslint` → `minimatch`（11.0.1 未満）
+- `prisma` CLI は migrate Job のために実行イメージに入るので、開発用の依存として無視はできない。リリース用の CI（T026）の `pnpm audit --audit-level high` でも失敗する
+- 対応: `package.json` の `pnpm.overrides` で `lodash` を `>=4.18.0`（4.18.1 に）、`minimatch@<11.0.1` を `>=11.0.1`（11.0.4 に）上げた。`pnpm audit` が 0 件になり、lint・型チェック・全テスト（148 件）が通ることを確かめた。上流（Prisma Studio、ESLint）が修正版に追従したら、この overrides を外す
 

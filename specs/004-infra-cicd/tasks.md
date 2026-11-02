@@ -75,8 +75,8 @@ description: "004 インフラと CI/CD の実装タスク"
 
 - [X] T019 [US1] PR チェックのワークフローを書く: トリガーは `pull_request`（main 向け。`pull_request_target` は使わない）、権限は `contents: read` だけ。`pnpm install --frozen-lockfile` → lint → typecheck → `pnpm test:unit` → Gitleaks（PR の差分）→ `actions/dependency-review-action`（high 以上で失敗）。5 分以内を目安にする: `.github/workflows/pr-checks.yml`
 - [X] T020 [P] [US1] Gitleaks の設定を書く: `tests/fixtures/` の MBTA API の応答（公開データ）を誤検知しないよう許可リストに入れる: `.gitleaks.toml`
-- [ ] T021 [US1] （人が行う）main にブランチ保護を設定する: PR 経由のマージだけを許可、`pr-checks` の合格を必須、承認者の人数は 0、force push と削除を禁止
-- [ ] T022 [US1] 確認（TR-008）: 型エラー、秘密の値に見える文字列、既知の脆弱性を持つ依存をそれぞれ含む PR を一度ずつ作り、チェックが失敗してマージできないことを確かめる。確かめたら PR は閉じる
+- [X] T021 [US1] （人が行う）main にブランチ保護を設定する: PR 経由のマージだけを許可、`pr-checks` の合格を必須、承認者の人数は 0、force push と削除を禁止
+- [X] T022 [US1] 確認（TR-008）: 型エラー、秘密の値に見える文字列、既知の脆弱性を持つ依存をそれぞれ含む PR を一度ずつ作り、チェックが失敗してマージできないことを確かめる。確かめたら PR は閉じる
 
 **チェックポイント**: US1 が動く。以降の変更は PR 経由になる
 
