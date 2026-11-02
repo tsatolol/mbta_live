@@ -8,3 +8,14 @@ next-env.d.ts
 .env.local
 .env.*.local
 coverage/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfplan
+# 秘密の値を含みうる変数ファイル。公開してよい値だけの envs/*/terraform.tfvars と *.tfvars.example はコミットする
+*.tfvars
+!infra/terraform/envs/*/terraform.tfvars
+!*.tfvars.example

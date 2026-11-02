@@ -25,8 +25,8 @@ description: "004 インフラと CI/CD の実装タスク"
 
 **目的**: Terraform とワークフローのディレクトリ、人が行う事前準備
 
-- [ ] T001 Terraform のディレクトリを作る: `infra/terraform/{bootstrap,modules/app,envs/dev,envs/prod}/`。各ディレクトリに `versions.tf`（Terraform と Google provider の最新安定版を `required_version` / `required_providers` で固定）を置く。`.terraform/`、`*.tfstate*`、`*.tfvars`（`terraform.tfvars.example` と `envs/*/terraform.tfvars` は除く）を `.gitignore` に追加する
-- [ ] T002 [P] Terraform の書式と静的検査のコマンドを用意する: `pnpm infra:fmt`（`terraform fmt -recursive -check infra/terraform`）と `pnpm infra:validate`（各ディレクトリで `terraform init -backend=false && terraform validate`）: `package.json`、`scripts/infra-validate.sh`
+- [X] T001 Terraform のディレクトリを作る: `infra/terraform/{bootstrap,modules/app,envs/dev,envs/prod}/`。各ディレクトリに `versions.tf`（Terraform と Google provider の最新安定版を `required_version` / `required_providers` で固定）を置く。`.terraform/`、`*.tfstate*`、`*.tfvars`（`terraform.tfvars.example` と `envs/*/terraform.tfvars` は除く）を `.gitignore` に追加する
+- [X] T002 [P] Terraform の書式と静的検査のコマンドを用意する: `pnpm infra:fmt`（`terraform fmt -recursive -check infra/terraform`）と `pnpm infra:validate`（各ディレクトリで `terraform init -backend=false && terraform validate`）: `package.json`、`scripts/infra-validate.sh`
 - [ ] T003 （人が行う）GCP プロジェクトを 2 つ（dev / prod）作り、請求先アカウントをひも付ける。プロジェクト ID を `docs/architecture.md` の「環境の違い」と CLAUDE.md の未決事項に反映する
 - [ ] T004 （人が行う）MBTA API キーを 2 つ（dev 用 / prod 用）取得する（https://api-v3.mbta.com で登録）
 - [ ] T005 （人が行う）GitHub に Environment `dev` と `prod` を作る。`prod` に Required reviewers（オーナー）を設定し、両方とも Deployment branches を `main` だけにする。secret scanning と Dependabot alerts を有効にする
@@ -73,8 +73,8 @@ description: "004 インフラと CI/CD の実装タスク"
 
 ### ユーザーストーリー 1 の実装
 
-- [ ] T019 [US1] PR チェックのワークフローを書く: トリガーは `pull_request`（main 向け。`pull_request_target` は使わない）、権限は `contents: read` だけ。`pnpm install --frozen-lockfile` → lint → typecheck → `pnpm test:unit` → Gitleaks（PR の差分）→ `actions/dependency-review-action`（high 以上で失敗）。5 分以内を目安にする: `.github/workflows/pr-checks.yml`
-- [ ] T020 [P] [US1] Gitleaks の設定を書く: `tests/fixtures/` の MBTA API の応答（公開データ）を誤検知しないよう許可リストに入れる: `.gitleaks.toml`
+- [X] T019 [US1] PR チェックのワークフローを書く: トリガーは `pull_request`（main 向け。`pull_request_target` は使わない）、権限は `contents: read` だけ。`pnpm install --frozen-lockfile` → lint → typecheck → `pnpm test:unit` → Gitleaks（PR の差分）→ `actions/dependency-review-action`（high 以上で失敗）。5 分以内を目安にする: `.github/workflows/pr-checks.yml`
+- [X] T020 [P] [US1] Gitleaks の設定を書く: `tests/fixtures/` の MBTA API の応答（公開データ）を誤検知しないよう許可リストに入れる: `.gitleaks.toml`
 - [ ] T021 [US1] （人が行う）main にブランチ保護を設定する: PR 経由のマージだけを許可、`pr-checks` の合格を必須、承認者の人数は 0、force push と削除を禁止
 - [ ] T022 [US1] 確認（TR-008）: 型エラー、秘密の値に見える文字列、既知の脆弱性を持つ依存をそれぞれ含む PR を一度ずつ作り、チェックが失敗してマージできないことを確かめる。確かめたら PR は閉じる
 
