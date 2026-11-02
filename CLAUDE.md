@@ -8,20 +8,24 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit 8 路線）の運�
 
 | 文書 | 内容 |
 |---|---|
-| `.specify/memory/constitution.md` | プロジェクト全体の原則（必ず守る） |
+| `.specify/memory/constitution.md` | プロジェクト全体の原則（必ず守る。テスト方針と文書の保守方針を含む） |
+| `docs/architecture.md` | システム全体の現在の構成、環境の違い、リポジトリ構成、文書の正（source of truth）の一覧 |
+| `docs/development.md` | ローカル開発の手順、コマンド、環境変数 |
 | `specs/001-data-collection/` | 収集ジョブ（collector / sync-static）、DB スキーマ、到着検出、MBTA API の利用方法と実測した応答の性質（`contracts/mbta-api.md`） |
 | `specs/002-live-dashboard/` | 地図・駅・アラート・稼働状況の画面と内部 API |
 | `specs/003-analytics/` | 日次集計と 4 つの分析画面、指標の定義 |
 | `specs/004-infra-cicd/` | dev / prod の GCP 環境、Terraform、パイプライン（CI 1 回 → CD dev → 承認 → CD prod） |
 
-各 feature のディレクトリには `spec.md`（何を・なぜ）、`plan.md`（どう作るか）、`research.md`（決定と理由）、`data-model.md`、`contracts/`、`quickstart.md` がある。`tasks.md` は `/speckit-tasks` で作る。リポジトリ全体のディレクトリ構成は `specs/001-data-collection/plan.md` にある。
+各 feature のディレクトリには `spec.md`（何を・なぜ。テスト要件を含む）と `plan.md`（どう作るか）が必ずあり、必要な feature だけに `research.md`（決定と理由）、`data-model.md`、`contracts/`、`quickstart.md` がある。`tasks.md` は `/speckit-tasks` で作る。
+
+文書の保守は flow-back 方式: 分かったことはどの文書からでも反映し、`/speckit-analyze` で食い違いを点検する。feature をまたぐ情報は `docs/` にだけ書く。DB スキーマの正は、実装後は `prisma/schema.prisma`。
 
 ## 最重要ルール（詳細は constitution）
 
 - MBTA API を呼ぶのは収集ジョブだけ。Web とブラウザは DB だけを読む。1 環境あたり 5 req/分以下
 - DB に書くのはジョブだけ。Web は読み取り専用
 - 外部入力は zod で検証する。`any` は使わない
-- 指標の計算は `src/lib/metrics/` の純粋関数にしてテストする
+- 指標の計算は `src/lib/metrics/` の純粋関数にしてテストする。DB を使うテストは本物の PostgreSQL で行い、テストで実 API は呼ばない。現在時刻は `src/lib/clock.ts` から取る
 - 時刻は UTC で保存し、表示だけ `America/New_York`。運行日の計算は `src/lib/time.ts` だけ
 - イメージは 1 つ。環境ごとの違いは実行時の環境変数だけで表す
 - マイグレーションは後方互換（expand → contract）
@@ -33,18 +37,14 @@ Next.js（App Router, TypeScript）/ Prisma ORM + PostgreSQL 16（Cloud SQL）/ 
 
 ## コマンド（予定）
 
+詳細は `docs/development.md`。
+
 ```bash
-docker compose up -d db        # ローカル PostgreSQL
-pnpm install                   # prisma generate も実行される
-pnpm db:migrate                # prisma migrate deploy
-pnpm db:migrate:dev            # スキーマ変更後にマイグレーションを作成
+docker compose up -d db && pnpm install && pnpm db:migrate
 pnpm dev                       # http://localhost:3000
-pnpm job:collect               # collector を 1 回（実 API。連打しない。普段は MBTA_FIXTURE_MODE=1）
-pnpm job:sync-static
-pnpm job:aggregate
+pnpm job:collect               # 実 API を使う。連打しない。普段は MBTA_FIXTURE_MODE=1
 pnpm lint && pnpm typecheck && pnpm test   # push の前に必ず実行（PR では CI が走らない）
 pnpm test:e2e
-pnpm fixtures:record           # 実 API からフィクスチャを記録
 ```
 
 ## spec-kit の使い方

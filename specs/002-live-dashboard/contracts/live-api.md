@@ -15,4 +15,28 @@
 | `GET /api/status` | なし | 直近の `collector_runs`、レート制限の残量、テーブルごとの行数 |
 | `GET /api/health` | なし | DB に接続できるか、最後に収集に成功した時刻。Cloud Run のヘルスチェックに使う |
 
+## 読むテーブル
+
+この feature は新しいテーブルを作らない。001 のテーブル（`specs/001-data-collection/data-model.md`）を読む。
+
+| 画面 | テーブル |
+|---|---|
+| Live Map | `vehicles_current`, `routes`, `route_patterns`（形状）, `stops` |
+| Stations / Arrival Board | `stops`, `route_patterns`（停車順）, `predictions_current`, `alerts`, `alert_routes` |
+| Alerts | `alerts`, `alert_routes` |
+| System Status | `collector_runs`, 各テーブルの行数 |
+
+## 計算して返す値
+
+- **`isStale`（車両）**: `now - updated_at >= 3 分`
+- **アラートの状態**: `active_period` のいずれかの区間に現在時刻が入っていれば `active`、すべての区間が未来なら `upcoming`、それ以外は `past`
+- **あと何分か**: API は `arrival_time`（始発駅は `departure_time`）を返し、ブラウザが毎秒 `時刻 - 現在時刻` を計算する
+- **stale バナー**: 最後に成功した `collector_runs.finished_at` から 3 分以上経っているか（`lastCollectedAt` から画面で判定）
+
+`now` はサーバーの時計（`src/lib/clock.ts`）から取り、テストでは固定する。
+
+## 応答の型
+
+応答の型は zod スキーマとして `src/lib/api-schemas/` に定義し、Route Handler（応答を組み立てる側）と画面（受け取る側）の両方で使う。結合テストでは、実際の応答がこのスキーマで解析できることを確かめる。
+
 分析用の API は `specs/003-analytics/contracts/analytics-api.md` を参照。

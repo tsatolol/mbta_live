@@ -16,7 +16,7 @@ Terraform で dev / prod の 2 つの GCP プロジェクトにアプリ一式�
 
 **Storage**: Terraform state は各環境のプロジェクトの GCS バケット
 
-**Testing**: `terraform fmt -check` / `validate` / `plan`、dev へのデプロイ後のスモークテスト（collector を 1 回実行）
+**Testing**: `terraform fmt -check` / `validate` / `plan`、デプロイ後のスモークテスト（collector を 1 回実行）、マイグレーションの互換性テスト。要件は spec.md の Testing Requirements
 
 **Target Platform**: Google Cloud（`us-east4`）: Cloud Run（サービス + Jobs）、Cloud SQL（PostgreSQL 16）、Cloud Scheduler、Secret Manager、Artifact Registry、IAP
 
@@ -28,28 +28,21 @@ Terraform で dev / prod の 2 つの GCP プロジェクトにアプリ一式�
 
 ### 環境の違い
 
-| | dev | prod |
-|---|---|---|
-| GCP プロジェクト | `<dev-project-id>`（未定） | `<prod-project-id>`（未定） |
-| デプロイ | main への push で自動 | dev 成功後、承認されてから |
-| collector の間隔 | 5 分（`*/5 * * * *`） | 1 分（`* * * * *`） |
-| 生データの保持 | 3 日 | 28 日 |
-| Cloud SQL | `db-f1-micro`、バックアップ 1 日、`deletion_protection=false` | `db-f1-micro`、バックアップ 7 日、`deletion_protection=true` |
-| IAP で許可するユーザー | 開発者 | 利用者（開発者を含む） |
-| MBTA API キー | dev 用 | prod 用 |
-| 予算アラート | 小さめ | 本番相当 |
+dev と prod の違い（間隔、保持期間、Cloud SQL の設定など）は [docs/architecture.md](../../docs/architecture.md#環境の違い) を参照。値は `envs/<env>/terraform.tfvars` で表す。
 
-### スケジュール（Cloud Scheduler、`America/New_York`）
+### ジョブの設定
 
-| ジョブ | dev | prod |
-|---|---|---|
-| collector | `*/5 * * * *` | `* * * * *` |
-| sync-static | 毎日 04:00 | 毎日 04:00 |
-| aggregate | 毎日 04:30 | 毎日 04:30 |
+スケジュールは Cloud Scheduler の `America/New_York` で指定する（時刻は docs/architecture.md）。
 
 - collector: タスクのタイムアウト 50 秒、リトライ 0。重なった実行は `pg_try_advisory_lock` で後の実行がすぐ終了する
 - web: `min-instances=0`
 - イメージはパイプラインが更新するので、Terraform では `lifecycle { ignore_changes = [image] }`
+
+### データ品質の監視（FR-013）
+
+- ジョブは件数・解析失敗の行数・未解決の駅 ID の数を構造化ログに出す。Cloud Logging のログベースの指標にし、Cloud Monitoring のアラートポリシーで通知する（通知先はメール）
+- 最後の収集成功からの経過時間と前日分の集計の完了は、`/api/health` を Cloud Monitoring の稼働時間チェックで見る（IAP の背後にあるので、監視用 SA に IAP のアクセス権を付ける。方式は実装時に検証する）
+- dev では通知せず、ダッシュボードで見るだけにする
 
 ### GCP のリソース配置
 

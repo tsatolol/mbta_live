@@ -16,7 +16,7 @@ Next.js の App Router で地図・駅・アラート・稼働状況の画面と
 
 **Storage**: 001 の PostgreSQL を読むだけ
 
-**Testing**: Playwright（E2E。シード済み DB + フィクスチャ）、Vitest（変換処理）
+**Testing**: 内部 API の結合テスト（本物の PostgreSQL + 共有の zod スキーマ）、Vitest（計算する値）、Playwright（主要な流れと状態）。要件は spec.md の Testing Requirements
 
 **Target Platform**: Cloud Run サービス（web、`min-instances=0`）、IAP の背後
 
@@ -48,16 +48,14 @@ specs/002-live-dashboard/
 ├── spec.md
 ├── plan.md
 ├── research.md
-├── data-model.md
-├── quickstart.md
 ├── contracts/
-│   └── live-api.md
+│   └── live-api.md     # 内部 API、読むテーブル、計算して返す値
 └── tasks.md             # /speckit-tasks で作成
 ```
 
 ### Source Code (repository root)
 
-リポジトリ全体の構成は `specs/001-data-collection/plan.md` を参照。この feature で使う部分:
+リポジトリ全体の構成は [docs/architecture.md](../../docs/architecture.md) を参照。この feature で使う部分:
 
 ```text
 src/

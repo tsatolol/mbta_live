@@ -16,7 +16,7 @@
 
 **Storage**: 001 の生データを読み、集計テーブルに書く
 
-**Testing**: Vitest（指標の計算関数）、Playwright（4 画面）
+**Testing**: Vitest（指標の TypeScript 版）、本物の PostgreSQL での集計 SQL と TypeScript 版の突き合わせ、Playwright（4 画面）。要件は spec.md の Testing Requirements
 
 **Target Platform**: Cloud Run Job（aggregate）+ Cloud Run サービス（web）
 
@@ -46,7 +46,6 @@ specs/003-analytics/
 ├── plan.md
 ├── research.md
 ├── data-model.md
-├── quickstart.md
 ├── contracts/
 │   └── analytics-api.md
 └── tasks.md             # /speckit-tasks で作成
@@ -54,7 +53,7 @@ specs/003-analytics/
 
 ### Source Code (repository root)
 
-リポジトリ全体の構成は `specs/001-data-collection/plan.md` を参照。この feature で使う部分:
+リポジトリ全体の構成は [docs/architecture.md](../../docs/architecture.md) を参照。この feature で使う部分:
 
 ```text
 prisma/sql/                          # 集計クエリ（TypedSQL）

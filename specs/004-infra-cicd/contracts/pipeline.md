@@ -8,7 +8,8 @@
 push to main
   │
   ├─ ci            （environment なし）
-  │    pnpm install → lint → typecheck → vitest → Playwright（Postgres サービスコンテナ + フィクスチャ）
+  │    pnpm install → lint → typecheck → unit / integration / replay（Postgres サービスコンテナ）→ Playwright（フィクスチャ）
+  │    → マイグレーションの互換性テスト（新しいマイグレーションを適用した DB に、prod で動いているコミットの結合テストを実行）
   │    → docker build → Artifact Registry に push（タグ = git SHA）→ outputs: image_digest
   │    → terraform fmt -check / validate → dev と prod の terraform plan（結果をジョブサマリーに出す）
   │    → outputs: prod_plan_hash（prod の plan の resource_changes のハッシュ）

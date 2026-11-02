@@ -8,27 +8,7 @@
 
 MBTA V3 API から対象 8 路線の車両・予測・アラートを定期的に取得する collector ジョブと、路線・駅・路線パターンを毎日同期する sync-static ジョブを作る。取得のたびに現在値を入れ替え、実到着の推定と予測のサンプリングを行って履歴に残す。生データは日ごとのパーティションに入れ、保持期間を過ぎたら削除する。
 
-### システム全体の構成
-
-001〜004 に共通する構成。dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成を作る（`specs/004-infra-cicd/`）。
-
-```
-                         ┌──────────────────────── GCP (us-east4) ─────────────────────────┐
-                         │                                                                 │
- MBTA V3 API  ◀──GET──── │  Cloud Run Job: collector     ◀── Cloud Scheduler (毎分/dev 5分)  │
- api-v3.mbta.com         │  Cloud Run Job: sync-static   ◀── Cloud Scheduler (毎日 04:00 ET) │
-                         │  Cloud Run Job: aggregate     ◀── Cloud Scheduler (毎日 04:30 ET) │
-                         │  Cloud Run Job: migrate       ◀── GitHub Actions (デプロイ時)     │
-                         │            │                                                    │
-                         │            ▼                                                    │
-                         │   Cloud SQL (PostgreSQL 16)                                     │
-                         │            ▲                                                    │
-                         │            │ (読み取りのみ)                                      │
- ブラウザ ──HTTPS──▶ IAP ─┼─▶ Cloud Run Service: web (Next.js: UI + Route Handlers)         │
-                         │                                                                 │
-                         │   Secret Manager: DB パスワード, MBTA_API_KEY                     │
-                         └─────────────────────────────────────────────────────────────────┘
-```
+システム全体の構成は [docs/architecture.md](../../docs/architecture.md) を参照。
 
 ## Technical Context
 
@@ -38,7 +18,7 @@ MBTA V3 API から対象 8 路線の車両・予測・アラートを定期的�
 
 **Storage**: PostgreSQL 16（Cloud SQL）。履歴テーブルは宣言的パーティショニング
 
-**Testing**: Vitest（単体。MBTA API は `tests/fixtures/mbta/` のフィクスチャ）
+**Testing**: Vitest + fast-check（単体・プロパティベース）、本物の PostgreSQL 16 を使う結合テスト、連続ポーリングの記録を流す再生テスト（`tests/replay/`）。MBTA API は `tests/fixtures/mbta/` のフィクスチャ。要件は spec.md の Testing Requirements
 
 **Target Platform**: Cloud Run Jobs（`us-east4`）。起動は Cloud Scheduler（`America/New_York`）
 
@@ -80,44 +60,22 @@ specs/001-data-collection/
 
 ### Source Code (repository root)
 
-リポジトリ全体の構成。002〜004 もこの構成を前提にする。
+リポジトリ全体の構成は [docs/architecture.md](../../docs/architecture.md) を参照。この feature で使う部分:
 
 ```text
-.
-├── CLAUDE.md
-├── README.md
-├── Dockerfile               # Web とジョブ共通のイメージ（Next.js standalone + 各ジョブのバンドル + Prisma CLI）
-├── docker-compose.yml       # ローカル用 PostgreSQL 16
-├── prisma.config.ts
-├── prisma/
-│   ├── schema.prisma
-│   ├── migrations/          # Prisma Migrate（パーティション部分は手書き SQL）
-│   └── sql/                 # TypedSQL（分析・集計クエリ）
-├── src/
-│   ├── app/                 # App Router のページと api/ 配下の Route Handlers（002, 003）
-│   ├── generated/prisma/    # prisma generate の出力（gitignore）
-│   ├── components/          # UI コンポーネント（map/, charts/, ui/）（002, 003）
-│   ├── lib/
-│   │   ├── mbta/            # API クライアント、zod スキーマ、JSON:API → ドメイン型、constants.ts（server-only）
-│   │   ├── db/              # Prisma Client の生成と共有、クエリ関数（server-only）
-│   │   ├── metrics/         # 到着検出・サンプリング・運行間隔・予測誤差（純粋関数）+ constants.ts
-│   │   └── time.ts          # 運行日の計算、タイムゾーン変換
-│   └── jobs/
-│       ├── collect.ts       # collector（001）
-│       ├── sync-static.ts   # 静的データの同期（001）
-│       ├── aggregate.ts     # 日次集計 + パーティションの作成と削除（003 / 001）
-│       └── migrate.ts       # prisma migrate deploy（004）
-├── tests/
-│   ├── unit/
-│   ├── e2e/
-│   └── fixtures/mbta/       # 実 API から記録した JSON
-├── infra/terraform/         # 004
-├── .github/workflows/       # 004
-├── .specify/                # spec-kit（constitution、テンプレート、スクリプト）
-└── specs/                   # spec-kit の feature ごとの文書
+prisma/                      # schema.prisma, migrations/（パーティションは手書き SQL）
+src/
+├── lib/mbta/                # API クライアント、zod スキーマ、変換、constants.ts
+├── lib/db/
+├── lib/metrics/             # 到着検出・サンプリング
+├── lib/clock.ts
+├── lib/time.ts
+└── jobs/{collect,sync-static}.ts
+tests/{unit,integration,replay}/
+tests/fixtures/mbta/
 ```
 
-**Structure Decision**: Next.js 一体型の単一プロジェクト。ジョブは `src/jobs/` に置き、Web と同じイメージにバンドルする。MBTA と DB にアクセスするコードは `src/lib/mbta/`・`src/lib/db/` にまとめ、`import "server-only"` でクライアントのバンドルに入らないようにする。
+**Structure Decision**: ジョブは `src/jobs/` に置き、Web と同じイメージにバンドルする。現在時刻は `src/lib/clock.ts` から取り、テストで差し替えられるようにする。
 
 ## Complexity Tracking
 
