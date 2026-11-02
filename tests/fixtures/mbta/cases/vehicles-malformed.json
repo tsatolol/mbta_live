@@ -158,7 +158,7 @@
         "current_stop_sequence": 4,
         "direction_id": 1,
         "label": "3234",
-        "latitude": 42.26969,
+        "latitude": "not-a-number",
         "longitude": -71.0758,
         "occupancy_status": null,
         "revenue": "REVENUE",

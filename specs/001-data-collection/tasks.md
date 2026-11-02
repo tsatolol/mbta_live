@@ -75,19 +75,19 @@ description: "001 データ収集の実装タスク"
 
 ### ユーザーストーリー 1 のテスト
 
-- [ ] T025 [P] [US1] 車両・予測・アラートの応答の解析テストを書く（TR-001 の一部）: 通常のフィクスチャと `tests/fixtures/mbta/cases/` の特殊ケース（運行時間外の空の応答、`stop` が `null` の車両、`updated_at` が 30 分前の車両、`UPCOMING` のアラート、`CANCELLED`（到着・出発時刻がどちらも `null`）/ `SKIPPED` / 始発駅（`arrival_time` が `null`）の予測、スキーマに合わない行）: `tests/unit/mbta/realtime.test.ts`
-- [ ] T026 [P] [US1] collector の結合テストを書く（TR-006、TR-008）: 現在値テーブルが入れ替わる、運行時間外の応答で現在値が空になり成功として記録される、1 回のリクエスト数が 3、429 で失敗として記録されリトライせず現在値が前の状態のまま、書き込みの途中で失敗すると前の状態が残る（トランザクション）、2 つの collector を同時に動かすと後の方が `skipped` ですぐ終わる: `tests/integration/collect.test.ts`
+- [X] T025 [P] [US1] 車両・予測・アラートの応答の解析テストを書く（TR-001 の一部）: 通常のフィクスチャと `tests/fixtures/mbta/cases/` の特殊ケース（運行時間外の空の応答、`stop` が `null` の車両、`updated_at` が 30 分前の車両、`UPCOMING` のアラート、`CANCELLED`（到着・出発時刻がどちらも `null`）/ `SKIPPED` / 始発駅（`arrival_time` が `null`）の予測、スキーマに合わない行）: `tests/unit/mbta/realtime.test.ts`
+- [X] T026 [P] [US1] collector の結合テストを書く（TR-006、TR-008）: 現在値テーブルが入れ替わる、運行時間外の応答で現在値が空になり成功として記録される、1 回のリクエスト数が 3、429 で失敗として記録されリトライせず現在値が前の状態のまま、書き込みの途中で失敗すると前の状態が残る（トランザクション）、2 つの collector を同時に動かすと後の方が `skipped` ですぐ終わる: `tests/integration/collect.test.ts`
 
 ### ユーザーストーリー 1 の実装
 
-- [ ] T027 [P] [US1] 車両の zod スキーマとドメイン型への変換を実装する（`bearing`, `current_status`, `current_stop_sequence`, `direction_id`, `label`, `latitude`, `longitude`, `revenue`, `speed`, `carriages`, `updated_at`、リレーション `route` / `stop`（`null` 可）/ `trip`）: `src/lib/mbta/schemas/vehicle.ts`
-- [ ] T028 [P] [US1] 予測の zod スキーマと変換を実装する（`arrival_time` / `departure_time` は `null` 可、`schedule_relationship` は `null` 可の文字列、`update_type`、`uncertainty_sec` = `arrival_uncertainty ?? departure_uncertainty`、リレーション `route` / `stop` / `trip` / `vehicle`（`null` 可））: `src/lib/mbta/schemas/prediction.ts`
-- [ ] T029 [P] [US1] アラートの zod スキーマと変換を実装する（`effect` / `cause` / `lifecycle` は列挙型にせず文字列、`severity` は整数、`active_period` の `end` は `null` 可、`informed_entity`、`short_header`, `service_effect`, `timeframe`）: `src/lib/mbta/schemas/alert.ts`
-- [ ] T030 [US1] 3 つのエンドポイントを取得する関数を実装する（`filter[route]` に対象 8 路線、`fields[...]` で必要な属性だけ）: `src/lib/mbta/realtime.ts`
-- [ ] T031 [US1] 現在値の入れ替えを実装する: `$transaction` の中で `vehicles_current` と `predictions_current` を `deleteMany` → `createMany`: `src/lib/db/current.ts`
-- [ ] T032 [US1] アラートの保存を実装する: 1 本の `$executeRaw`（`INSERT ... ON CONFLICT (id) DO UPDATE`）で upsert し、`first_seen_at` は初回の値を保ち、`last_seen_at` を更新し、`in_feed = true` にする。今回のフィードにないアラートは `in_feed = false` にする。`alert_routes` は `informed_entity` の `route` のうち対象 8 路線のものから作り直す: `src/lib/db/alerts.ts`
-- [ ] T033 [US1] 車両位置の履歴の保存を実装する: `vehicle_positions` に `createMany({ skipDuplicates: true })`（`updated_at` が前回と同じ車両は主キーの重複で入らない）: `src/lib/db/history.ts`
-- [ ] T034 [US1] collector のジョブを実装する: `withAdvisoryLock` → `ensurePartitions`（今日と明日の運行日）→ 3 つのエンドポイントを取得 → 解析 → 1 つのトランザクションで現在値・アラート・車両位置を書き込む → `runJob` で件数・解析に失敗した行数・レート制限の残量を記録する。現在時刻は `Clock` から取る: `src/jobs/collect.ts`
+- [X] T027 [P] [US1] 車両の zod スキーマとドメイン型への変換を実装する（`bearing`, `current_status`, `current_stop_sequence`, `direction_id`, `label`, `latitude`, `longitude`, `revenue`, `speed`, `carriages`, `updated_at`、リレーション `route` / `stop`（`null` 可）/ `trip`）: `src/lib/mbta/schemas/vehicle.ts`
+- [X] T028 [P] [US1] 予測の zod スキーマと変換を実装する（`arrival_time` / `departure_time` は `null` 可、`schedule_relationship` は `null` 可の文字列、`update_type`、`uncertainty_sec` = `arrival_uncertainty ?? departure_uncertainty`、リレーション `route` / `stop` / `trip` / `vehicle`（`null` 可））: `src/lib/mbta/schemas/prediction.ts`
+- [X] T029 [P] [US1] アラートの zod スキーマと変換を実装する（`effect` / `cause` / `lifecycle` は列挙型にせず文字列、`severity` は整数、`active_period` の `end` は `null` 可、`informed_entity`、`short_header`, `service_effect`, `timeframe`）: `src/lib/mbta/schemas/alert.ts`
+- [X] T030 [US1] 3 つのエンドポイントを取得する関数を実装する（`filter[route]` に対象 8 路線、`fields[...]` で必要な属性だけ）: `src/lib/mbta/realtime.ts`
+- [X] T031 [US1] 現在値の入れ替えを実装する: `$transaction` の中で `vehicles_current` と `predictions_current` を `deleteMany` → `createMany`: `src/lib/db/current.ts`
+- [X] T032 [US1] アラートの保存を実装する: 1 本の `$executeRaw`（`INSERT ... ON CONFLICT (id) DO UPDATE`）で upsert し、`first_seen_at` は初回の値を保ち、`last_seen_at` を更新し、`in_feed = true` にする。今回のフィードにないアラートは `in_feed = false` にする。`alert_routes` は `informed_entity` の `route` のうち対象 8 路線のものから作り直す: `src/lib/db/alerts.ts`
+- [X] T033 [US1] 車両位置の履歴の保存を実装する: `vehicle_positions` に `createMany({ skipDuplicates: true })`（`updated_at` が前回と同じ車両は主キーの重複で入らない）: `src/lib/db/history.ts`
+- [X] T034 [US1] collector のジョブを実装する: `withAdvisoryLock` → `ensurePartitions`（今日と明日の運行日）→ 3 つのエンドポイントを取得 → 解析 → 1 つのトランザクションで現在値・アラート・車両位置を書き込む → `runJob` で件数・解析に失敗した行数・レート制限の残量を記録する。現在時刻は `Clock` から取る: `src/jobs/collect.ts`
 
 **チェックポイント**: US1 が単独で動く（T025、T026 が通る）
 

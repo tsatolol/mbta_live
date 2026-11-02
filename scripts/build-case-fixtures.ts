@@ -104,7 +104,8 @@ async function main(): Promise<void> {
   const broken = structuredClone(sunV.data[2]);
   const missingId = structuredClone(sunV.data[3]);
   if (!broken || !missingId) throw new Error("vehicles の行が足りません");
-  rowSchema.parse(broken).attributes.latitude = "not-a-number";
+  // rowSchema.parse() はコピーを返すので、元の行を直接書き換える
+  (broken.attributes as Record<string, unknown>).latitude = "not-a-number";
   delete (missingId as Record<string, unknown>).id;
   await save(
     "vehicles-malformed",
