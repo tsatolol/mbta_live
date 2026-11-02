@@ -1,7 +1,13 @@
 // 履歴テーブルのパーティション（運行日ごとの子テーブル）の管理。
 // 子テーブルはスキーマ "partitions" に置き、Prisma の管理対象（public）に入れない
 // （specs/001-data-collection/data-model.md）。
-import { isServiceDate, serviceDayRange, type ServiceDate } from "@/lib/time";
+import {
+  addServiceDays,
+  isServiceDate,
+  serviceDateToDbDate,
+  serviceDayRange,
+  type ServiceDate,
+} from "@/lib/time";
 import type { Db } from "./client";
 
 export const PARTITION_SCHEMA = "partitions";
@@ -94,4 +100,56 @@ export async function listPartitions(db: Db): Promise<PartitionInfo[]> {
     if (!m) return [];
     return [{ table: m[1] as PartitionedTable, name, serviceDate: `${m[2]}-${m[3]}-${m[4]}` }];
   });
+}
+
+export interface RetentionResult {
+  /** 削除した運行日 */
+  dropped: ServiceDate[];
+  /** 保持期間を過ぎたが、集計が済んでいないので残した運行日 */
+  keptUnaggregated: ServiceDate[];
+}
+
+/**
+ * 保持期間を過ぎた運行日の子テーブルを削除する。
+ * - 今日を含めて直近 retentionDays 運行日分を残す（運行日 d が today - retentionDays 以前なら期限切れ）
+ * - 集計が成功していない運行日（aggregate_runs.status が success でない、または記録がない）は削除しない
+ */
+export async function dropExpiredPartitions(
+  db: Db,
+  today: ServiceDate,
+  retentionDays: number,
+): Promise<RetentionResult> {
+  if (!Number.isInteger(retentionDays) || retentionDays < 1) {
+    throw new Error(`保持日数は 1 以上の整数で指定してください: ${retentionDays}`);
+  }
+  const cutoff = addServiceDays(today, -retentionDays);
+  const partitions = await listPartitions(db);
+  const expiredDates = [...new Set(partitions.map((p) => p.serviceDate))]
+    .filter((d) => d <= cutoff)
+    .sort();
+  if (expiredDates.length === 0) return { dropped: [], keptUnaggregated: [] };
+
+  const aggregated = new Set(
+    (
+      await db.aggregateRun.findMany({
+        where: { status: "success", serviceDate: { in: expiredDates.map(serviceDateToDbDate) } },
+        select: { serviceDate: true },
+      })
+    ).map((r) => r.serviceDate.toISOString().slice(0, 10)),
+  );
+
+  const dropped: ServiceDate[] = [];
+  const keptUnaggregated: ServiceDate[] = [];
+  for (const date of expiredDates) {
+    if (!aggregated.has(date)) {
+      keptUnaggregated.push(date);
+      continue;
+    }
+    for (const p of partitions.filter((x) => x.serviceDate === date)) {
+      // 名前は listPartitions が正規表現で検証したもの
+      await db.$executeRawUnsafe(`DROP TABLE IF EXISTS "${PARTITION_SCHEMA}"."${p.name}"`);
+    }
+    dropped.push(date);
+  }
+  return { dropped, keptUnaggregated };
 }
