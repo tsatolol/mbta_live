@@ -333,3 +333,9 @@
 - **稼働時間チェックはやめた**: `/api/health` は IAP の背後にある。稼働時間チェックの ID トークン（Monitoring のサービスエージェント）の audience を、IAP の OAuth クライアントの ID に合わせられない。収集の途絶と集計の遅れは上のログで見られるので、稼働時間チェックは作らない
 - **dev は通知しない**: `alert_notifications_enabled = false`。ポリシーは作るので、Cloud Monitoring の画面で状態を見られる（TR-005 の確認は dev で条件を起こし、画面と、一時的に通知を有効にしたときのメールで確かめる）
 - **未確認（T042 で確かめる）**: 分布の指標の p99 で、0 件・1% などの境界が意図どおりに判定されるか。条件を起こしたときに通知が届くか
+
+## パイプラインの 13 回目の実行（2026-11-03、監視の最初の apply）
+
+- dev の apply で、ログベースの指標と、アラートポリシーのうち 3 つ（収集の途絶、車両 0 件、解析失敗）は作られた。2 つが失敗した
+  - `COMPARISON_GE` は使えない（「only COMPARISON_LT and COMPARISON_GT are supported at present」）。未解決の stop ID のポリシーを `COMPARISON_GT` としきい値 0.999 にした（分布の p99 は、0 件だけなら [0, 1) のバケットの中で 1 未満になる）
+  - 作った直後のログベースの指標を使うポリシーが「Cannot find metric(s) ... could take up to 10 minutes」で失敗した。指標を新しく作ったときだけ 5 分待つ `time_sleep`（hashicorp/time プロバイダ）を指標とポリシーの間に入れた。prod の最初の apply で同じ失敗をすると、plan のファイルと state がずれて cd-prod をやり直せなくなるため
