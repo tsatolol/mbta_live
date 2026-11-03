@@ -274,3 +274,12 @@
   - `hashicorp/setup-terraform` v3 → v4（Node.js 24 が必要になったこと以外の互換性のない変更なし）
   - `pnpm/action-setup` v4 → v6（pnpm 11 / 12 への対応）
   - バージョンは引き続きメジャーバージョンのタグで指定する。SHA での固定と Dependabot の version updates は T047 で見直す
+
+## フェーズ 5 の実装で決めたこと（2026-11-03）
+
+- **cd-prod の流れ**: 承認（Environment `prod` の Required reviewers）→ `github.sha` が main の最新か（`gh api repos/.../commits/main`）→ deployer-prod で認証 → plan して、ハッシュが ci の `prod_plan_hash` と同じかを確かめる → **確かめた plan ファイルをそのまま apply** する（plan と apply の間に変わらないように）→ 新しいマイグレーションがあればバックアップ → migrate → web を `--no-traffic --tag candidate` でデプロイ → candidate の URL でスモークテスト → トラフィックを新しいリビジョンに 100% → 本番の URL でスモークテスト（失敗したら直前のリビジョンに戻して失敗）→ 各ジョブのイメージの更新 → collector の 1 回の実行
+- **戻し先のリビジョン**: candidate をデプロイする前に、トラフィックが 100% のリビジョンを記録しておく。切り替えは `--to-revisions=<新しいリビジョン>=100` で、リビジョンを名前で指定する（`--to-latest` は、途中で別のリビジョンができたときに意図と違うものを指しうるため）
+- **新しいマイグレーションの判定**: prod で最後に成功したデプロイのコミット（`scripts/prod-deployed-sha.sh`）からの差分に `migration.sql` が追加されているか。最初のリリースではデータがないので、バックアップを取らない。`gcloud sql backups create` は `--async` を付けず、完了を待つ
+- **スモークテストのスクリプト**: dev / candidate / 本番の 3 か所で使うので、ID トークンの発行と `pnpm test:smoke` を `scripts/smoke.sh` にまとめた
+- **最初のリリースの例外**: prod の web は Terraform の最初の apply で、そのイメージのリビジョンがトラフィック 100% で作られる。その後の candidate は同じイメージの 2 つ目のリビジョンになる。最初のリリースでは利用者がいないので、段階的な切り替えの効果はないが、流れは同じに動く
+- **未確認（最初の prod へのデプロイで確かめる）**: Cloud Run に直接組み込む IAP が、タグ付きの URL（`https://candidate---web-....a.run.app`）も守るか。守らない場合、candidate の「認証なしは拒否」のテストが失敗してデプロイが止まる（利用者には影響しない）。そのときは candidate のスモークテストの方式を見直す
