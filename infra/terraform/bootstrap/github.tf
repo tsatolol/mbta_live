@@ -140,7 +140,8 @@ resource "github_repository" "this" {
   name       = var.github_repository
   visibility = "public"
 
-  vulnerability_alerts = true
+  # Dependabot alerts は github_repository_vulnerability_alerts で管理する（github_repository の
+  # vulnerability_alerts はプロバイダ 6.12 で非推奨になった。Optional かつ Computed なので、外しても差分は出ない）
 
   security_and_analysis {
     secret_scanning {
@@ -180,4 +181,10 @@ resource "github_repository" "this" {
       web_commit_signoff_required,
     ]
   }
+}
+
+# Dependabot alerts（プロバイダ 6.12 で追加されたリソース。既存の設定を imports.tf で取り込む）
+resource "github_repository_vulnerability_alerts" "this" {
+  repository = github_repository.this.name
+  enabled    = true
 }
