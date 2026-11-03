@@ -290,3 +290,11 @@
 - cd-prod: main の最新の確認、plan のハッシュの照合（ci の plan と一致。ci は空のローカルの state、cd-prod は GCS の空の state で plan したが、ハッシュは同じになった）、apply（Cloud SQL の作成を含めて約 6 分）、バックアップ（最初のリリースなので飛ばした）、migrate、candidate のデプロイ、candidate のスモークテスト、トラフィックの切り替えと本番のスモークテスト、ジョブの更新、collector の 1 回の実行
 - **IAP はタグ付きの URL も守る**: candidate の URL（`https://candidate---web-....a.run.app`）に対するスモークテストで、ID トークン付きの `/api/health` が 200、認証なしは拒否された（未確認だった点を確かめた）
 - 承認から cd-prod の完了まで約 8 分 20 秒（SC-003 の 15 分以内）。2 回目以降は Cloud SQL の作成がないので、さらに短くなる
+
+## T030 の後半と T034 の確認（2026-11-03）
+
+- **T030 の後半**（run #10）: わざと失敗する結合テストを入れた PR は、pr-checks（単体テストだけ）に合格してマージできた。マージ後のパイプラインでは ci の結合テストで失敗し、イメージのビルドも push もされず、cd-dev と cd-prod は skipped（dev にも prod にもデプロイされない）
+- **T034 の (3)**（run #11、cd-prod の 1 回目）: `/api/health` が prod でだけ 503 を返す一時的な変更で、candidate（`web-00006-kic`）のスモークテストが 503 で失敗し、トラフィックを切り替えるステップは動かなかった。利用者は直前のリビジョン（`web-00004-qud`）を使い続け、prod の `/api/health` は 200 のままだった。認証なしのリクエストは candidate でも IAP で拒否された
+- **T034 の (2)**（run #11、cd-prod の再実行）: 手順の想定とは順番が違った。prod の sync-static の Scheduler の一時停止が ci の plan の前に行われていて、承認時の plan に「sync-static の変更（再開）」が入った（承認用のサマリーにも出ていた）。1 回目の cd-prod は承認時と同じ plan だったので apply し、Terraform が Scheduler を元に戻した。再実行では plan が「変更なし」になり、承認時（変更 1 件）とハッシュが違うので「適用しません」で止まった。承認の後に prod の状態が変わると適用されないことは、これで確かめられた
+  - Cloud Scheduler の一時停止（`paused`）は、Terraform の plan で差分として検出される
+- **T034 の (1)**: 古い run の承認（段階 3 の後に確かめる）

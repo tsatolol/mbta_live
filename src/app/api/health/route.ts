@@ -9,14 +9,6 @@ import { errorFields, logger } from "@/lib/log";
 export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<NextResponse> {
-  // T034 の確認用（一時的。確認が終わったら次の PR で外す）: prod でだけ 503 を返し、candidate のスモークテストが
-  // 失敗したときにトラフィックが切り替わらないことを確かめる。ci のコンテナの起動確認と dev では APP_ENV が prod ではないので通る
-  if (process.env.APP_ENV === "prod") {
-    return NextResponse.json(
-      { status: "error", checkedAt: new Date().toISOString() },
-      { status: 503, headers: { "cache-control": "no-store" } },
-    );
-  }
   const result = await checkHealth(getDb(), systemClock);
   if (!result.ok) {
     logger.error("ヘルスチェックで DB に接続できませんでした", errorFields(result.error));
