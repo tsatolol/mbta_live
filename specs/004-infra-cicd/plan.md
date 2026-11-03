@@ -61,7 +61,7 @@ dev と prod の違い（間隔、保持期間、Cloud SQL の設定など）は
 ├─ Artifact Registry: mbta-live (イメージは1つ)   │
 │    └─ dev の Cloud Run サービスエージェントに reader を付与 ──▶ 同じイメージを pull
 ├─ GCS: Terraform state (prod)                  ├─ GCS: Terraform state (dev)
-├─ WIF pool/provider (GitHub)                   ├─ WIF pool/provider (GitHub)
+├─ WIF pool: github（deployer）, github-ci       ├─ WIF pool: github（deployer）
 ├─ SA: ci-builder（push と plan の読み取り）       │
 ├─ SA: deployer-prod, smoke-tester              ├─ SA: deployer-dev, smoke-tester
 └─ アプリ一式                                     └─ アプリ一式

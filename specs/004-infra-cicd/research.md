@@ -141,7 +141,7 @@
 
 ### 認証と権限
 
-- **WIF の絞り込み**: deployer は OIDC トークンの `sub` クレーム（`repo:tsatolol/mbta_live:environment:<dev|prod>`）で、ci-builder は `repo:tsatolol/mbta_live:ref:refs/heads/main`（environment のないジョブ）で絞る。属性のマッピングに `environment` を足さずに済む
+- **WIF の絞り込み**: 最初は OIDC トークンの `sub` クレーム（deployer は `repo:tsatolol/mbta_live:environment:<dev|prod>`、ci-builder は `repo:tsatolol/mbta_live:ref:refs/heads/main`）で 1 つの principal に絞った。最初のパイプラインの実行で、ci-builder の利用が `iam.serviceAccounts.getAccessToken` で拒否された（トークンの交換は通り、SA の付与と一致しなかった）。`sub` の形に頼らない方式に変えた（下の「パイプラインの最初の実行」）
 - **ci の plan**: contracts/pipeline.md では ci の GCP の認証は ci-builder だけなので、ci-builder に dev / prod の読み取り（`roles/viewer`、`roles/iam.securityReviewer`、`roles/serviceusage.serviceUsageConsumer`、state のバケットの `objectViewer`）を付けた。plan は `-lock=false` で実行する（ロックのオブジェクトを書かない）。deployer は environment のジョブでしか使えないので、ci からは使えない
 - **deployer の権限**: modules/app の apply とデプロイに要るロール（`run.admin`、`cloudsql.admin`、`secretmanager.admin`、`cloudscheduler.admin`、`iap.admin`、`iam.serviceAccountAdmin`、`iam.serviceAccountUser`、`resourcemanager.projectIamAdmin`、`monitoring.editor`、`logging.configWriter`）。実行用の SA とその権限を modules/app で作るので `projectIamAdmin` が要る。deployer-prod は承認後のジョブでしか使えないことで守る
 - **予算アラート（T037）**: 予算は請求先アカウントのリソースなので、deployer にはプロジェクトの権限だけでは足りない。T037 で、bootstrap に置くか deployer に請求先アカウントの権限を付けるかを決める
@@ -219,3 +219,13 @@
 - smoke-tester の ID トークンの audience。Cloud Run に直接組み込む IAP では、サービスの URL を audience にした ID トークンで通れるはず。通れなければ research.md に記録して直す
 - WIF の認証情報で `gcloud auth print-identity-token --impersonate-service-account` が使えるか
 - envs の最初の apply（Cloud SQL の作成に 10 分ほどかかる）と、その時点で Scheduler が collector を起動した場合の失敗（マイグレーションの前なので失敗するが、次の回からは成功する）
+
+## パイプラインの最初の実行（2026-11-03、run #1）
+
+- ci: lint からコンテナの起動確認まで合格した。`docker build`（約 1 分）とコンテナの起動確認（migrate、フィクスチャでの sync-static と collector、`/api/health`）が、開発環境では試せなかった分も含めて動くことを確かめた。マイグレーションの互換性テストは、prod へのデプロイがまだないので飛ばした
+- 失敗: イメージの push の前の、ci-builder としての認証で `Permission 'iam.serviceAccounts.getAccessToken' denied`。トークンの交換（attribute condition）は通っており、`sub` で絞った SA の付与（`principal://.../subject/repo:...:ref:refs/heads/main`）が実際のトークンと一致しなかった
+- **対応**: `sub` の形に頼らず、pool を分けて provider の attribute condition で絞り、SA には pool 全体（`principalSet://.../workloadIdentityPools/<pool>/*`）を付ける
+  - pool `github`（dev / prod の各プロジェクト）: 条件は「このリポジトリの main」かつ「`environment` クレームがその環境」。deployer-<env> だけを付ける
+  - pool `github-ci`（prod のプロジェクト。新規）: 条件は「このリポジトリの main」。ci-builder だけを付ける。GitHub の variable `CI_WIF_PROVIDER` はこの provider に変わる
+  - environment のないジョブは `environment` クレームがないので、pool `github` の条件を満たさない（deployer を使えない）
+- 警告: `google-github-actions/auth@v2`、`setup-gcloud@v2`、`pnpm/action-setup@v4` が Node.js 20 向けで、Node.js 24 で強制的に動かされている。T047 で新しいメジャーバージョンに上げる

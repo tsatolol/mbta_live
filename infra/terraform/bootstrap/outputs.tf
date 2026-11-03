@@ -19,8 +19,11 @@ output "artifact_registry" {
 }
 
 output "workload_identity_providers" {
-  description = "環境ごとの WIF provider"
-  value       = { for env in local.envs : env => google_iam_workload_identity_pool_provider.github[env].name }
+  description = "WIF provider（環境ごとの deployer 用と、ci-builder 用）"
+  value = merge(
+    { for env in local.envs : env => google_iam_workload_identity_pool_provider.github[env].name },
+    { ci = google_iam_workload_identity_pool_provider.github_ci.name },
+  )
 }
 
 output "service_accounts" {
