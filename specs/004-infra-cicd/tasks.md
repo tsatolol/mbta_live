@@ -100,7 +100,7 @@ description: "004 インフラと CI/CD の実装タスク"
 - [X] T027 [US2] `ci` ジョブに Terraform の検査と plan を加える（TR-001）: `terraform fmt -check` / `validate`、dev と prod の `terraform plan`（それぞれの deployer の権限で読み取りだけ。plan ファイルは artifact にしない）、prod の plan の `resource_changes` のハッシュを outputs `prod_plan_hash` に出す（research.md）: `.github/workflows/pipeline.yml`、`scripts/plan-hash.sh`
 - [X] T028 [US2] `ci` ジョブに承認用のサマリーを加える（FR-021）: prod で動いているコミットから今回までのコミット一覧、追加されるマイグレーションのファイル名、dev / prod の plan の要約（変更・追加・削除の件数と対象のリソース。秘密の値は出さない）、テストとセキュリティ検査の結果を `$GITHUB_STEP_SUMMARY` に書く: `scripts/approval-summary.sh`、`scripts/plan-summary.sh`
 - [X] T029 [US2] `cd-dev` ジョブを書く: `environment: dev`、`needs: ci`、`concurrency: deploy-dev`。deployer-dev として WIF で認証 → `terraform apply`（envs/dev）→ migrate Job をそのイメージ（ダイジェスト指定）で実行 → web をデプロイ（トラフィック 100%）→ collector / sync-static / aggregate の Job のイメージを更新 → T023 のスモークテスト → collector Job を 1 回実行（`--wait`）: `.github/workflows/pipeline.yml`
-- [ ] T030 [US2] 確認: 小さな変更を PR → マージし、CI が 1 回だけ動いて dev にデプロイされ、スモークテストが成功することを確かめる。テストを 1 つ失敗させた PR では、dev にも prod にもデプロイされないことを確かめる（SC-002 の所要時間も記録する）
+- [ ] T030 [US2] 確認（前半は run #6 で確かめた: CI が 1 回動いて dev にデプロイされ、スモークテストと collector の実行が成功。マージから約 5 分 20 秒。research.md。後半の「テストを 1 つ失敗させた PR」は未実施）: 小さな変更を PR → マージし、CI が 1 回だけ動いて dev にデプロイされ、スモークテストが成功することを確かめる。テストを 1 つ失敗させた PR では、dev にも prod にもデプロイされないことを確かめる（SC-002 の所要時間も記録する）
 
 **チェックポイント**: US1 と US2 が動く。dev で収集が始まる
 
