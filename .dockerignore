@@ -1,0 +1,22 @@
+# ビルドに要らないもの・秘密の値を含みうるものをイメージに入れない
+.git
+.github
+.next
+.env
+.env.*
+!.env.example
+node_modules
+dist
+coverage
+src/generated
+*.tsbuildinfo
+infra
+docs
+specs
+.specify
+.claude
+tests
+docker
+docker-compose.yml
+Dockerfile
+.dockerignore

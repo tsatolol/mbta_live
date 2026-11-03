@@ -1,4 +1,4 @@
-# アプリ一式のモジュールが使うプロバイダ。バージョンの固定は呼び出す側（envs/dev, envs/prod）と合わせる
+# Terraform とプロバイダのバージョン（2026-11 時点の最新安定版に合わせる）
 terraform {
   required_version = "~> 1.17"
 
@@ -7,7 +7,7 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 8.9"
     }
-    # DB パスワードの生成（T011）に使う
+    # DB のパスワードを作る（ephemeral なので state に残らない）
     random = {
       source  = "hashicorp/random"
       version = "~> 3.9"

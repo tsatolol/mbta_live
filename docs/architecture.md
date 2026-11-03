@@ -35,12 +35,13 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 
 | | dev | prod |
 |---|---|---|
-| GCP プロジェクト | `<dev-project-id>`（未定） | `<prod-project-id>`（未定） |
+| GCP プロジェクト | `<dev-project-id>`（未定。bootstrap の変数 `project_ids` で決める） | `<prod-project-id>`（未定） |
 | デプロイ | main への push で自動 | dev 成功後、承認されてから |
 | collector の間隔 | 5 分（`*/5 * * * *`） | 1 分（`* * * * *`） |
 | sync-static / aggregate | 毎日 04:00 / 04:30 ET | 同左 |
 | 生データの保持 | 3 日 | 28 日 |
 | Cloud SQL | `db-f1-micro`、バックアップ 1 日、`deletion_protection=false` | `db-f1-micro`、バックアップ 7 日、`deletion_protection=true` |
+| 値の置き場所 | `infra/terraform/envs/dev/terraform.tfvars` | `infra/terraform/envs/prod/terraform.tfvars` |
 | IAP で許可するユーザー | 開発者 | 利用者（開発者を含む） |
 | MBTA API キー | dev 用 | prod 用 |
 | 予算アラート | 小さめ | 本番相当 |
@@ -52,6 +53,7 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 ├── CLAUDE.md
 ├── README.md
 ├── Dockerfile               # Web とジョブ共通のイメージ（Next.js standalone + 各ジョブのバンドル + Prisma CLI）
+├── scripts/                 # フィクスチャの記録、ジョブのバンドル（build-jobs.mjs）、インフラの検査
 ├── docker-compose.yml       # ローカル用 PostgreSQL 16
 ├── prisma.config.ts
 ├── prisma/
@@ -71,8 +73,7 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 │   └── jobs/
 │       ├── collect.ts       # collector（001）
 │       ├── sync-static.ts   # 静的データの同期（001）
-│       ├── aggregate.ts     # 日次集計 + パーティションの作成と削除（003 / 001）
-│       └── migrate.ts       # prisma migrate deploy（004）
+│       └── aggregate.ts     # 日次集計 + パーティションの作成と削除（003 / 001）
 ├── tests/
 │   ├── unit/                # 純粋関数（Vitest）
 │   ├── integration/         # 本物の PostgreSQL を使うテスト（Vitest）
@@ -85,6 +86,20 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 ├── .specify/                # spec-kit（憲章、テンプレート、スクリプト）
 └── specs/                   # spec-kit の feature ごとの文書
 ```
+
+## イメージの起動コマンド
+
+イメージは 1 つ（`Dockerfile`）。既定のコマンドは web で、Cloud Run Jobs は command / args で上書きする（`infra/terraform/modules/app/jobs.tf`）。作業ディレクトリは `/app`。
+
+| 用途 | コマンド | ローカルで同じ処理 |
+|---|---|---|
+| web | `node server.js`（既定。`PORT=8080`） | `pnpm dev` / `pnpm start` |
+| collector | `node jobs/collect.mjs` | `pnpm job:collect` |
+| sync-static | `node jobs/sync-static.mjs` | `pnpm job:sync-static` |
+| aggregate | `node jobs/aggregate.mjs` | `pnpm job:aggregate` |
+| migrate | `node migrate/node_modules/prisma/build/index.js migrate deploy --config migrate/prisma.config.ts` | `pnpm db:migrate` |
+
+`jobs/*.mjs` は `src/jobs/` を依存ごと 1 ファイルにまとめたもの（`pnpm build:jobs`）。イメージの中身と決めた理由は `specs/004-infra-cicd/research.md` の「イメージの中身」。
 
 Web とジョブは同じ Next.js プロジェクト・同じイメージに入れる。MBTA と DB にアクセスするコードは `src/lib/mbta/`・`src/lib/db/` にまとめ、`import "server-only"` でクライアントのバンドルに入らないようにする。
 

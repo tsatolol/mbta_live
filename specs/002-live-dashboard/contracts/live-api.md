@@ -13,7 +13,7 @@
 | `GET /api/static/routes` | なし | 路線と路線形状（encoded polyline を GeoJSON に変換済み） |
 | `GET /api/static/stops` | `route`（任意） | 親駅の一覧（路線ごと） |
 | `GET /api/status` | なし | 直近の `collector_runs`、レート制限の残量、テーブルごとの行数 |
-| `GET /api/health` | なし | DB に接続できるか、最後に収集に成功した時刻。Cloud Run のヘルスチェックに使う |
+| `GET /api/health` | なし | DB に接続できるか、最後に収集に成功した時刻、前の運行日の集計が成功しているか。Cloud Run の起動確認、スモークテスト、監視に使う。DB に接続できなければ 503。004 で先に作った（応答の型は `src/lib/api-schemas/health.ts`） |
 
 ## 読むテーブル
 

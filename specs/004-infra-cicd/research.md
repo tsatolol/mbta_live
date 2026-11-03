@@ -124,3 +124,48 @@
 - **検討した代替案**: GCP プロジェクトと GitHub の設定は画面で作る（当初案。手作業と写し間違いが多い）
 - **未確認**: 開発環境からは Terraform のレジストリに接続できず、GitHub プロバイダの最新版と、ルールセットや `security_and_analysis` の書式を手元で `terraform validate` できない（Google プロバイダはローカルのミラーで検証できる）。T009 は GitHub プロバイダのドキュメントに沿って書き、T010 の apply の前の `terraform plan` で確かめる
 
+
+## フェーズ 2 の実装で決めたこと（2026-11-03）
+
+### イメージの中身
+
+- **決定**: 実行イメージ（`node:24-bookworm-slim`、非 root の `node` ユーザー）に、次の 3 つを入れる
+  - `/app/server.js` ほか: Next.js の standalone 出力（web）。node_modules は Next.js がたどった分だけ（約 63MB）
+  - `/app/jobs/*.mjs`: 各ジョブを esbuild で依存ごと 1 ファイルにまとめたもの（各 約 6MB。`pnpm build:jobs`）。node_modules なしで動く。`server-only` は `react-server` の条件で空のモジュールとして取り込む
+  - `/app/migrate/`: lockfile どおりに入れた本番用の依存から、Prisma CLI に要らない `next`・`@next/*`・`@img/*`（sharp）・`@prisma/client` を除いたもの（約 310MB）と、`prisma/`・`prisma.config.ts`
+- **理由**: 本番用の依存をそのまま入れると 821MB になる（`next` と `@next/swc` の 2 種類で約 400MB）。web は standalone で足り、ジョブはまとめれば依存がいらない。Prisma CLI だけは依存が多く（Prisma Studio など）まとめられないので、lockfile どおりに入れてから大きなものを除いた
+- `prisma` は migrate Job が実行時に使うので `dependencies` に移した。esbuild は `devDependencies` に明示した
+- **検討した代替案**: ジョブを `tsx` で動かす（tsx と全依存がイメージに要る）、migrate 用に別の小さな lockfile を持つ（Prisma のバージョンを 2 か所で管理することになる）
+- **確かめたこと**: 開発環境では Docker のデーモンが使えず、`docker build` は試せていない。代わりに各ステージの手順を手元で再現し、(1) まとめたジョブを node_modules のないディレクトリで実行して、フィクスチャで sync-static と collector が成功する、(2) 除いた後の依存で `prisma migrate deploy --config migrate/prisma.config.ts` が別のディレクトリから成功する、(3) standalone の `server.js` で `/api/health` が DB に接続できれば 200、できなければ 503 を返す、を確かめた。イメージ全体は T024 のコンテナの起動確認で確かめる
+- **フィクスチャ**: イメージにはテスト用のフィクスチャを入れない。T024 で collector をフィクスチャで動かすときは、`tests/fixtures/mbta` をコンテナにマウントする
+
+### 認証と権限
+
+- **WIF の絞り込み**: deployer は OIDC トークンの `sub` クレーム（`repo:tsatolol/mbta_live:environment:<dev|prod>`）で、ci-builder は `repo:tsatolol/mbta_live:ref:refs/heads/main`（environment のないジョブ）で絞る。属性のマッピングに `environment` を足さずに済む
+- **ci の plan**: contracts/pipeline.md では ci の GCP の認証は ci-builder だけなので、ci-builder に dev / prod の読み取り（`roles/viewer`、`roles/iam.securityReviewer`、`roles/serviceusage.serviceUsageConsumer`、state のバケットの `objectViewer`）を付けた。plan は `-lock=false` で実行する（ロックのオブジェクトを書かない）。deployer は environment のジョブでしか使えないので、ci からは使えない
+- **deployer の権限**: modules/app の apply とデプロイに要るロール（`run.admin`、`cloudsql.admin`、`secretmanager.admin`、`cloudscheduler.admin`、`iap.admin`、`iam.serviceAccountAdmin`、`iam.serviceAccountUser`、`resourcemanager.projectIamAdmin`、`monitoring.editor`、`logging.configWriter`）。実行用の SA とその権限を modules/app で作るので `projectIamAdmin` が要る。deployer-prod は承認後のジョブでしか使えないことで守る
+- **予算アラート（T037）**: 予算は請求先アカウントのリソースなので、deployer にはプロジェクトの権限だけでは足りない。T037 で、bootstrap に置くか deployer に請求先アカウントの権限を付けるかを決める
+
+### 秘密の値
+
+- **DB のパスワード**: ephemeral の `random_password` で作り、write-only の引数（`google_sql_user.password_wo`、`google_secret_manager_secret_version.secret_data_wo`）で入れる。plan と state にパスワードが残らないので、ci-builder が state を読めても問題がない。パスワードを変えるときは `db_password_version` を上げる
+- **MBTA API キー**: Secret Manager の入れ物には値（バージョン）がないので、そのままジョブから参照するとデプロイが失敗しうる。変数 `mbta_api_key_enabled`（既定 false）で、値を入れてからジョブに渡す。キーがなくても収集は動く（キーなしの上限 20 req/分）
+- **IAP で許可するユーザー**: メールアドレスが plan の出力（public リポジトリの Actions のログ）に出ないよう、`for_each` のキーにせず、`google_iap_web_cloud_run_service_iam_binding` の `members`（sensitive）で渡す
+
+### Terraform の構成
+
+- **envs の backend**: プロジェクト ID をコミットしないので、bucket を `terraform init -backend-config="bucket=<プロジェクト ID>-tfstate"` で渡す
+- **envs のプロジェクト ID とイメージ**: `TF_VAR_project_id`（Environment の variable `GCP_PROJECT_ID`）と `TF_VAR_image`（CI でビルドしたダイジェスト）で渡す。イメージは最初に作るときだけ使い、以降の変更は `ignore_changes` で無視する（パイプラインが gcloud で更新する）。プレースホルダーのイメージで作ると、Scheduler が先に動いたときにジョブが失敗するため
+- **Artifact Registry**: 古いイメージの自動削除（cleanup policy）は入れない。prod で動いているイメージを消すと、新しいインスタンスを起動できなくなる。容量が気になったら、prod のデプロイ履歴を見て消す仕組みを別に考える
+- **ステートレスなリソースの削除保護**: Cloud Run のサービスとジョブは `deletion_protection = false`（作り直せる）。Cloud SQL だけ prod で守る
+- **GitHub のリポジトリの設定**: `github_repository` を import し、`vulnerability_alerts` と `security_and_analysis` だけを管理する。それ以外の項目はプロバイダの既定値で画面の設定を上書きしないよう `ignore_changes` に入れた。Dependency graph は API で設定できないので画面の設定のまま
+- **ルールセットの取り込み**: import のときにルールセットの ID が要るので、変数 `main_ruleset_id` で渡す
+
+### 確かめたこと・未確認のこと
+
+- 開発環境で、`terraform fmt -check`、modules/app と envs の `terraform validate`、bootstrap の GCP の部分（GitHub の部分を除いたもの）の `terraform validate` が通った。さらに `terraform test` のモックのプロバイダで、envs/prod と bootstrap（GCP の部分）の plan と apply が通ることを確かめた（値の形や依存関係の誤りを見つけるため。GCP の API の挙動は確かめられない）
+- 未確認（T010 と T017 の最初の apply で確かめる）
+  - GitHub プロバイダ（`~> 6.6` とした）の最新版と、`github.tf` の書式
+  - 組織のないプロジェクトで、Cloud Run に直接組み込む IAP（`iap_enabled`）が使えるか。使えなければ外部 HTTPS LB + Serverless NEG + IAP に切り替える
+  - IAP のサービスエージェント（`service-<番号>@gcp-sa-iap.iam.gserviceaccount.com`）と、dev の Cloud Run のサービスエージェントが、IAM の付与の時点で作られているか。作られていなければ、少し待って apply し直す
+  - bootstrap の apply で、ユーザーの認証情報に割り当てのプロジェクト（quota project）が要ると言われるか。言われたら、prod のプロジェクトができた後に `gcloud auth application-default set-quota-project` で設定して apply し直す
