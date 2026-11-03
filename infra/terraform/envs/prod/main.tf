@@ -12,8 +12,6 @@ module "app" {
   project_id               = var.project_id
   region                   = var.region
   image                    = var.image
-  iap_members              = var.iap_members
-  smoke_tester_email       = "smoke-tester@${var.project_id}.iam.gserviceaccount.com"
   collector_schedule       = var.collector_schedule
   raw_retention_days       = var.raw_retention_days
   db_backup_retained_count = var.db_backup_retained_count

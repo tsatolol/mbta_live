@@ -7,7 +7,7 @@
 - MBTA API キーを 2 つ（dev 用 / prod 用。https://api-v3.mbta.com で登録）
 - GitHub の fine-grained personal access token（対象はこのリポジトリだけ、権限は Administration・Environments・Secrets・Variables の読み書き。bootstrap の apply が終わったら削除する）
 
-GitHub の Environment・variables・secrets・ルールセット・セキュリティ設定は bootstrap が作るので、画面での操作はいらない。
+GitHub の Environment・variables・ルールセット・セキュリティ設定と、IAP で許可するユーザー・監視の通知先は bootstrap が作るので、画面での操作はいらない。
 
 ## 2. bootstrap（最初に一度だけ）
 
@@ -15,8 +15,8 @@ GitHub の Environment・variables・secrets・ルールセット・セキュリ
 gcloud auth application-default login            # 請求先アカウントのユーザー権限がある Google アカウント
 export GITHUB_TOKEN=<fine-grained personal access token>
 export TF_VAR_billing_account=<請求先アカウントの ID>
-export TF_VAR_iap_members='{"dev":["user:you@example.com"],"prod":["user:you@example.com"]}'   # IAP で許可するユーザー（GitHub の Environment の secrets に入る）
-export TF_VAR_alert_email=<監視の通知先>
+export TF_VAR_iap_members='{"dev":["user:you@example.com"],"prod":["user:you@example.com"]}'   # IAP で許可するユーザー（プロジェクト単位で付ける）
+export TF_VAR_alert_email=<監視の通知先>                  # 各プロジェクトの通知チャンネルになる
 
 cd infra/terraform/bootstrap
 cp terraform.tfvars.example terraform.tfvars   # プロジェクト ID と main のルールセットの ID を書く（このファイルはコミットしない）

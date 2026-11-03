@@ -1,0 +1,250 @@
+# リリース用のパイプライン（specs/004-infra-cicd/contracts/pipeline.md の「pipeline.yml」）
+# main への push（= PR のマージ）ごとに、ci を 1 回 → cd-dev（承認なし）→ cd-prod（承認後。フェーズ 5 で追加）。
+# リポジトリは public なので、ログ・ジョブサマリーに秘密の値を出さない。plan ファイルは artifact にしない。
+name: pipeline
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  REGION: us-east4
+  TERRAFORM_VERSION: 1.17.1
+  # Terraform のチェックポイント（バージョン確認の通信）を止める
+  CHECKPOINT_DISABLE: "1"
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: pipeline-main
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      # Workload Identity Federation（ci-builder）
+      id-token: write
+      # prod で動いているコミット（Environment prod のデプロイ履歴）を読む
+      deployments: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      PG_BASE_URL: postgresql://postgres:postgres@localhost:5432
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mbta_live_test
+      GH_TOKEN: ${{ github.token }}
+    outputs:
+      image: ${{ steps.push.outputs.image }}
+      prod_plan_hash: ${{ steps.plan.outputs.prod_plan_hash }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # コミット一覧・マイグレーションの差分・互換性テスト・Gitleaks（履歴全体）に使う
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create test databases
+        run: |
+          for db in mbta_live_test mbta_live_compat mbta_live_container; do
+            psql "$PG_BASE_URL/postgres" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE $db"
+          done
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+      - name: Integration tests
+        run: pnpm test:integration
+
+      - name: Replay tests
+        run: pnpm test:replay
+
+      - name: Migration compatibility (TR-003)
+        # 新しいマイグレーションを適用した DB に、prod で動いているコミットの結合テストを実行する
+        run: scripts/check-migration-compat.sh "$PG_BASE_URL/mbta_live_compat"
+
+      - name: Dependency audit
+        run: pnpm audit --audit-level high
+
+      - name: Secret scan (Gitleaks, full history)
+        # リポジトリの履歴全体を走査する。設定は .gitleaks.toml。見つかった値はログで伏せ字にする
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" \
+            ghcr.io/gitleaks/gitleaks:v8.24.3 \
+            git /repo --config /repo/.gitleaks.toml --redact --no-banner
+
+      - name: Build image
+        run: docker build -t "mbta-live:${{ github.sha }}" .
+
+      - name: Check container (TR-006)
+        run: scripts/check-container.sh "mbta-live:${{ github.sha }}" "$PG_BASE_URL/mbta_live_container"
+
+      - name: Authenticate to Google Cloud (ci-builder)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.CI_WIF_PROVIDER }}
+          service_account: ${{ vars.CI_BUILDER_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Push image
+        id: push
+        env:
+          REPOSITORY: ${{ vars.ARTIFACT_REGISTRY }}
+        run: |
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          tag="$REPOSITORY/mbta-live:${{ github.sha }}"
+          docker tag "mbta-live:${{ github.sha }}" "$tag"
+          docker push "$tag"
+          # dev と prod には、タグではなくダイジェストでデプロイする（同じイメージであることを保証する）
+          image="$(docker inspect --format '{{index .RepoDigests 0}}' "$tag")"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "イメージ: $image"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          # plan の出力をそのまま出さないよう、ラッパーを使わない
+          terraform_wrapper: false
+
+      - name: Terraform fmt / validate (TR-001)
+        run: |
+          pnpm infra:fmt
+          pnpm infra:validate
+
+      - name: Terraform plan (dev / prod)
+        id: plan
+        env:
+          TF_VAR_image: ${{ steps.push.outputs.image }}
+        run: |
+          for env in dev prod; do
+            dir="infra/terraform/envs/$env"
+            terraform -chdir="$dir" init -input=false -no-color >/dev/null
+            # ci-builder は読み取りだけなので、ロックを取らない。plan の全文はログに出さない（要約だけをサマリーに出す）
+            terraform -chdir="$dir" plan -input=false -lock=false -no-color -out="$RUNNER_TEMP/$env.tfplan" >/dev/null
+            terraform -chdir="$dir" show -json "$RUNNER_TEMP/$env.tfplan" > "$RUNNER_TEMP/$env.plan.json"
+            echo "== $env"
+            scripts/plan-summary.sh "$RUNNER_TEMP/$env.plan.json"
+          done
+          echo "prod_plan_hash=$(scripts/plan-hash.sh "$RUNNER_TEMP/prod.plan.json")" >> "$GITHUB_OUTPUT"
+
+      - name: Approval summary (FR-021)
+        run: scripts/approval-summary.sh "$RUNNER_TEMP/dev.plan.json" "$RUNNER_TEMP/prod.plan.json" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove plan files
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/*.tfplan "$RUNNER_TEMP"/*.plan.json
+
+  cd-dev:
+    name: cd-dev
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: dev
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      IMAGE: ${{ needs.ci.outputs.image }}
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Authenticate to Google Cloud (deployer-dev)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform apply (envs/dev)
+        env:
+          TF_VAR_image: ${{ env.IMAGE }}
+        run: |
+          terraform -chdir=infra/terraform/envs/dev init -input=false -no-color
+          terraform -chdir=infra/terraform/envs/dev apply -input=false -auto-approve -no-color
+
+      - name: Migrate
+        run: |
+          gcloud run jobs update migrate --image="$IMAGE" --project="$PROJECT" --region="$REGION" --quiet
+          gcloud run jobs execute migrate --project="$PROJECT" --region="$REGION" --wait
+
+      - name: Deploy web
+        run: gcloud run deploy web --image="$IMAGE" --project="$PROJECT" --region="$REGION" --quiet
+
+      - name: Update jobs
+        run: |
+          for job in collector sync-static aggregate; do
+            gcloud run jobs update "$job" --image="$IMAGE" --project="$PROJECT" --region="$REGION" --quiet
+          done
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Smoke test (TR-002)
+        env:
+          SMOKE_TESTER_SA: ${{ vars.SMOKE_TESTER_SA }}
+        run: |
+          url="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format='value(status.url)')"
+          # smoke-tester の ID トークンで IAP を通る。トークンはログで伏せ字にする
+          token="$(gcloud auth print-identity-token --impersonate-service-account="$SMOKE_TESTER_SA" \
+            --audiences="$url" --include-email)"
+          echo "::add-mask::$token"
+          SMOKE_BASE_URL="$url" SMOKE_ID_TOKEN="$token" pnpm test:smoke
+
+      - name: Run collector once
+        # Secret Manager、DB、MBTA API への接続をまとめて確かめる
+        run: gcloud run jobs execute collector --project="$PROJECT" --region="$REGION" --wait

@@ -67,10 +67,10 @@ resource "google_cloud_run_v2_service" "web" {
         mount_path = "/cloudsql"
       }
 
-      # DB に接続できないリビジョンにはトラフィックを流さない
+      # 起動の確認はポートが開くことだけにする。/api/health（DB への接続）はデプロイ後のスモークテストで確かめる。
+      # 最初の apply ではまだマイグレーションが適用されていないので、/api/health を使うと web を作れないため（research.md）
       startup_probe {
-        http_get {
-          path = "/api/health"
+        tcp_socket {
           port = 8080
         }
         period_seconds    = 5

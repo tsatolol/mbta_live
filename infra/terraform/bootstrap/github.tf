@@ -67,23 +67,8 @@ resource "github_actions_environment_variable" "env" {
   value         = each.value.value
 }
 
-resource "github_actions_environment_secret" "iap_members" {
-  for_each = local.envs
-
-  repository  = var.github_repository
-  environment = github_repository_environment.env[each.key].environment
-  secret_name = "TF_VAR_iap_members"
-  value       = jsonencode(var.iap_members[each.key])
-}
-
-resource "github_actions_environment_secret" "alert_email" {
-  for_each = local.envs
-
-  repository  = var.github_repository
-  environment = github_repository_environment.env[each.key].environment
-  secret_name = "TF_VAR_alert_email"
-  value       = var.alert_email
-}
+# Environment の secrets は置かない。IAP で許可するユーザーと通知先は bootstrap が GCP に直接設定する（iap.tf、monitoring.tf）。
+# ci ジョブ（environment なし）が envs の plan を作れるように、envs の入力はリポジトリの中の値だけにしている（research.md）
 
 # ---- リポジトリ全体の variables（ci ジョブが使う）
 

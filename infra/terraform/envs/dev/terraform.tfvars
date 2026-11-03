@@ -1,4 +1,5 @@
 # dev の値（公開してよい値だけ。docs/architecture.md の「環境の違い」）
+project_id               = "mbta-live-dev-76bt"
 collector_schedule       = "*/5 * * * *"
 raw_retention_days       = 3
 db_backup_retained_count = 1

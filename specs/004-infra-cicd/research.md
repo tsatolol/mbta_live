@@ -173,3 +173,49 @@
 - bootstrap をローカルで apply し、dev（`mbta-live-dev-76bt`）と prod（`mbta-live-prod-76bt`）のプロジェクト、WIF、SA、GitHub の設定が作られた。エラーはなかった（quota project の設定も、サービスエージェントを待つ apply のやり直しも要らなかった）
 - GitHub プロバイダは 6.13.0 が入った。`versions.tf` を `~> 6.13` にした
 - 警告: `github_actions_environment_secret` の `plaintext_value` が非推奨（「Use value.」）。`value` に書き換えた。次に bootstrap を apply するとき、plan で secrets の差分がどう出るかを確かめる
+
+## フェーズ 4 の実装で決めたこと（2026-11-03）
+
+### ci で envs の plan を作るための入力の置き場所
+
+- **問題**: ci ジョブは environment を持たないので、GitHub の Environment の variables（`GCP_PROJECT_ID`）と secrets（`TF_VAR_iap_members`）を読めず、dev / prod の plan を作れない
+- **決定**: envs の入力を、イメージ（`TF_VAR_image`）を除いてリポジトリの中の値だけにする
+  - プロジェクト ID は公開してよい値なので、`envs/<env>/terraform.tfvars` と `backend.tf`（state のバケット名）に書く
+  - IAP で許可するユーザーは、bootstrap がプロジェクト単位の `roles/iap.httpsResourceAccessor`（`google_project_iam_binding`）で付ける（`bootstrap/iap.tf`）。メールアドレスを envs の入力にも plan の出力にも置かずに済む。smoke-tester もここで付ける
+  - 監視の通知先は、bootstrap が各プロジェクトに通知チャンネル（表示名 `mbta-live alerts`）を作る（`bootstrap/monitoring.tf`）。T040〜T041 のアラートポリシーは、表示名でデータソースから探す
+  - GitHub の Environment の secrets（`TF_VAR_iap_members`、`TF_VAR_alert_email`）はいらなくなったので、bootstrap から外した。次に bootstrap を apply すると削除される
+- **検討した代替案**: リポジトリ全体の secrets にする（Environment で守る意味がなくなる）、plan だけを行う承認なしの Environment を足す（設定が増える）
+- **未確認**: Cloud Run に直接組み込む IAP で、プロジェクト単位の IAP のアクセス権が効くか（IAM の継承で効くはず）。T029 の最初のスモークテストで確かめる
+
+### web の起動の確認
+
+- **決定**: Cloud Run の起動の確認（startup probe）は TCP にする。`/api/health`（DB への接続とテーブルの読み取り）はデプロイ後のスモークテストで確かめる
+- **理由**: 最初の apply では、web を作る時点でマイグレーションがまだ適用されておらず、`/api/health` が 503 になって web を作れないため。DB に接続できないリビジョンは、dev ではスモークテストで、prod ではトラフィックを切り替える前の candidate のスモークテストで止まる
+
+### マイグレーションの互換性テスト（TR-003）
+
+- **方式**: prod で最後に成功したデプロイ（GitHub の Deployments API。environment `prod`）のコミットを `git worktree` で取り出す。新しいマイグレーションを適用した DB に対して、そのコミットの `pnpm test:integration` を `TEST_SKIP_MIGRATE=1` で実行する
+  - `TEST_SKIP_MIGRATE=1` のとき、テストの開始時に DB を作り直さない（古いコミットのマイグレーションで上書きしない）。drift のテストは、DB が新しいスキーマなので差分が出るのが正しく、飛ばす
+  - この仕組みは、この変更を含むコミットが prod に出た後から有効になる（古いコミットのテストがこのフラグを知っている必要があるため）
+  - prod へのデプロイがまだないとき、新しいマイグレーションがないときは飛ばす
+- **確かめたこと**: 開発環境で、列を足すマイグレーション（expand）では古いコミットの結合テストが通り、古いコードが使う列を消すマイグレーション（contract を先にした誤り）では 29 件が失敗してスクリプトが失敗することを確かめた
+
+### plan のハッシュ（FR-007）
+
+- **方式**: `terraform show -json` の `resource_changes` のうち no-op 以外の、アドレス・操作・`before`・`after`・`after_unknown` を、キーを並べ替えた JSON にして SHA-256 を取る（`scripts/plan-hash.sh`）
+- 同じ設定と state からは同じハッシュになり、変更内容が変わればハッシュも変わることを、開発環境で random プロバイダの plan で確かめた
+- DB のパスワードは write-only の引数なので、plan に値が出ずハッシュにも影響しない。イメージは ci と cd-prod で同じダイジェストを渡す
+- ci の plan は ci-builder（読み取りだけ）で `-lock=false` で作る。plan の全文はログに出さず、件数とアドレスの要約（`scripts/plan-summary.sh`）だけを出す
+
+### パイプラインの道具
+
+- Gitleaks（リポジトリ全体）は、gitleaks-action が push のイベントでは push されたコミットしか見ないので、Gitleaks のコンテナイメージ（`ghcr.io/gitleaks/gitleaks:v8.24.3`。PR チェックと同じバージョン）で履歴全体を走査する
+- GCP の認証は `google-github-actions/auth@v2` と `setup-gcloud@v2`、Terraform は `hashicorp/setup-terraform@v3`（Terraform 1.17.1）。PR チェックの actions と同じく、メジャーバージョンのタグで指定した（T047 で見直す）
+- `pnpm test` から smoke を外した（`pnpm test:smoke` で別に実行する）
+
+### 未確認（T030 で、最初のマージのときに確かめる）
+
+- `docker build` とコンテナの起動確認（開発環境に Docker のデーモンがない）
+- smoke-tester の ID トークンの audience。Cloud Run に直接組み込む IAP では、サービスの URL を audience にした ID トークンで通れるはず。通れなければ research.md に記録して直す
+- WIF の認証情報で `gcloud auth print-identity-token --impersonate-service-account` が使えるか
+- envs の最初の apply（Cloud SQL の作成に 10 分ほどかかる）と、その時点で Scheduler が collector を起動した場合の失敗（マイグレーションの前なので失敗するが、次の回からは成功する）

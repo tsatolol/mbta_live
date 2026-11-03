@@ -42,6 +42,11 @@ export default defineConfig({
           hookTimeout: 120_000,
         },
       },
+      {
+        // デプロイ後のスモークテスト。pnpm test には含めない（pnpm test:smoke）
+        extends: true,
+        test: { name: "smoke", include: ["tests/smoke/**/*.test.ts"], testTimeout: 30_000 },
+      },
     ],
   },
 });

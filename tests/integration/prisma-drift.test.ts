@@ -21,7 +21,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("Prisma の drift", () => {
+// マイグレーションの互換性テスト（TEST_SKIP_MIGRATE=1）では、DB が新しいスキーマなので差分が出るのが正しい。飛ばす
+describe.skipIf(process.env.TEST_SKIP_MIGRATE === "1")("Prisma の drift", () => {
   it("子テーブルを作った後も、DB とスキーマの差分がない", async () => {
     expect(await listPartitions(db)).toHaveLength(9);
     const result = await run(

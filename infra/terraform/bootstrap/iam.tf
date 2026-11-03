@@ -2,7 +2,7 @@
 #
 #   ci-builder（prod）       ci ジョブ。イメージの push と、dev / prod の terraform plan（読み取りだけ）
 #   deployer-<env>           cd-<env> と rollback。その環境の apply とデプロイ。environment が一致するジョブだけが使える
-#   smoke-tester（環境ごと） スモークテスト、dev の E2E、稼働時間チェック。IAP のアクセス権だけ（modules/app で付与）
+#   smoke-tester（環境ごと） スモークテスト、dev の E2E、稼働時間チェック。IAP のアクセス権だけ（iap.tf）
 #
 # アプリの実行用の SA（web、ジョブ、Scheduler）は modules/app で作る。
 

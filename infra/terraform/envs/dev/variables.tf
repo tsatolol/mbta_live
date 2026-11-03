@@ -1,8 +1,7 @@
-# プロジェクト ID・イメージ・IAP で許可するユーザーは、パイプラインが環境変数で渡す:
-#   TF_VAR_project_id   … GitHub の Environment の variable GCP_PROJECT_ID（bootstrap が登録）
-#   TF_VAR_image        … CI でビルドしたイメージ（ダイジェスト指定）
-#   TF_VAR_iap_members  … GitHub の Environment の secret（bootstrap が登録）
-# それ以外の環境ごとの値は terraform.tfvars（公開してよい値だけ）。
+# 環境ごとの値は terraform.tfvars（公開してよい値だけ）。イメージだけはパイプラインが環境変数で渡す:
+#   TF_VAR_image … CI でビルドしたイメージ（ダイジェスト指定）
+# 秘密の値・個人の情報（IAP で許可するユーザー、通知先）は envs の入力にしない（bootstrap が GCP に直接設定する）。
+# ci ジョブ（environment なし。Environment の variables / secrets を読めない）でも plan を作れるようにするため
 
 variable "project_id" {
   description = "GCP プロジェクト ID"
@@ -18,12 +17,6 @@ variable "region" {
 variable "image" {
   description = "最初に作るときのイメージ（ダイジェスト指定）。以降はパイプラインが更新する"
   type        = string
-}
-
-variable "iap_members" {
-  description = "IAP で許可するユーザー"
-  type        = list(string)
-  sensitive   = true
 }
 
 variable "collector_schedule" {
