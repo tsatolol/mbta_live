@@ -54,3 +54,17 @@ variable "alert_email" {
   type        = string
   sensitive   = true
 }
+
+variable "iap_oauth_clients" {
+  description = <<-EOT
+    環境ごとの IAP の OAuth クライアント（Cloud Console の Google Auth Platform で作った Web アプリケーションのクライアント）。
+    組織のないプロジェクトでは Google が用意するクライアントを IAP が使えないので、自分で作ったものを設定する（quickstart.md）。
+    作った環境だけを書けばよい。例: { dev = { client_id = "...", client_secret = "..." } }。コミットしない
+  EOT
+  type = map(object({
+    client_id     = string
+    client_secret = string
+  }))
+  default   = {}
+  sensitive = true
+}

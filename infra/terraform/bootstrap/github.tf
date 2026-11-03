@@ -23,6 +23,11 @@ locals {
       }[pair[1]]
     }
   }
+
+  # スモークテストの ID トークンの audience（IAP の OAuth クライアントの ID。秘密の値ではない）。設定した環境だけ
+  iap_client_id_variables = {
+    for env in local.iap_oauth_envs : env => nonsensitive(var.iap_oauth_clients[env].client_id)
+  }
 }
 
 # ---- Environment
@@ -56,6 +61,15 @@ resource "github_repository_environment_deployment_policy" "main_only" {
   repository     = var.github_repository
   environment    = github_repository_environment.env[each.key].environment
   branch_pattern = "main"
+}
+
+resource "github_actions_environment_variable" "iap_client_id" {
+  for_each = local.iap_client_id_variables
+
+  repository    = var.github_repository
+  environment   = github_repository_environment.env[each.key].environment
+  variable_name = "IAP_CLIENT_ID"
+  value         = each.value
 }
 
 resource "github_actions_environment_variable" "env" {

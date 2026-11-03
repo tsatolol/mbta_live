@@ -15,9 +15,17 @@ function requiredEnv(name: string): string {
 const baseUrl = requiredEnv("SMOKE_BASE_URL").replace(/\/+$/, "");
 const idToken = requiredEnv("SMOKE_ID_TOKEN");
 
-function get(path: string, init: RequestInit = {}): Promise<Response> {
+async function get(path: string, init: RequestInit = {}): Promise<Response> {
   // IAP のログイン画面へのリダイレクトを、そのまま拒否として見るため、リダイレクトをたどらない
-  return fetch(`${baseUrl}${path}`, { redirect: "manual", ...init });
+  const res = await fetch(`${baseUrl}${path}`, { redirect: "manual", ...init });
+  if (res.status >= 500) {
+    // 原因を調べられるよう、応答の本文を出す（IAP やアプリのエラーの文言。秘密の値は含まない）
+    const body = await res.clone().text();
+    console.error(
+      `${path}: ${res.status} ${res.headers.get("x-goog-iap-generated-response") ? "(IAP) " : ""}${body.slice(0, 500)}`,
+    );
+  }
+  return res;
 }
 
 describe("スモークテスト", () => {

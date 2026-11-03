@@ -105,7 +105,7 @@ ci のジョブサマリーに次を出し、prod の承認時に確認する。
 |---|---|---|
 | 保護ルール | なし | Required reviewers（リポジトリのオーナー） |
 | Deployment branches | `main` だけ | `main` だけ |
-| variables | `GCP_PROJECT_ID`, `WIF_PROVIDER`, `DEPLOYER_SA`, `SMOKE_TESTER_SA` | 同左 |
+| variables | `GCP_PROJECT_ID`, `WIF_PROVIDER`, `DEPLOYER_SA`, `SMOKE_TESTER_SA`, `IAP_CLIENT_ID`（スモークテストの ID トークンの audience） | 同左 |
 
 リポジトリ全体の variables: `ARTIFACT_REGISTRY`（prod プロジェクトのリポジトリ）、`CI_BUILDER_SA`、`CI_WIF_PROVIDER`。
 
