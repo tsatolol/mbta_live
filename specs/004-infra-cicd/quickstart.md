@@ -38,6 +38,15 @@ apply が終わったら、GitHub のトークンを削除する（bootstrap を
 - 「quota project が必要」というエラーが出たら、prod のプロジェクトができた後に `gcloud auth application-default set-quota-project <prod のプロジェクト ID>` を実行して、もう一度 apply する
 - Dependency graph は API で設定できないので、画面で有効にしたままにする（Settings → Code security）
 
+## 2.5. IAP の OAuth クライアントを作る（環境ごと）
+
+組織のないプロジェクトでは、Google が用意する OAuth クライアントを IAP が使えない（web が「Empty Google Account OAuth client ID(s)/secret(s)」の 502 を返す）。OAuth クライアントを作る API は提供されていないので、Cloud Console で作る。dev と prod のそれぞれのプロジェクトで次を行う。
+
+1. Cloud Console で「Google Auth Platform」を開く（初回は「開始」でアプリ名とサポートのメールアドレスを入れる）
+2. 「対象（Audience）」: ユーザーの種類は「外部」。IAP で許可するユーザーを「テストユーザー」に足すか、アプリを「本番環境」に公開する（IAP が使うのは基本的なスコープだけなので、確認の審査はいらない）
+3. 「クライアント」→「クライアントを作成」: 種類は「ウェブ アプリケーション」。作成後、「承認済みのリダイレクト URI」に `https://iap.googleapis.com/v1/oauth/clientIds/<クライアント ID>:handleRedirect` を足す
+4. クライアント ID とシークレットを bootstrap の `terraform.tfvars` の `iap_oauth_clients` に書き（コミットしない）、bootstrap を apply する。IAP の設定（プロジェクト単位）と、GitHub の Environment の variable `IAP_CLIENT_ID` が作られる
+
 ## 3. MBTA API キーを入れる
 
 envs の初回の apply（main へのマージで動く cd-dev / cd-prod）で、各プロジェクトに Secret Manager のシークレット `MBTA_API_KEY` の入れ物ができる。その後に値を入れる。

@@ -15,3 +15,9 @@ main_ruleset_id = "0000000"
 #   prod = ["user:you@example.com"]
 # }
 # alert_email = "you@example.com"
+
+# IAP の OAuth クライアント（Cloud Console で作る。quickstart.md）。作った環境だけを書く
+# iap_oauth_clients = {
+#   dev  = { client_id = "xxxx.apps.googleusercontent.com", client_secret = "GOCSPX-..." }
+#   prod = { client_id = "xxxx.apps.googleusercontent.com", client_secret = "GOCSPX-..." }
+# }

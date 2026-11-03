@@ -248,3 +248,13 @@
 - ci は合格。cd-dev は Terraform の apply（Cloud Run の web とジョブの作成）、migrate Job の実行、web のデプロイ、各ジョブのイメージの更新まで成功した。deployer に Artifact Registry の読み取り権限を付けたことで、run #3 の失敗は解消した
 - 失敗: スモークテストの前の ID トークンの発行で `iam.serviceAccounts.getAccessToken` が拒否された。`gcloud auth print-identity-token --impersonate-service-account` は、ID トークンの前に smoke-tester のアクセストークンも取ろうとするため、Token Creator の権限が要る。deployer には ID トークンの発行（`roles/iam.serviceAccountOpenIdTokenCreator`）しか付けていない
 - **対応**: 権限は広げず、IAM Credentials API の `generateIdToken` を deployer のアクセストークンで直接呼ぶスクリプト（`scripts/smoke-id-token.sh`）にした
+
+## IAP の OAuth クライアント（2026-11-03、run #5）
+
+- run #5: cd-dev は ID トークンの発行まで成功し、スモークテストが 2 件とも 502 で失敗した（認証なしも 502）。応答は IAP が返したもの（`x-goog-iap-generated-response: true`）で、本文は「Empty Google Account OAuth client ID(s)/secret(s).」。web 自体は正常に起動していた（Cloud Run のログ）
+- 原因: 組織のないプロジェクトでは、Cloud Run に直接組み込む IAP が Google の用意する OAuth クライアントを使えない（`gcloud iap oauth-brands list` が「Project must belong to an organization」）。IAP の OAuth Admin API（brands / clients）は 2026-03 に廃止されていて、OAuth クライアントを API や Terraform で作れない
+- **決定**: OAuth クライアント（Web アプリケーション）を Cloud Console の Google Auth Platform で環境ごとに作り（人が行う。quickstart.md の 2.5）、クライアント ID とシークレットを bootstrap の変数 `iap_oauth_clients` で渡す。bootstrap が `google_iap_settings`（プロジェクト単位の `projects/<番号>/iap_web`）の `oauth_settings` に入れ、GitHub の Environment の variable `IAP_CLIENT_ID` を登録する。シークレットは bootstrap の state（公開アクセスを禁止したバケット）に残る
+- スモークテストの ID トークンの audience は、web の URL ではなく OAuth クライアントの ID にする（IAP のプログラムからの認証は、IAP の OAuth クライアントの ID を audience とする）
+- スモークテストは、5xx のときに応答の本文をログに出すようにした（原因を調べるため。秘密の値は含まない）
+- **検討した代替案**: プロジェクトを組織に入れる（Cloud Identity の無料版と独自ドメインが要り、手間が大きい）、外部 HTTPS LB + IAP（同じく OAuth クライアントが要るうえ、LB の費用がかかる）
+- **未確認**: プロジェクト単位の IAP の設定で、Cloud Run の web に OAuth クライアントが効くか。効かなければ、サービス単位（`projects/<番号>/iap_web/cloud_run-us-east4/services/web`）に設定する

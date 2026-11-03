@@ -254,10 +254,16 @@ jobs:
       - name: Smoke test (TR-002)
         env:
           SMOKE_TESTER_SA: ${{ vars.SMOKE_TESTER_SA }}
+          # IAP の OAuth クライアントの ID（bootstrap が登録）。IAP はこれを audience とする ID トークンを受け付ける
+          IAP_CLIENT_ID: ${{ vars.IAP_CLIENT_ID }}
         run: |
           url="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format='value(status.url)')"
+          if [ -z "$IAP_CLIENT_ID" ]; then
+            echo "GitHub の Environment の variable IAP_CLIENT_ID がありません（bootstrap の iap_oauth_clients）" >&2
+            exit 1
+          fi
           # smoke-tester の ID トークンで IAP を通る。トークンはログで伏せ字にする
-          token="$(scripts/smoke-id-token.sh "$SMOKE_TESTER_SA" "$url")"
+          token="$(scripts/smoke-id-token.sh "$SMOKE_TESTER_SA" "$IAP_CLIENT_ID")"
           echo "::add-mask::$token"
           SMOKE_BASE_URL="$url" SMOKE_ID_TOKEN="$token" pnpm test:smoke
 
