@@ -23,17 +23,6 @@ variable "image" {
   type        = string
 }
 
-variable "iap_members" {
-  description = "IAP で許可するユーザー（例: [\"user:you@example.com\"]）"
-  type        = list(string)
-  sensitive   = true
-}
-
-variable "smoke_tester_email" {
-  description = "smoke-tester の SA（bootstrap が作る）。IAP のアクセス権を付ける"
-  type        = string
-}
-
 variable "collector_schedule" {
   description = "collector の Cloud Scheduler の cron（America/New_York）"
   type        = string

@@ -76,7 +76,7 @@ dev と prod の違い（間隔、保持期間、Cloud SQL の設定など）は
 |---|---|
 | VI. 1 つのイメージ | ✅ CI で 1 回ビルドし、同じダイジェストを dev → prod |
 | VII. 後方互換のマイグレーション | ✅ ロールバックはイメージの差し替えだけ |
-| 公開リポジトリ | ✅ 秘密の値は Environment の secrets と Secret Manager。plan ファイルを artifact にしない。PR とリリースの両方で秘密の値の混入を検査する |
+| 公開リポジトリ | ✅ 秘密の値は Secret Manager（DB パスワードは state にも残さない）。IAP で許可するユーザーと通知先は bootstrap が GCP に直接設定し、リポジトリに置かない。plan ファイルを artifact にしない。PR とリリースの両方で秘密の値の混入を検査する |
 
 ## プロジェクト構成（Project Structure）
 
@@ -99,7 +99,8 @@ specs/004-infra-cicd/
 infra/terraform/
 ├── bootstrap/          # 最初に一度だけ人が apply: GCP プロジェクト（dev / prod）、API の有効化、
 │                       # state バケット、Artifact Registry、WIF、SA、
-│                       # GitHub の Environment・variables・secrets・ルールセット・セキュリティ設定
+│                       # IAP で許可するユーザー、監視の通知先、
+│                       # GitHub の Environment・variables・ルールセット・セキュリティ設定
 ├── modules/app/        # Cloud SQL、Secret Manager、Cloud Run（web）、Cloud Run Jobs、
 │                       # Cloud Scheduler、IAP、実行用の SA、予算アラート
 └── envs/
@@ -114,7 +115,7 @@ tests/smoke/            # スモークテスト（dev / prod 共通）
 Dockerfile
 ```
 
-**構成の決定**: パイプラインの前提（GCP プロジェクト、state バケット、WIF、SA、Artifact Registry、GitHub の Environment と variables・secrets、main のルールセット）は `bootstrap/` に分け、人が一度だけ apply する（ご自身の Google アカウントと、GitHub のトークンの権限で）。それ以外はパイプラインが apply する。人の手作業は、請求先アカウントとプロジェクト ID を決めること、MBTA API キーの取得と Secret Manager への登録、bootstrap の apply だけにする
+**構成の決定**: パイプラインの前提（GCP プロジェクト、state バケット、WIF、SA、Artifact Registry、GitHub の Environment と variables、main のルールセット、IAP で許可するユーザー、監視の通知先）は `bootstrap/` に分け、人が一度だけ apply する（ご自身の Google アカウントと、GitHub のトークンの権限で）。それ以外はパイプラインが apply する。人の手作業は、請求先アカウントとプロジェクト ID を決めること、MBTA API キーの取得と Secret Manager への登録、bootstrap の apply だけにする
 
 ## 複雑さの記録（Complexity Tracking）
 

@@ -29,6 +29,7 @@ pnpm test:unit                 # 純粋関数
 pnpm test:integration          # 本物の PostgreSQL を使うテスト（docker compose の DB）
 pnpm test:replay               # 記録した連続ポーリングを collector に流すテスト
 pnpm test:e2e                  # Playwright
+pnpm test:smoke                # デプロイ後のスモークテスト（SMOKE_BASE_URL と SMOKE_ID_TOKEN が必要。パイプラインが実行する）
 pnpm fixtures:record           # 実 API から 1 回分のフィクスチャを記録（7 リクエスト）
 pnpm fixtures:cases            # 記録済みのフィクスチャから特殊ケースのフィクスチャを作る（API は呼ばない）
 pnpm fixtures:record-sequence  # 実 API から連続ポーリングを記録（再生テスト用。1 分ごとに 3 リクエスト）
@@ -37,7 +38,15 @@ pnpm infra:fmt                 # Terraform の書式の検査（terraform fmt -c
 pnpm infra:validate            # Terraform の各ディレクトリで init（backend なし）と validate
 ```
 
-`pnpm test` は unit + integration + replay を実行する。
+`pnpm test` は unit + integration + replay を実行する（smoke は含まない）。
+
+リリース用のパイプラインが使うスクリプト（手元でも実行できる）:
+
+```bash
+scripts/check-container.sh <イメージ> <DATABASE_URL>      # コンテナの起動確認（Docker が必要）
+scripts/check-migration-compat.sh <DATABASE_URL>          # マイグレーションの互換性テスト（PROD_SHA で比べるコミットを指定できる）
+scripts/plan-summary.sh <plan の JSON> / scripts/plan-hash.sh <plan の JSON>
+```
 
 ## MBTA API を呼ぶときの注意
 
@@ -51,6 +60,8 @@ pnpm infra:validate            # Terraform の各ディレクトリで init（ba
 |---|---|
 | `DATABASE_URL` | ローカル用の接続文字列 |
 | `TEST_DATABASE_URL` | 結合テスト・再生テスト用の DB（既定値 `postgresql://postgres:postgres@localhost:5432/mbta_live_test`）。テストの開始時に中身を消して作り直す |
+| `TEST_SKIP_MIGRATE` | `1` で、テストの開始時に DB を作り直さない（マイグレーションの互換性テスト用。普段は設定しない） |
+| `SMOKE_BASE_URL`, `SMOKE_ID_TOKEN` | スモークテストの対象の URL と、IAP を通るための ID トークン（パイプラインが渡す） |
 | `INSTANCE_CONNECTION_NAME`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Cloud Run 用（Unix ソケット `/cloudsql/<INSTANCE_CONNECTION_NAME>`。パスワードは Secret Manager から注入） |
 | `MBTA_API_BASE_URL` | 既定値 `https://api-v3.mbta.com` |
 | `MBTA_API_KEY` | 任意。設定すると `x-api-key` ヘッダーで送る |

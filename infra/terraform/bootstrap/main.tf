@@ -4,7 +4,9 @@
 #   projects.tf  GCP プロジェクト、API、state のバケット、Artifact Registry
 #   wif.tf       Workload Identity Federation（GitHub Actions からの認証）
 #   iam.tf       サービスアカウントと権限
-#   github.tf    GitHub の Environment・variables・secrets・ルールセット・セキュリティ設定
+#   iap.tf       IAP で web を開けるユーザー（プロジェクト単位）
+#   monitoring.tf 監視の通知先
+#   github.tf    GitHub の Environment・variables・ルールセット・セキュリティ設定
 #   imports.tf   画面で作った GitHub の設定の取り込み
 
 provider "google" {

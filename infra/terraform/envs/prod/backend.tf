@@ -1,8 +1,7 @@
-# state は prod のプロジェクトの GCS バケットに置く。bucket（<プロジェクト ID>-tfstate）は
-# プロジェクト ID がコミットされていないので、init のときに渡す:
-#   terraform init -backend-config="bucket=${GCP_PROJECT_ID}-tfstate"
+# state は prod のプロジェクトの GCS バケットに置く（bootstrap が作る）
 terraform {
   backend "gcs" {
+    bucket = "mbta-live-prod-76bt-tfstate"
     prefix = "envs/prod"
   }
 }

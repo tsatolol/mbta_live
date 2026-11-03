@@ -26,7 +26,7 @@ push to main（PR のマージ）
   ├─ ci            （environment なし。GCP の認証は ci-builder だけ）
   │    pnpm install → lint → typecheck
   │    → unit / integration / replay（Postgres サービスコンテナ）→ Playwright（フィクスチャ）
-  │    → マイグレーションの互換性テスト（新しいマイグレーションを適用した DB に、prod で動いているコミットの結合テストを実行）
+  │    → マイグレーションの互換性テスト（新しいマイグレーションを適用した DB に、prod で動いているコミットの結合テストを実行。TEST_SKIP_MIGRATE=1）
   │    → セキュリティ検査: pnpm audit（high 以上で失敗）、Gitleaks（リポジトリ全体）
   │    → docker build
   │    → コンテナの起動確認: テスト用 DB に向けてイメージを起動し、/api/health が 200、
@@ -106,13 +106,14 @@ ci のジョブサマリーに次を出し、prod の承認時に確認する。
 | 保護ルール | なし | Required reviewers（リポジトリのオーナー） |
 | Deployment branches | `main` だけ | `main` だけ |
 | variables | `GCP_PROJECT_ID`, `WIF_PROVIDER`, `DEPLOYER_SA`, `SMOKE_TESTER_SA` | 同左 |
-| secrets | `TF_VAR_iap_members`, `TF_VAR_alert_email` | 同左 |
 
 リポジトリ全体の variables: `ARTIFACT_REGISTRY`（prod プロジェクトのリポジトリ）、`CI_BUILDER_SA`、`CI_WIF_PROVIDER`。
 
 その他: Dependency graph、Dependabot alerts、secret scanning と push protection を有効にする（public リポジトリでは無料。Dependency graph がないと依存関係の検査が動かない）。
 
-この節の設定（ルールセット、Environment・variables・secrets、リポジトリの variables、セキュリティ設定）は、すべて bootstrap の Terraform（`infra/terraform/bootstrap/github.tf`）が作る。画面で変えない。web の URL は variables に置かず、ジョブの中で `gcloud run services describe` で取得する。
+Environment の secrets は置かない。IAP で許可するユーザーと監視の通知先は、bootstrap が GCP に直接設定する（ci ジョブは Environment の variables と secrets を読めないので、envs の入力をリポジトリの中の値だけにして、ci で plan を作れるようにするため）。
+
+この節の設定（ルールセット、Environment・variables、リポジトリの variables、セキュリティ設定）は、すべて bootstrap の Terraform（`infra/terraform/bootstrap/github.tf`）が作る。画面で変えない。web の URL は variables に置かず、ジョブの中で `gcloud run services describe` で取得する。
 
 ## 守ること
 

@@ -41,7 +41,7 @@ variable "main_ruleset_id" {
 }
 
 variable "iap_members" {
-  description = "環境ごとの IAP で許可するユーザー（例: [\"user:you@example.com\"]）。GitHub の Environment の secret TF_VAR_iap_members になる"
+  description = "環境ごとの IAP で許可するユーザー（例: { dev = [\"user:you@example.com\"], prod = [\"user:you@example.com\"] }）。プロジェクト単位で IAP のアクセス権を付ける（iap.tf）"
   type = object({
     dev  = list(string)
     prod = list(string)
@@ -50,7 +50,7 @@ variable "iap_members" {
 }
 
 variable "alert_email" {
-  description = "監視の通知先のメールアドレス。GitHub の Environment の secret TF_VAR_alert_email になる"
+  description = "監視の通知先のメールアドレス。各プロジェクトの通知チャンネルになる（iap.tf と同じく bootstrap が作る。monitoring.tf）"
   type        = string
   sensitive   = true
 }
