@@ -86,6 +86,7 @@ ci のジョブサマリーに次を出し、prod の承認時に確認する。
 ## rollback.yml
 
 - トリガー: `workflow_dispatch`。入力は `environment`（`dev` / `prod`）と `image_digest`（省略時は web の直前のリビジョンにトラフィックを戻すだけ）
+- 直前のリビジョンは `previous` タグで見つける。cd-dev と cd-prod は、トラフィックを新しいリビジョンに移したら、それまで流れていたリビジョンに `previous` タグを付ける
 - `environment:` に入力値を指定するので、prod では承認が必要
 - web のトラフィックの切り替えと各 Job のイメージの差し替えだけを行う。Terraform の apply とマイグレーションは実行しない
 - 終わったらスモークテストを実行する

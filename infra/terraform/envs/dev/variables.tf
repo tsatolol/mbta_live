@@ -43,3 +43,13 @@ variable "mbta_api_key_enabled" {
   description = "Secret Manager の MBTA_API_KEY をジョブに渡すか（値を入れてから true にする）"
   type        = bool
 }
+
+variable "alert_notifications_enabled" {
+  description = "アラートポリシーの通知をメールに送るか"
+  type        = bool
+}
+
+variable "collector_absence_seconds" {
+  description = "collector の成功がこの秒数ないとアラートにする"
+  type        = number
+}

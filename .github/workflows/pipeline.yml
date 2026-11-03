@@ -231,7 +231,16 @@ jobs:
           gcloud run jobs execute migrate --project="$PROJECT" --region="$REGION" --wait
 
       - name: Deploy web
-        run: gcloud run deploy web --image="$IMAGE" --project="$PROJECT" --region="$REGION" --quiet
+        run: |
+          # ロールバック（rollback.yml）の戻し先として、今トラフィックが流れているリビジョンに previous タグを付ける
+          previous="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format=json \
+            | jq -r '[.status.traffic[] | select(.percent == 100)][0].revisionName // ""')"
+          gcloud run deploy web --image="$IMAGE" --project="$PROJECT" --region="$REGION" --quiet
+          current="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format='value(status.latestReadyRevisionName)')"
+          if [ -n "$previous" ] && [ "$previous" != "$current" ]; then
+            gcloud run services update-traffic web --update-tags="previous=$previous" \
+              --project="$PROJECT" --region="$REGION" --quiet
+          fi
 
       - name: Update jobs
         run: |
@@ -406,6 +415,11 @@ jobs:
                 --project="$PROJECT" --region="$REGION" --quiet
             fi
             exit 1
+          fi
+          # ロールバック（rollback.yml）の戻し先として、直前のリビジョンに previous タグを付ける
+          if [ -n "$PREVIOUS" ] && [ "$PREVIOUS" != "$REVISION" ]; then
+            gcloud run services update-traffic web --update-tags="previous=$PREVIOUS" \
+              --project="$PROJECT" --region="$REGION" --quiet
           fi
 
       - name: Update jobs

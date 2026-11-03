@@ -60,3 +60,13 @@ variable "web_max_instances" {
   type        = number
   default     = 2
 }
+
+variable "alert_notifications_enabled" {
+  description = "アラートポリシーの通知をメールに送るか（prod は true。dev は通知せず、Cloud Monitoring の画面で見るだけ）"
+  type        = bool
+}
+
+variable "collector_absence_seconds" {
+  description = "collector の成功がこの秒数ないとアラートにする（prod は 1 分間隔なので 180 秒。dev は 5 分間隔なので長くする）"
+  type        = number
+}

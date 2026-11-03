@@ -56,9 +56,9 @@ pnpm test:e2e
 
 ## 未決事項
 
-- dev / prod の予算額（GCP プロジェクトは `mbta-live-dev-76bt` / `mbta-live-prod-76bt`。bootstrap の Terraform で作成済み）
-- prod の承認者（現状はリポジトリのオーナーのみを想定）
-- MBTA API キーの取得（dev 用・prod 用）
+- dev / prod の予算額（決めたら bootstrap の `monthly_budgets` に書いて apply する。GCP プロジェクトは `mbta-live-dev-76bt` / `mbta-live-prod-76bt`。bootstrap の Terraform で作成済み）
+- prod の承認者（現状はリポジトリのオーナーのみ。bootstrap の `prod_reviewer`）
+- MBTA API キーの取得（dev 用・prod 用。取得したら Secret Manager の `MBTA_API_KEY` に入れ、`envs/<env>/terraform.tfvars` の `mbta_api_key_enabled` を true にする。それまではキーなしで収集している）
 - 独自ドメインを使うか
 - 平日のラッシュ時の `/predictions` の件数とサイズ（日曜早朝は 416 件・非圧縮 251KB、平日 10:20 ET は 2,278 件・非圧縮 1.36MB）
 - 団子運転・間隔の開きのしきい値

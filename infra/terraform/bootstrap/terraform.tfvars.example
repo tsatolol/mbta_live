@@ -21,3 +21,7 @@ main_ruleset_id = "0000000"
 #   dev  = { client_id = "xxxx.apps.googleusercontent.com", client_secret = "GOCSPX-..." }
 #   prod = { client_id = "xxxx.apps.googleusercontent.com", client_secret = "GOCSPX-..." }
 # }
+
+# 月の予算（予算アラート）。請求先アカウントの通貨で書く。書いた環境だけ予算を作る
+# monthly_budgets      = { dev = 1000, prod = 3000 }
+# budget_currency_code = "JPY"

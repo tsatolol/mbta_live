@@ -5,6 +5,15 @@ import { addServiceDays, serviceDateOf, serviceDateToDbDate } from "@/lib/time";
 import type { HealthErrorResponse, HealthResponse } from "@/lib/api-schemas/health";
 import type { Db } from "./client";
 
+/** そのジョブが、ある時刻以降に一度でも成功しているか（collector_runs） */
+export async function hasJobSucceededSince(db: Db, job: string, since: Date): Promise<boolean> {
+  const run = await db.collectorRun.findFirst({
+    where: { job, status: "success", startedAt: { gte: since } },
+    select: { id: true },
+  });
+  return run !== null;
+}
+
 export type HealthResult =
   { ok: true; body: HealthResponse } | { ok: false; body: HealthErrorResponse; error: unknown };
 

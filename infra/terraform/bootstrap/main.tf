@@ -6,6 +6,7 @@
 #   iam.tf       サービスアカウントと権限
 #   iap.tf       IAP で web を開けるユーザー（プロジェクト単位）
 #   monitoring.tf 監視の通知先
+#   budget.tf    予算アラート
 #   github.tf    GitHub の Environment・variables・ルールセット・セキュリティ設定
 #   imports.tf   画面で作った GitHub の設定の取り込み
 

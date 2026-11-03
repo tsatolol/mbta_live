@@ -71,3 +71,9 @@ scripts/smoke.sh <URL>                                    # IAP を通したス�
 | `RAW_RETENTION_DAYS` | 生データの保持日数（dev 3 / prod 28） |
 
 `.env.local` はコミットしない。`.env.example` を最新に保つ。
+
+## パイプラインとロールバック
+
+- PR を作ると `pr-checks`、main にマージするとリリース用のパイプライン（ci → dev へのデプロイ → 承認 → prod へのデプロイ）が動く。流れと安全装置は `specs/004-infra-cicd/contracts/pipeline.md`
+- ロールバックは GitHub の Actions の画面から `rollback` を実行する（環境と、必要ならイメージのダイジェストを指定。prod は承認が要る）
+- bootstrap（GCP プロジェクト、WIF、GitHub の設定、IAP の OAuth クライアント、予算）の変更は、ローカルで `terraform plan` を確かめてから apply する（`specs/004-infra-cicd/quickstart.md`）

@@ -44,7 +44,8 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 | 値の置き場所 | `infra/terraform/envs/dev/terraform.tfvars` | `infra/terraform/envs/prod/terraform.tfvars` |
 | IAP で許可するユーザー | 開発者 | 利用者（開発者を含む） |
 | MBTA API キー | dev 用 | prod 用 |
-| 予算アラート | 小さめ | 本番相当 |
+| 予算アラート | 小さめ | 本番相当（金額は未定。bootstrap の `monthly_budgets`） |
+| 監視の通知 | なし（Cloud Monitoring の画面で見る） | メール（bootstrap の通知チャンネル） |
 
 ## リポジトリ構成
 
@@ -86,6 +87,12 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 ├── .specify/                # spec-kit（憲章、テンプレート、スクリプト）
 └── specs/                   # spec-kit の feature ごとの文書
 ```
+
+## 認証・監視・ロールバック
+
+- **IAP**: Cloud Run に直接組み込む IAP（`iap_enabled`）。プロジェクトが組織に属していないので、OAuth クライアントは Cloud Console で作り、bootstrap が IAP の設定（プロジェクト単位）に入れる。許可するユーザーと smoke-tester は、bootstrap がプロジェクト単位の `roles/iap.httpsResourceAccessor` で付ける（`specs/004-infra-cicd/research.md`）
+- **監視**: ジョブの終了ログ（`job`・`status`・`counts` と、collector の `inServiceHours`・`rejectedRowRatio`・`aggregateOverdue`）をログベースの指標にし、Cloud Monitoring のアラートポリシーで見る。web は Cloud Run の指標（5xx の割合、応答時間の p95）。prod はメールで通知し、dev は通知しない（`infra/terraform/modules/app/monitoring.tf`）
+- **ロールバック**: `.github/workflows/rollback.yml`。web を `previous` タグのリビジョンに戻すか、指定したイメージに差し替える。Terraform とマイグレーションは実行しない
 
 ## イメージの起動コマンド
 

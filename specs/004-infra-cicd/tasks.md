@@ -100,7 +100,7 @@ description: "004 インフラと CI/CD の実装タスク"
 - [X] T027 [US2] `ci` ジョブに Terraform の検査と plan を加える（TR-001）: `terraform fmt -check` / `validate`、dev と prod の `terraform plan`（それぞれの deployer の権限で読み取りだけ。plan ファイルは artifact にしない）、prod の plan の `resource_changes` のハッシュを outputs `prod_plan_hash` に出す（research.md）: `.github/workflows/pipeline.yml`、`scripts/plan-hash.sh`
 - [X] T028 [US2] `ci` ジョブに承認用のサマリーを加える（FR-021）: prod で動いているコミットから今回までのコミット一覧、追加されるマイグレーションのファイル名、dev / prod の plan の要約（変更・追加・削除の件数と対象のリソース。秘密の値は出さない）、テストとセキュリティ検査の結果を `$GITHUB_STEP_SUMMARY` に書く: `scripts/approval-summary.sh`、`scripts/plan-summary.sh`
 - [X] T029 [US2] `cd-dev` ジョブを書く: `environment: dev`、`needs: ci`、`concurrency: deploy-dev`。deployer-dev として WIF で認証 → `terraform apply`（envs/dev）→ migrate Job をそのイメージ（ダイジェスト指定）で実行 → web をデプロイ（トラフィック 100%）→ collector / sync-static / aggregate の Job のイメージを更新 → T023 のスモークテスト → collector Job を 1 回実行（`--wait`）: `.github/workflows/pipeline.yml`
-- [ ] T030 [US2] 確認（前半は run #6 で確かめた: CI が 1 回動いて dev にデプロイされ、スモークテストと collector の実行が成功。マージから約 5 分 20 秒。research.md。後半の「テストを 1 つ失敗させた PR」は未実施）: 小さな変更を PR → マージし、CI が 1 回だけ動いて dev にデプロイされ、スモークテストが成功することを確かめる。テストを 1 つ失敗させた PR では、dev にも prod にもデプロイされないことを確かめる（SC-002 の所要時間も記録する）
+- [X] T030 [US2] 確認（前半は run #6、後半は run #10 で確かめた。research.md）: 小さな変更を PR → マージし、CI が 1 回だけ動いて dev にデプロイされ、スモークテストが成功することを確かめる。テストを 1 つ失敗させた PR では、dev にも prod にもデプロイされないことを確かめる（SC-002 の所要時間も記録する）
 
 **チェックポイント**: US1 と US2 が動く。dev で収集が始まる
 
@@ -117,7 +117,7 @@ description: "004 インフラと CI/CD の実装タスク"
 - [X] T031 [US3] `cd-prod` ジョブの前半を書く: `environment: prod`（Required reviewers）、`needs: cd-dev`、`concurrency: deploy-prod`。`github.sha` が main の HEAD でなければ失敗 → deployer-prod として WIF で認証 → `terraform plan`（envs/prod）のハッシュが `prod_plan_hash` と違えば失敗 → `terraform apply`（ハッシュを確かめた plan ファイルをそのまま適用する）: `.github/workflows/pipeline.yml`
 - [X] T032 [US3] `cd-prod` にマイグレーション前のバックアップを加える（FR-019）: 新しいマイグレーションがあるときだけ `gcloud sql backups create` を実行し、完了を待ってから migrate Job を動かす: `.github/workflows/pipeline.yml`
 - [X] T033 [US3] `cd-prod` に段階的な切り替えを加える（FR-018）: web の新しいリビジョンを `--no-traffic --tag candidate` でデプロイ → タグ付き URL に対してスモークテスト（失敗したら切り替えずに終了）→ トラフィックを 100% に切り替え → 本番 URL に対してスモークテスト（失敗したら直前のリビジョンに戻して失敗）→ 各 Job のイメージを更新 → collector Job を 1 回実行（`--wait`）。タグ付き URL を IAP を通して ID トークンで呼べるかは、最初の prod へのデプロイで確かめて research.md に記録する: `.github/workflows/pipeline.yml`、`scripts/smoke.sh`
-- [ ] T034 [US3] 確認（TR-004。通常の流れは run #8 で確かめた: 承認後に prod へデプロイされ、candidate と本番のスモークテストが成功、承認から約 8 分 20 秒。安全装置の 3 つは未実施）: (1) 承認待ちの古い run を承認すると失敗する、(2) 承認後に prod の Terraform を手で変えると plan のハッシュが合わずに失敗する、(3) スモークテストが失敗するリビジョン（`/api/health` が 503 を返すようにした一時的な変更）でトラフィックが切り替わらない、をそれぞれ一度ずつ試して確かめる（SC-003 の所要時間も記録する）
+- [X] T034 [US3] 確認（TR-004。通常の流れは run #8、安全装置の 3 つは run #11 と run #12 で確かめた。承認から約 8 分 20 秒。research.md）: (1) 承認待ちの古い run を承認すると失敗する、(2) 承認後に prod の Terraform を手で変えると plan のハッシュが合わずに失敗する、(3) スモークテストが失敗するリビジョン（`/api/health` が 503 を返すようにした一時的な変更）でトラフィックが切り替わらない、をそれぞれ一度ずつ試して確かめる（SC-003 の所要時間も記録する）
 
 **チェックポイント**: US1〜US3 が動く。prod で収集が始まる
 
@@ -129,7 +129,7 @@ description: "004 インフラと CI/CD の実装タスク"
 
 **単独での確認方法**: dev でロールバックを実行し、web とジョブが戻ることを確かめる
 
-- [ ] T035 [US4] ロールバックのワークフローを書く: `workflow_dispatch`（入力 `environment`、任意の `image_digest`）、`environment:` に入力値を指定（prod では承認が必要）。`image_digest` がなければ web のトラフィックを直前のリビジョンに戻すだけ、あれば web と各 Job をそのイメージに差し替える。Terraform の apply とマイグレーションは実行しない。終わったらスモークテスト: `.github/workflows/rollback.yml`
+- [X] T035 [US4] ロールバックのワークフローを書く（直前のリビジョンは、cd-dev と cd-prod が付ける `previous` タグで見つける）: `workflow_dispatch`（入力 `environment`、任意の `image_digest`）、`environment:` に入力値を指定（prod では承認が必要）。`image_digest` がなければ web のトラフィックを直前のリビジョンに戻すだけ、あれば web と各 Job をそのイメージに差し替える。Terraform の apply とマイグレーションは実行しない。終わったらスモークテスト: `.github/workflows/rollback.yml`
 - [ ] T036 [US4] 確認: dev で両方の使い方を一度ずつ試し、SC-004（5 分以内）を確かめる
 
 ---
@@ -140,7 +140,7 @@ description: "004 インフラと CI/CD の実装タスク"
 
 **単独での確認方法**: 権限とアクセスの拒否を実際に試して確かめる
 
-- [ ] T037 [US5] `modules/app` に予算アラートを書く（FR-012）: 環境ごとの予算額（tfvars）を超えそうなときにメールで通知する: `infra/terraform/modules/app/budget.tf`
+- [X] T037 [US5] 予算アラートを書く（FR-012。予算は請求先アカウントのリソースで deployer の権限では作れないので、`modules/app` ではなく bootstrap に置いた: `infra/terraform/bootstrap/budget.tf`。金額は未定なので、変数 `monthly_budgets` に書いた環境だけ作る）: 環境ごとの予算額（tfvars）を超えそうなときにメールで通知する: `infra/terraform/modules/app/budget.tf`
 - [ ] T038 [US5] 確認: (1) deployer-dev の権限で prod のリソースを操作できない、(2) `environment: dev` のジョブから deployer-prod を使えない、(3) main 以外のブランチやフォークの PR から WIF で認証できない、(4) 許可されていない Google アカウントと認証なしのリクエストは画面・API にアクセスできない、をそれぞれ試して確かめる
 
 ---
@@ -151,9 +151,9 @@ description: "004 インフラと CI/CD の実装タスク"
 
 **単独での確認方法**: dev で各条件を起こし、ダッシュボードに出ることと、prod と同じ設定で通知されることを確かめる
 
-- [ ] T039 [US6] 構造化ログの項目を、ログベースの指標で使える形にそろえる: collector / sync-static / aggregate の終了ログに `job`・`status`・件数（`vehicles`、`rejectedRows`、`unknownStopIds` など）が必ず入ることを結合テストで確かめる: `src/jobs/runner.ts`、`tests/integration/runner.test.ts`
-- [ ] T040 [US6] `modules/app` に監視を書く（FR-013）: ログベースの指標（収集の成否、解析に失敗した行の割合、運行時間中の車両数、未解決の駅 ID の数）と、アラートポリシー（最後の収集成功から 3 分以上、05:30〜24:00 ET の車両 0 件、解析失敗の割合 1% 超、未解決の駅 ID の増加、05:00 ET 時点で前日分の集計が未完了）。通知先は bootstrap が作った通知チャンネル（表示名 `mbta-live alerts`）をデータソースで探す。dev では通知せずダッシュボードだけ: `infra/terraform/modules/app/monitoring.tf`
-- [ ] T041 [US6] `modules/app` に web の監視を書く（FR-020）: Cloud Run の指標で 5xx の割合（5 分間で 5% 超）と応答時間（p95 が 3 秒超）のアラートポリシー。`/api/health` の稼働時間チェック（`smoke-tester` の ID トークンで IAP を通す。方式を検証して research.md に記録する）: `infra/terraform/modules/app/monitoring.tf`
+- [X] T039 [US6] 構造化ログの項目を、ログベースの指標で使える形にそろえる: collector / sync-static / aggregate の終了ログに `job`・`status`・件数（`vehicles`、`rejectedRows`、`unknownStopIds` など）が必ず入ることを結合テストで確かめる: `src/jobs/runner.ts`、`tests/integration/runner.test.ts`
+- [X] T040 [US6] `modules/app` に監視を書く（FR-013）: ログベースの指標（収集の成否、解析に失敗した行の割合、運行時間中の車両数、未解決の駅 ID の数）と、アラートポリシー（最後の収集成功から 3 分以上、05:30〜24:00 ET の車両 0 件、解析失敗の割合 1% 超、未解決の駅 ID の増加、05:00 ET 時点で前日分の集計が未完了）。通知先は bootstrap が作った通知チャンネル（表示名 `mbta-live alerts`）をデータソースで探す。dev では通知せずダッシュボードだけ: `infra/terraform/modules/app/monitoring.tf`
+- [X] T041 [US6] `modules/app` に web の監視を書く（FR-020。`/api/health` の稼働時間チェックは作らず、collector の終了ログで代える。research.md）: Cloud Run の指標で 5xx の割合（5 分間で 5% 超）と応答時間（p95 が 3 秒超）のアラートポリシー。`/api/health` の稼働時間チェック（`smoke-tester` の ID トークンで IAP を通す。方式を検証して research.md に記録する）: `infra/terraform/modules/app/monitoring.tf`
 - [ ] T042 [US6] 確認（TR-005）: dev で各条件を起こし（collector の Scheduler を止める、`/api/health` を 503 にするなど）、prod と同じ設定にした通知先へ通知が届くことを一度ずつ確かめる
 
 ---
@@ -162,10 +162,10 @@ description: "004 インフラと CI/CD の実装タスク"
 
 **目的**: 文書の反映、002 の完了後に有効にするもの、全体の確認
 
-- [ ] T043 [P] docs/architecture.md を更新する: 実際のプロジェクト ID、イメージの起動コマンド、IAP の方式、監視の構成（flow-back）
-- [ ] T044 [P] docs/development.md に、インフラのコマンド（`pnpm infra:fmt` / `pnpm infra:validate` / `pnpm test:smoke`）と、パイプラインの流れへのリンクを追記する
+- [X] T043 [P] docs/architecture.md を更新する: 実際のプロジェクト ID、イメージの起動コマンド、IAP の方式、監視の構成（flow-back）
+- [X] T044 [P] docs/development.md に、インフラのコマンド（`pnpm infra:fmt` / `pnpm infra:validate` / `pnpm test:smoke`）と、パイプラインの流れへのリンクを追記する
 - [ ] T045 quickstart.md の手順を最初から実行し、書かれている結果になることを確かめる。違っていれば quickstart.md を直す
-- [ ] T046 CLAUDE.md の未決事項（GCP プロジェクト ID、承認者、MBTA API キーの取得）を更新する
+- [X] T046 CLAUDE.md の未決事項（GCP プロジェクト ID、承認者、MBTA API キーの取得）を更新する
 - [ ] T047 `/speckit-analyze` で 004 の文書とタスクの食い違いを点検し、見つかったものを反映する
 
 ### 002 の完了後に有効にするもの

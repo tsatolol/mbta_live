@@ -37,6 +37,7 @@ apply が終わったら、GitHub のトークンを削除する（bootstrap を
 - main のルールセットの ID は、GitHub の Settings → Rules → Rulesets で main を開いたときの URL の末尾の数字
 - 「quota project が必要」というエラーが出たら、prod のプロジェクトができた後に `gcloud auth application-default set-quota-project <prod のプロジェクト ID>` を実行して、もう一度 apply する
 - Dependency graph は API で設定できないので、画面で有効にしたままにする（Settings → Code security）
+- 予算アラートは、`terraform.tfvars` に `monthly_budgets`（環境ごとの月の予算。請求先アカウントの通貨で）と `budget_currency_code` を書くと作られる
 
 ## 2.5. IAP の OAuth クライアントを作る（環境ごと）
 
