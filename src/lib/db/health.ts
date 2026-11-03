@@ -1,0 +1,39 @@
+// /api/health の中身: DB への接続、collector の最後の成功、前の運行日の集計の有無。
+import "server-only";
+import type { Clock } from "@/lib/clock";
+import { addServiceDays, serviceDateOf, serviceDateToDbDate } from "@/lib/time";
+import type { HealthErrorResponse, HealthResponse } from "@/lib/api-schemas/health";
+import type { Db } from "./client";
+
+export type HealthResult =
+  { ok: true; body: HealthResponse } | { ok: false; body: HealthErrorResponse; error: unknown };
+
+export async function checkHealth(db: Db, clock: Clock): Promise<HealthResult> {
+  const now = clock.now();
+  const previousServiceDate = addServiceDays(serviceDateOf(now), -1);
+  try {
+    const [lastCollect, aggregate] = await Promise.all([
+      db.collectorRun.findFirst({
+        where: { job: "collect", status: "success" },
+        orderBy: { startedAt: "desc" },
+        select: { finishedAt: true },
+      }),
+      db.aggregateRun.findUnique({
+        where: { serviceDate: serviceDateToDbDate(previousServiceDate) },
+        select: { status: true },
+      }),
+    ]);
+    return {
+      ok: true,
+      body: {
+        status: "ok",
+        checkedAt: now.toISOString(),
+        lastCollectedAt: lastCollect?.finishedAt?.toISOString() ?? null,
+        previousServiceDate,
+        previousServiceDateAggregated: aggregate?.status === "success",
+      },
+    };
+  } catch (error) {
+    return { ok: false, body: { status: "error", checkedAt: now.toISOString() }, error };
+  }
+}

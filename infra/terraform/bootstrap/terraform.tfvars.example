@@ -1,0 +1,17 @@
+# このファイルを terraform.tfvars にコピーして値を書く（terraform.tfvars はコミットしない）。
+# 請求先アカウントの ID、IAP で許可するユーザー、通知先は、環境変数 TF_VAR_* で渡してもよい。
+
+project_ids = {
+  dev  = "mbta-live-dev-xxxx"
+  prod = "mbta-live-prod-xxxx"
+}
+
+# GitHub の Settings → Rules → Rulesets で main を開いたときの URL の末尾の数字
+main_ruleset_id = "0000000"
+
+# billing_account = "XXXXXX-XXXXXX-XXXXXX"
+# iap_members = {
+#   dev  = ["user:you@example.com"]
+#   prod = ["user:you@example.com"]
+# }
+# alert_email = "you@example.com"

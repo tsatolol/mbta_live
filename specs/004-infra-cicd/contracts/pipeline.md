@@ -32,7 +32,7 @@ push to main（PR のマージ）
   │    → コンテナの起動確認: テスト用 DB に向けてイメージを起動し、/api/health が 200、
   │      migrate と collector（MBTA_FIXTURE_MODE=1）の起動コマンドが成功することを確かめる
   │    → Artifact Registry に push（タグ = git SHA）→ outputs: image_digest
-  │    → terraform fmt -check / validate → dev と prod の terraform plan
+  │    → terraform fmt -check / validate → dev と prod の terraform plan（ci-builder の読み取り権限、-lock=false）
   │    → outputs: prod_plan_hash（prod の plan の resource_changes のハッシュ）
   │    → 承認用のサマリーをジョブサマリーに出す（下記）
   │

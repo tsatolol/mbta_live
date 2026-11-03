@@ -15,6 +15,9 @@ pnpm db:migrate                # マイグレーションを適用（prisma migr
 pnpm db:migrate:dev            # スキーマ変更後にマイグレーションを作成（prisma migrate dev）
 pnpm db:generate               # Prisma Client を生成
 pnpm dev                       # http://localhost:3000
+pnpm build                     # Next.js のビルド（standalone）
+pnpm build:jobs                # ジョブを dist/jobs/*.mjs にまとめる（イメージ用）
+docker build -t mbta-live .    # web とジョブ共通のイメージ（起動コマンドは docs/architecture.md）
 
 pnpm job:sync-static           # 静的データの同期
 pnpm job:collect               # collector を 1 回

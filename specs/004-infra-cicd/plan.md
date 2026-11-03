@@ -62,11 +62,12 @@ dev と prod の違い（間隔、保持期間、Cloud SQL の設定など）は
 │    └─ dev の Cloud Run サービスエージェントに reader を付与 ──▶ 同じイメージを pull
 ├─ GCS: Terraform state (prod)                  ├─ GCS: Terraform state (dev)
 ├─ WIF pool/provider (GitHub)                   ├─ WIF pool/provider (GitHub)
-├─ SA: ci-builder（イメージの push だけ）          │
+├─ SA: ci-builder（push と plan の読み取り）       │
 ├─ SA: deployer-prod, smoke-tester              ├─ SA: deployer-dev, smoke-tester
 └─ アプリ一式                                     └─ アプリ一式
    Cloud Run (web + Jobs), Cloud SQL, Scheduler,    （同じ構成）
    Secret Manager (DB パスワード, MBTA_API_KEY), IAP
+   実行用の SA: web-runtime, jobs-runtime, scheduler-invoker
 ```
 
 ## 憲章との適合確認（Constitution Check）

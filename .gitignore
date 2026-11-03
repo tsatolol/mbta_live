@@ -19,3 +19,4 @@ crash.log
 *.tfvars
 !infra/terraform/envs/*/terraform.tfvars
 !*.tfvars.example
+dist/

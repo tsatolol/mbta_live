@@ -15,11 +15,11 @@ GitHub の Environment・variables・secrets・ルールセット・セキュリ
 gcloud auth application-default login            # 請求先アカウントのユーザー権限がある Google アカウント
 export GITHUB_TOKEN=<fine-grained personal access token>
 export TF_VAR_billing_account=<請求先アカウントの ID>
-export TF_VAR_iap_members='["user:you@example.com"]'   # IAP で許可するユーザー（GitHub の Environment の secrets に入る）
+export TF_VAR_iap_members='{"dev":["user:you@example.com"],"prod":["user:you@example.com"]}'   # IAP で許可するユーザー（GitHub の Environment の secrets に入る）
 export TF_VAR_alert_email=<監視の通知先>
 
 cd infra/terraform/bootstrap
-cp terraform.tfvars.example terraform.tfvars   # プロジェクト ID などを書く（このファイルはコミットしない）
+cp terraform.tfvars.example terraform.tfvars   # プロジェクト ID と main のルールセットの ID を書く（このファイルはコミットしない）
 terraform init
 terraform plan                                  # 作られるもの（プロジェクト、バケット、WIF、SA、GitHub の設定）を確かめる
 terraform apply
@@ -34,6 +34,10 @@ terraform providers lock -platform=linux_amd64 -platform=darwin_arm64
 
 apply が終わったら、GitHub のトークンを削除する（bootstrap を変更するときに作り直す）。
 
+- main のルールセットの ID は、GitHub の Settings → Rules → Rulesets で main を開いたときの URL の末尾の数字
+- 「quota project が必要」というエラーが出たら、prod のプロジェクトができた後に `gcloud auth application-default set-quota-project <prod のプロジェクト ID>` を実行して、もう一度 apply する
+- Dependency graph は API で設定できないので、画面で有効にしたままにする（Settings → Code security）
+
 ## 3. MBTA API キーを入れる
 
 envs の初回の apply（main へのマージで動く cd-dev / cd-prod）で、各プロジェクトに Secret Manager のシークレット `MBTA_API_KEY` の入れ物ができる。その後に値を入れる。
@@ -42,6 +46,8 @@ envs の初回の apply（main へのマージで動く cd-dev / cd-prod）で�
 printf '%s' '<dev 用のキー>'  | gcloud secrets versions add MBTA_API_KEY --project=<dev のプロジェクト ID>  --data-file=-
 printf '%s' '<prod 用のキー>' | gcloud secrets versions add MBTA_API_KEY --project=<prod のプロジェクト ID> --data-file=-
 ```
+
+値を入れたら、`infra/terraform/envs/<env>/terraform.tfvars` の `mbta_api_key_enabled` を `true` にする PR を作ってマージする。キーを入れるまでは、ジョブはキーなしで MBTA API を呼ぶ。
 
 ## 4. 最初のデプロイ
 

@@ -2,7 +2,7 @@ import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypescript from "eslint-config-next/typescript";
 
 const config = [
-  { ignores: [".next/**", "node_modules/**", "src/generated/**", "next-env.d.ts"] },
+  { ignores: [".next/**", "dist/**", "node_modules/**", "src/generated/**", "next-env.d.ts"] },
   ...nextCoreWebVitals,
   ...nextTypescript,
   {

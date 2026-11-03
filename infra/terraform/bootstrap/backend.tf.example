@@ -1,0 +1,8 @@
+# 初回の apply（ローカルの state）の後に、このファイルを backend.tf にコピーして
+# terraform init -migrate-state で state を GCS に移す。bucket は outputs の bootstrap_tfstate_bucket
+terraform {
+  backend "gcs" {
+    bucket = "<prod のプロジェクト ID>-bootstrap-tfstate"
+    prefix = "bootstrap"
+  }
+}
