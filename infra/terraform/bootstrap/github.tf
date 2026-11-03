@@ -76,7 +76,7 @@ resource "github_actions_variable" "repo" {
   for_each = {
     ARTIFACT_REGISTRY = "${google_artifact_registry_repository.images.location}-docker.pkg.dev/${google_artifact_registry_repository.images.project}/${google_artifact_registry_repository.images.repository_id}"
     CI_BUILDER_SA     = google_service_account.ci_builder.email
-    CI_WIF_PROVIDER   = google_iam_workload_identity_pool_provider.github["prod"].name
+    CI_WIF_PROVIDER   = google_iam_workload_identity_pool_provider.github_ci.name
   }
 
   repository    = var.github_repository
