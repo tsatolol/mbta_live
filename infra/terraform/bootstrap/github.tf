@@ -2,8 +2,7 @@
 # トークンは環境変数 GITHUB_TOKEN（fine-grained personal access token。このリポジトリだけ、
 # Administration・Environments・Secrets・Variables の読み書き）。apply の後に削除する。
 #
-# 開発環境から GitHub プロバイダを取得できず、この節は terraform validate で確かめていない（research.md）。
-# T010 の terraform plan で、作られるもの・変わるものを確かめてから apply する。
+# 開発環境からは GitHub プロバイダを取得できないので、変更したらローカルの terraform plan で確かめてから apply する。
 
 data "github_user" "prod_reviewer" {
   username = var.prod_reviewer
@@ -71,19 +70,19 @@ resource "github_actions_environment_variable" "env" {
 resource "github_actions_environment_secret" "iap_members" {
   for_each = local.envs
 
-  repository      = var.github_repository
-  environment     = github_repository_environment.env[each.key].environment
-  secret_name     = "TF_VAR_iap_members"
-  plaintext_value = jsonencode(var.iap_members[each.key])
+  repository  = var.github_repository
+  environment = github_repository_environment.env[each.key].environment
+  secret_name = "TF_VAR_iap_members"
+  value       = jsonencode(var.iap_members[each.key])
 }
 
 resource "github_actions_environment_secret" "alert_email" {
   for_each = local.envs
 
-  repository      = var.github_repository
-  environment     = github_repository_environment.env[each.key].environment
-  secret_name     = "TF_VAR_alert_email"
-  plaintext_value = var.alert_email
+  repository  = var.github_repository
+  environment = github_repository_environment.env[each.key].environment
+  secret_name = "TF_VAR_alert_email"
+  value       = var.alert_email
 }
 
 # ---- リポジトリ全体の variables（ci ジョブが使う）
