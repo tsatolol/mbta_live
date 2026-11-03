@@ -6,6 +6,11 @@ import {
 }
 
 import {
+  to = github_repository_vulnerability_alerts.this
+  id = var.github_repository
+}
+
+import {
   to = github_repository_ruleset.main
   id = "${var.github_repository}:${var.main_ruleset_id}"
 }

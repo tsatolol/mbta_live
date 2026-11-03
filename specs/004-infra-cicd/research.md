@@ -258,3 +258,19 @@
 - スモークテストは、5xx のときに応答の本文をログに出すようにした（原因を調べるため。秘密の値は含まない）
 - **検討した代替案**: プロジェクトを組織に入れる（Cloud Identity の無料版と独自ドメインが要り、手間が大きい）、外部 HTTPS LB + IAP（同じく OAuth クライアントが要るうえ、LB の費用がかかる）
 - **未確認**: プロジェクト単位の IAP の設定で、Cloud Run の web に OAuth クライアントが効くか。効かなければ、サービス単位（`projects/<番号>/iap_web/cloud_run-us-east4/services/web`）に設定する
+
+## パイプラインの 6 回目の実行（2026-11-03、run #6）: 初めて最後まで成功
+
+- dev の OAuth クライアントを作って bootstrap を apply した後、ブラウザで dev の web を開くと Google のログイン画面が出た。プロジェクト単位の IAP の設定（`projects/<番号>/iap_web`）で、Cloud Run の web にも OAuth クライアントが効いた
+- run #6 で ci → cd-dev が最後まで成功した: Terraform の apply、migrate、web のデプロイ、ジョブの更新、スモークテスト（IAP を通した `/api/health` が 200、認証なしは拒否）、collector の 1 回の実行
+- 次のことを実際に確かめた: smoke-tester の ID トークン（audience = IAP の OAuth クライアントの ID、`generateIdToken` で発行）で IAP を通れる。プロジェクト単位の `roles/iap.httpsResourceAccessor` が Cloud Run の web に効く
+- マージ（push）から cd-dev の完了まで約 5 分 20 秒（SC-002 の 20 分以内）。2 回目以降の実行なので、Cloud SQL の作成（約 9 分）は含まない
+
+## 非推奨の警告への対応（2026-11-03）
+
+- **Dependabot alerts**: `github_repository` の `vulnerability_alerts` は、GitHub プロバイダ 6.12 で非推奨になった（「Use the github_repository_vulnerability_alerts resource instead.」）。引数を外し、`github_repository_vulnerability_alerts`（引数は `repository` と `enabled`。既定は true）に移した。既存の設定は import ブロック（ID はリポジトリ名）で取り込む。元の引数は Optional かつ Computed なので、外しても `github_repository` に差分は出ない。プロバイダ 6.13.0 のソースと文書で確かめた
+- **GitHub Actions**: Node.js 20 向けで警告が出ていた actions を、Node.js 24 で動く最新のメジャーバージョンに上げた。使っている入力（auth の `workload_identity_provider` / `service_account`、setup-terraform の `terraform_version` / `terraform_wrapper`、pnpm は `package.json` の `packageManager` を読む）は、新しいバージョンにも残っていることを各 action の `action.yml` で確かめた
+  - `google-github-actions/auth` v2 → v3、`google-github-actions/setup-gcloud` v2 → v3（`skip_tool_cache` の削除。使っていない）
+  - `hashicorp/setup-terraform` v3 → v4（Node.js 24 が必要になったこと以外の互換性のない変更なし）
+  - `pnpm/action-setup` v4 → v6（pnpm 11 / 12 への対応）
+  - バージョンは引き続きメジャーバージョンのタグで指定する。SHA での固定と Dependabot の version updates は T047 で見直す
