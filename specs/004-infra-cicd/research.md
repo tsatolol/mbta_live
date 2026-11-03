@@ -297,4 +297,5 @@
 - **T034 の (3)**（run #11、cd-prod の 1 回目）: `/api/health` が prod でだけ 503 を返す一時的な変更で、candidate（`web-00006-kic`）のスモークテストが 503 で失敗し、トラフィックを切り替えるステップは動かなかった。利用者は直前のリビジョン（`web-00004-qud`）を使い続け、prod の `/api/health` は 200 のままだった。認証なしのリクエストは candidate でも IAP で拒否された
 - **T034 の (2)**（run #11、cd-prod の再実行）: 手順の想定とは順番が違った。prod の sync-static の Scheduler の一時停止が ci の plan の前に行われていて、承認時の plan に「sync-static の変更（再開）」が入った（承認用のサマリーにも出ていた）。1 回目の cd-prod は承認時と同じ plan だったので apply し、Terraform が Scheduler を元に戻した。再実行では plan が「変更なし」になり、承認時（変更 1 件）とハッシュが違うので「適用しません」で止まった。承認の後に prod の状態が変わると適用されないことは、これで確かめられた
   - Cloud Scheduler の一時停止（`paused`）は、Terraform の plan で差分として検出される
-- **T034 の (1)**: 古い run の承認（段階 3 の後に確かめる）
+- **T034 の (1)**（run #11 の 3 回目）: 503 の変更を元に戻した PR（run #12）で main が進み、prod が正常なリビジョンに戻った後に、古い run #11 の cd-prod を再実行して承認した。最初のステップ「Require the latest main」で失敗し、認証・apply・デプロイは動かなかった（503 を返すイメージは prod に出なかった）
+- 確認のために main に入れた一時的な変更（失敗するテスト、prod だけの 503）は、PR #28 と PR #29 で元に戻した
