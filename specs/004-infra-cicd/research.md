@@ -217,7 +217,7 @@
 
 - `docker build` とコンテナの起動確認（開発環境に Docker のデーモンがない）
 - smoke-tester の ID トークンの audience。Cloud Run に直接組み込む IAP では、サービスの URL を audience にした ID トークンで通れるはず。通れなければ research.md に記録して直す
-- WIF の認証情報で `gcloud auth print-identity-token --impersonate-service-account` が使えるか
+- WIF の認証情報で `gcloud auth print-identity-token --impersonate-service-account` が使えるか（run #4 で使えないと分かった。下の「4 回目の実行」）
 - envs の最初の apply（Cloud SQL の作成に 10 分ほどかかる）と、その時点で Scheduler が collector を起動した場合の失敗（マイグレーションの前なので失敗するが、次の回からは成功する）
 
 ## パイプラインの最初の実行（2026-11-03、run #1）
@@ -242,3 +242,9 @@
 - ci はすべて合格した（plan は dev / prod とも空の state で作られた）
 - cd-dev: Terraform の apply で、Cloud SQL（作成に約 9 分）、DB とユーザー、Secret Manager、実行用の SA などが作られた。Cloud Run のサービスとジョブの作成で `Permission 'artifactregistry.repositories.downloadArtifacts' denied`（prod のプロジェクトの Artifact Registry）
   - dev の Cloud Run のサービスエージェントには読み取り権限を付けてあった。作成を呼び出した deployer 自身にもイメージを読む権限が要ると判断し、両方の deployer に Artifact Registry のリポジトリの `roles/artifactregistry.reader` を付けた（`bootstrap/iam.tf`）。prod の deployer も同じ理由で失敗するはずなので、一緒に付けた
+
+## パイプラインの 4 回目の実行（2026-11-03、run #4）
+
+- ci は合格。cd-dev は Terraform の apply（Cloud Run の web とジョブの作成）、migrate Job の実行、web のデプロイ、各ジョブのイメージの更新まで成功した。deployer に Artifact Registry の読み取り権限を付けたことで、run #3 の失敗は解消した
+- 失敗: スモークテストの前の ID トークンの発行で `iam.serviceAccounts.getAccessToken` が拒否された。`gcloud auth print-identity-token --impersonate-service-account` は、ID トークンの前に smoke-tester のアクセストークンも取ろうとするため、Token Creator の権限が要る。deployer には ID トークンの発行（`roles/iam.serviceAccountOpenIdTokenCreator`）しか付けていない
+- **対応**: 権限は広げず、IAM Credentials API の `generateIdToken` を deployer のアクセストークンで直接呼ぶスクリプト（`scripts/smoke-id-token.sh`）にした

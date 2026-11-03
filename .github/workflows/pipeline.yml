@@ -257,8 +257,7 @@ jobs:
         run: |
           url="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format='value(status.url)')"
           # smoke-tester の ID トークンで IAP を通る。トークンはログで伏せ字にする
-          token="$(gcloud auth print-identity-token --impersonate-service-account="$SMOKE_TESTER_SA" \
-            --audiences="$url" --include-email)"
+          token="$(scripts/smoke-id-token.sh "$SMOKE_TESTER_SA" "$url")"
           echo "::add-mask::$token"
           SMOKE_BASE_URL="$url" SMOKE_ID_TOKEN="$token" pnpm test:smoke
 
