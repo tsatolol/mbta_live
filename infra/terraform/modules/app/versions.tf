@@ -12,5 +12,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.9"
     }
+    # ログベースの指標を作ってから、アラートポリシーで使えるようになるまで待つ（monitoring.tf）
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.14"
+    }
   }
 }

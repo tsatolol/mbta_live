@@ -99,6 +99,22 @@ resource "google_logging_metric" "aggregate_overdue" {
   }
 }
 
+# ログベースの指標は、作ってから Cloud Monitoring で使えるようになるまで最大 10 分かかる。作った直後にアラートポリシーを
+# 作ると「Cannot find metric(s)」で失敗するので、指標を新しく作ったときだけ待つ（パイプラインの 13 回目の実行。research.md）
+resource "time_sleep" "log_metrics_propagation" {
+  create_duration = "300s"
+
+  triggers = {
+    metrics = join(",", [
+      google_logging_metric.collector_success.id,
+      google_logging_metric.vehicles_in_service_hours.id,
+      google_logging_metric.rejected_row_ratio.id,
+      google_logging_metric.unknown_stop_ids.id,
+      google_logging_metric.aggregate_overdue.id,
+    ])
+  }
+}
+
 # ---- アラートポリシー（FR-013）
 
 resource "google_monitoring_alert_policy" "collector_stopped" {
@@ -117,6 +133,8 @@ resource "google_monitoring_alert_policy" "collector_stopped" {
     }
   }
   notification_channels = local.notification_channels
+
+  depends_on = [time_sleep.log_metrics_propagation]
 }
 
 resource "google_monitoring_alert_policy" "no_vehicles" {
@@ -137,6 +155,8 @@ resource "google_monitoring_alert_policy" "no_vehicles" {
     }
   }
   notification_channels = local.notification_channels
+
+  depends_on = [time_sleep.log_metrics_propagation]
 }
 
 resource "google_monitoring_alert_policy" "rejected_rows" {
@@ -157,6 +177,8 @@ resource "google_monitoring_alert_policy" "rejected_rows" {
     }
   }
   notification_channels = local.notification_channels
+
+  depends_on = [time_sleep.log_metrics_propagation]
 }
 
 resource "google_monitoring_alert_policy" "unknown_stop_ids" {
@@ -166,9 +188,10 @@ resource "google_monitoring_alert_policy" "unknown_stop_ids" {
   conditions {
     display_name = "未解決の stop ID が 1 件以上、60 分間"
     condition_threshold {
-      filter          = "resource.type=\"cloud_run_job\" AND metric.type=\"logging.googleapis.com/user/${google_logging_metric.unknown_stop_ids.name}\""
-      comparison      = "COMPARISON_GE"
-      threshold_value = 1
+      filter = "resource.type=\"cloud_run_job\" AND metric.type=\"logging.googleapis.com/user/${google_logging_metric.unknown_stop_ids.name}\""
+      # COMPARISON_GE は使えない（LT と GT だけ）。分布の p99 は、0 件だけなら [0, 1) のバケットの中で 1 未満になる
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0.999
       duration        = "3600s"
       aggregations {
         alignment_period   = "300s"
@@ -177,6 +200,8 @@ resource "google_monitoring_alert_policy" "unknown_stop_ids" {
     }
   }
   notification_channels = local.notification_channels
+
+  depends_on = [time_sleep.log_metrics_propagation]
 }
 
 resource "google_monitoring_alert_policy" "aggregate_overdue" {
@@ -197,6 +222,8 @@ resource "google_monitoring_alert_policy" "aggregate_overdue" {
     }
   }
   notification_channels = local.notification_channels
+
+  depends_on = [time_sleep.log_metrics_propagation]
 }
 
 # ---- web の監視（FR-020）
