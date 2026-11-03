@@ -165,7 +165,11 @@
 
 - 開発環境で、`terraform fmt -check`、modules/app と envs の `terraform validate`、bootstrap の GCP の部分（GitHub の部分を除いたもの）の `terraform validate` が通った。さらに `terraform test` のモックのプロバイダで、envs/prod と bootstrap（GCP の部分）の plan と apply が通ることを確かめた（値の形や依存関係の誤りを見つけるため。GCP の API の挙動は確かめられない）
 - 未確認（T010 と T017 の最初の apply で確かめる）
-  - GitHub プロバイダ（`~> 6.6` とした）の最新版と、`github.tf` の書式
   - 組織のないプロジェクトで、Cloud Run に直接組み込む IAP（`iap_enabled`）が使えるか。使えなければ外部 HTTPS LB + Serverless NEG + IAP に切り替える
   - IAP のサービスエージェント（`service-<番号>@gcp-sa-iap.iam.gserviceaccount.com`）と、dev の Cloud Run のサービスエージェントが、IAM の付与の時点で作られているか。作られていなければ、少し待って apply し直す
-  - bootstrap の apply で、ユーザーの認証情報に割り当てのプロジェクト（quota project）が要ると言われるか。言われたら、prod のプロジェクトができた後に `gcloud auth application-default set-quota-project` で設定して apply し直す
+
+## T010 の結果（2026-11-03）
+
+- bootstrap をローカルで apply し、dev（`mbta-live-dev-76bt`）と prod（`mbta-live-prod-76bt`）のプロジェクト、WIF、SA、GitHub の設定が作られた。エラーはなかった（quota project の設定も、サービスエージェントを待つ apply のやり直しも要らなかった）
+- GitHub プロバイダは 6.13.0 が入った。`versions.tf` を `~> 6.13` にした
+- 警告: `github_actions_environment_secret` の `plaintext_value` が非推奨（「Use value.」）。`value` に書き換えた。次に bootstrap を apply するとき、plan で secrets の差分がどう出るかを確かめる

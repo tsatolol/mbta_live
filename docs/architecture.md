@@ -35,7 +35,7 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 
 | | dev | prod |
 |---|---|---|
-| GCP プロジェクト | `<dev-project-id>`（未定。bootstrap の変数 `project_ids` で決める） | `<prod-project-id>`（未定） |
+| GCP プロジェクト | `mbta-live-dev-76bt` | `mbta-live-prod-76bt` |
 | デプロイ | main への push で自動 | dev 成功後、承認されてから |
 | collector の間隔 | 5 分（`*/5 * * * *`） | 1 分（`* * * * *`） |
 | sync-static / aggregate | 毎日 04:00 / 04:30 ET | 同左 |
