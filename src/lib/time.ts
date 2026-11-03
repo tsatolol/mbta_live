@@ -60,6 +60,30 @@ export function serviceDateOf(instant: Date): ServiceDate {
   return `${year}-${pad2(month + 1)}-${pad2(day)}`;
 }
 
+/** 運行時間（監視で「車両 0 件」を異常とみなす時間帯）の始まり。ET の 05:30（分で表す） */
+export const SERVICE_HOURS_START_MINUTES = 5 * 60 + 30;
+
+/**
+ * ET の壁時計で運行時間中（05:30〜24:00）か（004 FR-013 の「運行時間中の車両 0 件」の監視に使う）。
+ * 00:00〜05:30 は運行時間外。
+ */
+export function isInServiceHours(instant: Date): boolean {
+  const et = new TZDate(instant.getTime(), BOSTON_TZ);
+  return et.getHours() * 60 + et.getMinutes() >= SERVICE_HOURS_START_MINUTES;
+}
+
+/** 前の運行日の集計の期限。ET の 05:00（aggregate は 04:30 に動く） */
+export const AGGREGATE_DEADLINE_HOUR = 5;
+
+/**
+ * 前の運行日の集計の期限を過ぎているか（004 FR-013 の「05:00 ET 時点で前日分の集計が未完了」の監視に使う）。
+ * 運行日の始まり（03:00 ET）から 05:00 ET までは、集計がまだ終わっていなくてよい。
+ */
+export function isAggregateDeadlinePassed(instant: Date): boolean {
+  const hour = new TZDate(instant.getTime(), BOSTON_TZ).getHours();
+  return !(hour >= SERVICE_DAY_START_HOUR && hour < AGGREGATE_DEADLINE_HOUR);
+}
+
 /** 運行日に日数を足す（負の数で引く） */
 export function addServiceDays(serviceDate: ServiceDate, days: number): ServiceDate {
   const { year, month, day } = parseServiceDate(serviceDate);

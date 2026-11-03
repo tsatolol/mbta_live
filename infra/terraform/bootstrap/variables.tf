@@ -68,3 +68,18 @@ variable "iap_oauth_clients" {
   default   = {}
   sensitive = true
 }
+
+variable "monthly_budgets" {
+  description = <<-EOT
+    環境ごとの月の予算（予算アラート。FR-012）。金額は請求先アカウントの通貨で書く（通貨は budget_currency_code）。
+    書いた環境だけ予算を作る。例: { dev = 1000, prod = 3000 }
+  EOT
+  type        = map(number)
+  default     = {}
+}
+
+variable "budget_currency_code" {
+  description = "予算の通貨（請求先アカウントの通貨と同じにする。例: JPY、USD）"
+  type        = string
+  default     = "JPY"
+}

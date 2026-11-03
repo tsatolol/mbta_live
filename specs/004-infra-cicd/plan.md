@@ -41,13 +41,13 @@ dev と prod の違い（間隔、保持期間、Cloud SQL の設定など）は
 ### データ品質の監視（FR-013）
 
 - ジョブは件数・解析失敗の行数・未解決の駅 ID の数を構造化ログに出す。Cloud Logging のログベースの指標にし、Cloud Monitoring のアラートポリシーで通知する（通知先はメール）
-- 最後の収集成功からの経過時間と前日分の集計の完了は、`/api/health` を Cloud Monitoring の稼働時間チェックで見る（IAP の背後にあるので、監視用 SA に IAP のアクセス権を付ける。方式は実装時に検証する）
+- 最後の収集成功からの経過時間は、collector の成功のログが途絶えたこと（ログベースの指標の absence）で見る。前日分の集計の完了は、collector が毎回「05:00 ET を過ぎても今の運行日に aggregate が成功していないか」を終了ログに出し、それを数える。`/api/health` の稼働時間チェックは使わない（IAP の背後にあり、ID トークンの audience を合わせられないため。research.md）
 - web の 5xx の割合（5 分間で 5% 超）と応答時間（p95 が 3 秒超）は、Cloud Run の組み込みの指標でアラートポリシーを作る（FR-020）
 - dev では通知せず、ダッシュボードで見るだけにする
 
 ### テスト用・監視用の SA
 
-- `smoke-tester`（環境ごと）: IAP のアクセス権（`roles/iap.httpsResourceAccessor`）だけを持つ。パイプラインのスモークテスト、dev の E2E、Cloud Monitoring の稼働時間チェックで ID トークンを発行して使う
+- `smoke-tester`（環境ごと）: IAP のアクセス権（`roles/iap.httpsResourceAccessor`）だけを持つ。パイプラインのスモークテストと dev の E2E で ID トークンを発行して使う
 - deployer は `smoke-tester` の ID トークンを発行できる（`roles/iam.serviceAccountOpenIdTokenCreator`）
 
 ### prod のマイグレーション前のバックアップ
@@ -99,10 +99,10 @@ specs/004-infra-cicd/
 infra/terraform/
 ├── bootstrap/          # 最初に一度だけ人が apply: GCP プロジェクト（dev / prod）、API の有効化、
 │                       # state バケット、Artifact Registry、WIF、SA、
-│                       # IAP で許可するユーザー、監視の通知先、
+│                       # IAP で許可するユーザー、監視の通知先、予算アラート、
 │                       # GitHub の Environment・variables・ルールセット・セキュリティ設定
 ├── modules/app/        # Cloud SQL、Secret Manager、Cloud Run（web）、Cloud Run Jobs、
-│                       # Cloud Scheduler、IAP、実行用の SA、予算アラート
+│                       # Cloud Scheduler、IAP、実行用の SA、監視
 └── envs/
     ├── dev/            # backend.tf + main.tf（module "app"）+ terraform.tfvars（公開してよい値だけ）
     └── prod/

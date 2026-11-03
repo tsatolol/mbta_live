@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   addServiceDays,
   formatInBoston,
+  isAggregateDeadlinePassed,
+  isInServiceHours,
   isServiceDate,
   parseMbtaDateTime,
   serviceDateOf,
@@ -110,5 +112,33 @@ describe("その他", () => {
 
   it("formatInBoston はボストン時間で書式化する", () => {
     expect(formatInBoston(new Date("2026-11-02T15:04:05Z"), "HH:mm:ss")).toBe("10:04:05");
+  });
+});
+
+describe("isInServiceHours", () => {
+  it.each([
+    // [UTC の時刻, 期待, 説明]
+    ["2026-11-03T10:29:59Z", false, "05:29:59 EST は運行時間外"],
+    ["2026-11-03T10:30:00Z", true, "05:30 EST から運行時間"],
+    ["2026-11-04T04:59:59Z", true, "23:59:59 EST は運行時間"],
+    ["2026-11-04T05:00:00Z", false, "00:00 EST から運行時間外"],
+    ["2026-07-01T09:29:59Z", false, "夏時間（EDT）の 05:29:59"],
+    ["2026-07-01T09:30:00Z", true, "夏時間（EDT）の 05:30"],
+  ])("%s は %s（%s）", (utc, expected) => {
+    expect(isInServiceHours(new Date(utc))).toBe(expected);
+  });
+});
+
+describe("isAggregateDeadlinePassed", () => {
+  it.each([
+    // [UTC の時刻, 期待, 説明]
+    ["2026-11-03T07:59:59Z", true, "02:59:59 EST は前の運行日の続き（期限は過ぎている）"],
+    ["2026-11-03T08:00:00Z", false, "03:00 EST から 05:00 までは集計を待つ"],
+    ["2026-11-03T09:59:59Z", false, "04:59:59 EST はまだ期限前"],
+    ["2026-11-03T10:00:00Z", true, "05:00 EST で期限"],
+    ["2026-07-01T08:59:59Z", false, "夏時間（EDT）の 04:59:59"],
+    ["2026-07-01T09:00:00Z", true, "夏時間（EDT）の 05:00"],
+  ])("%s は %s（%s）", (utc, expected) => {
+    expect(isAggregateDeadlinePassed(new Date(utc))).toBe(expected);
   });
 });

@@ -18,6 +18,8 @@ export type JobStatus = "running" | "success" | "failed" | "skipped";
 
 export interface JobOutcome {
   counts?: Record<string, number>;
+  /** 終了ログに足す項目（監視のログベースの指標で使う。counts のような件数ではないもの） */
+  logFields?: Record<string, string | number | boolean>;
   ratelimitRemaining?: number | null;
 }
 
@@ -109,7 +111,10 @@ export async function runJob(
       error,
     },
   });
+  // 監視（004 の modules/app/monitoring.tf）のログベースの指標は、この終了ログの job・status・counts・
+  // logFields の項目を読む。項目の名前を変えるときは monitoring.tf も直す
   logger.info(`ジョブ ${name} が終了しました`, {
+    ...(outcome.logFields ?? {}),
     job: name,
     status,
     counts: outcome.counts ?? {},

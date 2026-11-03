@@ -6,3 +6,6 @@ db_backup_retained_count = 1
 db_deletion_protection   = false
 # Secret Manager の MBTA_API_KEY に値を入れたら true にする（quickstart.md）
 mbta_api_key_enabled = false
+# 監視: dev は通知しない（画面で見る）。collector は 5 分間隔なので、15 分成功がなければアラート
+alert_notifications_enabled = false
+collector_absence_seconds   = 900

@@ -299,3 +299,37 @@
   - Cloud Scheduler の一時停止（`paused`）は、Terraform の plan で差分として検出される
 - **T034 の (1)**（run #11 の 3 回目）: 503 の変更を元に戻した PR（run #12）で main が進み、prod が正常なリビジョンに戻った後に、古い run #11 の cd-prod を再実行して承認した。最初のステップ「Require the latest main」で失敗し、認証・apply・デプロイは動かなかった（503 を返すイメージは prod に出なかった）
 - 確認のために main に入れた一時的な変更（失敗するテスト、prod だけの 503）は、PR #28 と PR #29 で元に戻した
+
+## フェーズ 6〜9 の実装で決めたこと（2026-11-03）
+
+### ロールバック（T035）
+
+- **決定**: `rollback.yml`（`workflow_dispatch`）。`image_digest` がなければ、web のトラフィックを `previous` タグのリビジョンに戻す。あれば、web と各ジョブをそのイメージに差し替える。Terraform の apply とマイグレーションは実行しない。終わったらスモークテスト
+- **直前のリビジョンの見つけ方**: cd-dev と cd-prod が、トラフィックを新しいリビジョンに移したら、それまで流れていたリビジョンに `previous` タグを付ける（`gcloud run services update-traffic --update-tags`）。作成日時の順で 1 つ前のリビジョンを選ぶと、スモークテストで止めた candidate（T034 の `web-00006-kic` のような壊れたリビジョン）を選んでしまうため
+- `concurrency` はパイプラインのデプロイと同じ `deploy-<env>` にして、重ならないようにした。入力（`image_digest`）はスクリプトに埋め込まず環境変数で渡し、Artifact Registry のダイジェストの形かを確かめる
+
+### 予算アラート（T037）
+
+- **決定**: 予算は請求先アカウントのリソースなので、パイプラインの deployer（プロジェクトの権限だけ）ではなく、bootstrap（請求先アカウントの権限がある人）で作る。変数 `monthly_budgets`（環境ごとの月の予算）と `budget_currency_code`（請求先アカウントの通貨。既定 JPY）。予算額は未定なので、書いた環境だけ作る
+- 50%・90%・100% と、月末の見込みが 100% で、監視の通知チャンネルと請求先アカウントの管理者にメールが届く
+- Billing Budget API はユーザーの認証情報で呼ぶときに割り当てのプロジェクトが要るので、予算だけ prod のプロジェクトを `billing_project` にしたプロバイダ（`google.billing`）で作る
+- **未確認**: bootstrap の apply（予算額を決めたとき）
+
+### 監視（T039〜T041）
+
+- **ジョブの終了ログ**: `src/jobs/runner.ts` の終了ログに `job`・`status`・`counts` が必ず入る。監視に要る件数以外の項目は `JobOutcome.logFields` で足す。collector は `inServiceHours`（運行時間中か）、`rejectedRowRatio`（解析に失敗した行の割合）、`aggregateOverdue`（後述）を出す。結合テスト（`tests/integration/job-end-log.test.ts`）で確かめる
+- **ログベースの指標とアラートポリシー**（`modules/app/monitoring.tf`）:
+  | 条件（FR-013・FR-020） | 指標 | アラートの条件 |
+  |---|---|---|
+  | 最後の収集成功から 3 分以上 | collector の成功の回数 | 成功が `collector_absence_seconds` 秒ない（prod 180 秒、dev 900 秒） |
+  | 運行時間中（05:30〜24:00 ET）の車両 0 件 | 運行時間中の車両数（分布） | p99 が 1 未満、10 分間 |
+  | 解析に失敗した行の割合が 1% 超 | `rejectedRowRatio`（分布） | p99 が 0.01 超 |
+  | `unknown_stop_ids` の未解決分の増加 | 駅一覧にない stop ID の数（分布） | 1 件以上が 60 分続く（sync-static は毎日 04:00 なので、新しい駅は最大で約 1 日残る。続くときだけ通知する） |
+  | 05:00 ET 時点で前日分の集計が未完了 | collector が `aggregateOverdue=true` を出した回数 | 1 回以上 |
+  | web の 5xx の割合 5% 超（5 分） | Cloud Run の `request_count` | 5xx / 全体 > 0.05 |
+  | web の応答時間の p95 が 3 秒超 | Cloud Run の `request_latencies` | p95 > 3,000 ms |
+- **運行時間の判定**は Cloud Monitoring の条件では夏時間を扱いにくいので、アプリ（`src/lib/time.ts` の `isInServiceHours`）で判定してログに出す
+- **集計の遅れ**: ログがないことの条件（absence）で「毎日 1 回の aggregate の成功」を見るには 24 時間を超える期間が要り、上限を確かめられなかった。そこで collector が毎回「05:00 ET を過ぎても、今の運行日（03:00 ET から）に aggregate が一度も成功していないか」（`isAggregateDeadlinePassed` と `collector_runs`）をログに出す。集計（003）が入る前は aggregate はパーティションの管理だけだが、ジョブが動いて成功したかは同じように見られる。003 で集計が入ったら、集計の失敗は aggregate の失敗になるので、同じ監視で見られる
+- **稼働時間チェックはやめた**: `/api/health` は IAP の背後にある。稼働時間チェックの ID トークン（Monitoring のサービスエージェント）の audience を、IAP の OAuth クライアントの ID に合わせられない。収集の途絶と集計の遅れは上のログで見られるので、稼働時間チェックは作らない
+- **dev は通知しない**: `alert_notifications_enabled = false`。ポリシーは作るので、Cloud Monitoring の画面で状態を見られる（TR-005 の確認は dev で条件を起こし、画面と、一時的に通知を有効にしたときのメールで確かめる）
+- **未確認（T042 で確かめる）**: 分布の指標の p99 で、0 件・1% などの境界が意図どおりに判定されるか。条件を起こしたときに通知が届くか

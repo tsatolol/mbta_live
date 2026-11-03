@@ -8,15 +8,17 @@ provider "google" {
 module "app" {
   source = "../../modules/app"
 
-  env                      = "dev"
-  project_id               = var.project_id
-  region                   = var.region
-  image                    = var.image
-  collector_schedule       = var.collector_schedule
-  raw_retention_days       = var.raw_retention_days
-  db_backup_retained_count = var.db_backup_retained_count
-  db_deletion_protection   = var.db_deletion_protection
-  mbta_api_key_enabled     = var.mbta_api_key_enabled
+  env                         = "dev"
+  project_id                  = var.project_id
+  region                      = var.region
+  image                       = var.image
+  collector_schedule          = var.collector_schedule
+  raw_retention_days          = var.raw_retention_days
+  db_backup_retained_count    = var.db_backup_retained_count
+  db_deletion_protection      = var.db_deletion_protection
+  mbta_api_key_enabled        = var.mbta_api_key_enabled
+  alert_notifications_enabled = var.alert_notifications_enabled
+  collector_absence_seconds   = var.collector_absence_seconds
 }
 
 output "web_service_name" {

@@ -19,7 +19,15 @@ import { toPredictionSamples } from "@/lib/metrics/sampling";
 import { logger } from "@/lib/log";
 import { mbtaClientFromEnv, type MbtaClient } from "@/lib/mbta/client";
 import { fetchRealtime } from "@/lib/mbta/realtime";
-import { addServiceDays, serviceDateOf } from "@/lib/time";
+import {
+  addServiceDays,
+  isAggregateDeadlinePassed,
+  isInServiceHours,
+  serviceDateOf,
+  serviceDayRange,
+} from "@/lib/time";
+import { hasJobSucceededSince } from "@/lib/db/health";
+import { rejectedRowRatio } from "@/lib/metrics/data-quality";
 import { runJob, type JobOutcome, type JobRunResult } from "./runner";
 
 export interface CollectDeps {
@@ -119,6 +127,12 @@ export async function collect({
     { timeout: TX_TIMEOUT_MS },
   );
 
+  // 監視: 05:00 ET を過ぎても、今の運行日に aggregate が一度も成功していない（FR-013）。
+  // 集計（003）が入る前はパーティションの管理だけだが、ジョブが動いたかは同じように見られる
+  const aggregateOverdue =
+    isAggregateDeadlinePassed(polledAt) &&
+    !(await hasJobSucceededSince(db, "aggregate", serviceDayRange(today).start));
+
   return {
     counts: {
       requests: client.requestCount,
@@ -132,6 +146,16 @@ export async function collect({
       arrivalsInserted: written.arrivalsInserted,
       unknownStopIds: unknownStopIds.length,
       samplesInserted: written.samplesInserted,
+    },
+    logFields: {
+      // 監視: 運行時間中の車両 0 件（FR-013）
+      inServiceHours: isInServiceHours(polledAt),
+      // 監視: 解析に失敗した行の割合（FR-013。1% 超で通知）
+      aggregateOverdue,
+      rejectedRowRatio: rejectedRowRatio(
+        snapshot.vehicles.length + snapshot.predictions.length + snapshot.alerts.length,
+        rejectedRows,
+      ),
     },
     ratelimitRemaining: client.lastRateLimit?.remaining ?? null,
   };

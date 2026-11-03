@@ -1,0 +1,106 @@
+# ロールバック（specs/004-infra-cicd/contracts/pipeline.md の「rollback.yml」、FR-010）
+# GitHub の Actions の画面から手で実行する（main で実行する。Environment の Deployment branches が main だけのため）。
+#   image_digest なし: web のトラフィックを、直前のリビジョン（previous タグ。デプロイのたびに pipeline.yml が付ける）に戻す
+#   image_digest あり: web と各ジョブを、そのイメージ（ダイジェスト指定）に差し替える
+# Terraform の apply とマイグレーションは実行しない（マイグレーションは後方互換なので、前のイメージでも動く）。
+# prod は Environment prod の承認が要る。終わったらスモークテストを実行する。
+name: rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 戻す環境
+        type: choice
+        options: [dev, prod]
+        required: true
+      image_digest:
+        description: 戻すイメージ（<Artifact Registry>/mbta-live@sha256:...）。空なら web を直前のリビジョンに戻すだけ
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  REGION: us-east4
+
+jobs:
+  rollback:
+    name: rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    # パイプラインのデプロイと重ならないようにする
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+      # 入力はスクリプトに直接埋め込まず、環境変数で渡す
+      IMAGE_DIGEST: ${{ inputs.image_digest }}
+      REPOSITORY: ${{ vars.ARTIFACT_REGISTRY }}
+      SMOKE_TESTER_SA: ${{ vars.SMOKE_TESTER_SA }}
+      IAP_CLIENT_ID: ${{ vars.IAP_CLIENT_ID }}
+    steps:
+      - name: Validate inputs
+        run: |
+          if [ -n "$IMAGE_DIGEST" ] && [[ ! "$IMAGE_DIGEST" =~ ^${REPOSITORY}/mbta-live@sha256:[0-9a-f]{64}$ ]]; then
+            echo "image_digest は $REPOSITORY/mbta-live@sha256:<64 桁> の形で指定してください" >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Authenticate to Google Cloud (deployer)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Roll back web
+        run: |
+          if [ -n "$IMAGE_DIGEST" ]; then
+            gcloud run deploy web --image="$IMAGE_DIGEST" --project="$PROJECT" --region="$REGION" --quiet
+          else
+            previous="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format=json \
+              | jq -r '.status.traffic[] | select(.tag == "previous") | .revisionName')"
+            if [ -z "$previous" ]; then
+              echo "previous タグの付いたリビジョンがありません。image_digest を指定してください" >&2
+              exit 1
+            fi
+            echo "web のトラフィックを $previous に戻します"
+            gcloud run services update-traffic web --to-revisions="$previous=100" \
+              --project="$PROJECT" --region="$REGION" --quiet
+          fi
+
+      - name: Roll back jobs
+        if: inputs.image_digest != ''
+        run: |
+          for job in collector sync-static aggregate migrate; do
+            gcloud run jobs update "$job" --image="$IMAGE_DIGEST" --project="$PROJECT" --region="$REGION" --quiet
+          done
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Smoke test
+        run: |
+          url="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format='value(status.url)')"
+          scripts/smoke.sh "$url"
