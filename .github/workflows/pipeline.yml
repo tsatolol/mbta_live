@@ -127,8 +127,13 @@ jobs:
           tag="$REPOSITORY/mbta-live:${{ github.sha }}"
           docker tag "mbta-live:${{ github.sha }}" "$tag"
           docker push "$tag"
-          # dev と prod には、タグではなくダイジェストでデプロイする（同じイメージであることを保証する）
-          image="$(docker inspect --format '{{index .RepoDigests 0}}' "$tag")"
+          # dev と prod には、タグではなくダイジェストでデプロイする（同じイメージであることを保証する）。
+          # RepoDigests にはローカルの名前のものも入りうるので、Artifact Registry のものを選ぶ
+          image="$(docker inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$tag" | grep "^$REPOSITORY/mbta-live@sha256:" | head -n 1)"
+          if [ -z "$image" ]; then
+            echo "push したイメージのダイジェストが見つかりません" >&2
+            exit 1
+          fi
           echo "image=$image" >> "$GITHUB_OUTPUT"
           echo "イメージ: $image"
 
@@ -151,8 +156,20 @@ jobs:
         run: |
           for env in dev prod; do
             dir="infra/terraform/envs/$env"
-            terraform -chdir="$dir" init -input=false -no-color >/dev/null
+            # state がまだない環境（最初のデプロイの前）では、GCS の backend の init が空の state を書こうとして、
+            # 読み取りだけの ci-builder では失敗する。そのときは空のローカルの state で plan する（結果は同じ）
+            bucket="$(sed -n 's/^ *bucket *= *"\(.*\)"/\1/p' "$dir/backend.tf")"
+            if ! out="$(gcloud storage ls "gs://$bucket/envs/$env/default.tfstate" 2>&1)"; then
+              # 権限の誤りなどで ls が失敗したときに、空の state で plan してしまわないよう、「ない」ときだけに限る
+              if ! grep -q "matched no objects" <<<"$out"; then
+                echo "$out" >&2
+                exit 1
+              fi
+              echo "== $env: state がまだないので、空の state で plan する"
+              printf 'terraform {\n  backend "local" {}\n}\n' > "$dir/backend_override.tf"
+            fi
             # ci-builder は読み取りだけなので、ロックを取らない。plan の全文はログに出さない（要約だけをサマリーに出す）
+            terraform -chdir="$dir" init -input=false -lock=false -no-color >/dev/null
             terraform -chdir="$dir" plan -input=false -lock=false -no-color -out="$RUNNER_TEMP/$env.tfplan" >/dev/null
             terraform -chdir="$dir" show -json "$RUNNER_TEMP/$env.tfplan" > "$RUNNER_TEMP/$env.plan.json"
             echo "== $env"
