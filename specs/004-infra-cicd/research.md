@@ -229,3 +229,10 @@
   - pool `github-ci`（prod のプロジェクト。新規）: 条件は「このリポジトリの main」。ci-builder だけを付ける。GitHub の variable `CI_WIF_PROVIDER` はこの provider に変わる
   - environment のないジョブは `environment` クレームがないので、pool `github` の条件を満たさない（deployer を使えない）
 - 警告: `google-github-actions/auth@v2`、`setup-gcloud@v2`、`pnpm/action-setup@v4` が Node.js 20 向けで、Node.js 24 で強制的に動かされている。T047 で新しいメジャーバージョンに上げる
+
+## パイプラインの 2 回目の実行（2026-11-03、run #2）
+
+- WIF の修正で、ci-builder としての認証とイメージの push が通った
+- 失敗 1: ci の plan で、state がまだない（最初のデプロイの前）ため、GCS の backend の `terraform init` が空の state とロックのオブジェクトを書こうとして、読み取りだけの ci-builder では `storage.objects.create` が拒否された。`-lock=false` を付けても、GCS の backend は state がないときに空の state を書く
+  - **対応**: state のオブジェクトがまだない環境（`gcloud storage ls` が「matched no objects」で失敗したとき）だけ、`backend_override.tf` で local の backend に切り替え、空の state で plan する。state がない場合は GCS でもローカルでも plan の結果は同じなので、prod の plan のハッシュも cd-prod の plan と一致する。ls がほかの理由（権限など）で失敗したときは止める
+- 失敗 2: `docker inspect` の `RepoDigests` の最初の要素が、Artifact Registry ではなくローカルの名前（`mbta-live@sha256:...`）だった。Artifact Registry のパスで始まるものを選ぶようにした

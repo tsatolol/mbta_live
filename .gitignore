@@ -20,3 +20,5 @@ crash.log
 !infra/terraform/envs/*/terraform.tfvars
 !*.tfvars.example
 dist/
+# Terraform の override（ci で一時的に作る）
+*_override.tf
