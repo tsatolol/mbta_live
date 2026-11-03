@@ -283,3 +283,10 @@
 - **スモークテストのスクリプト**: dev / candidate / 本番の 3 か所で使うので、ID トークンの発行と `pnpm test:smoke` を `scripts/smoke.sh` にまとめた
 - **最初のリリースの例外**: prod の web は Terraform の最初の apply で、そのイメージのリビジョンがトラフィック 100% で作られる。その後の candidate は同じイメージの 2 つ目のリビジョンになる。最初のリリースでは利用者がいないので、段階的な切り替えの効果はないが、流れは同じに動く
 - **未確認（最初の prod へのデプロイで確かめる）**: Cloud Run に直接組み込む IAP が、タグ付きの URL（`https://candidate---web-....a.run.app`）も守るか。守らない場合、candidate の「認証なしは拒否」のテストが失敗してデプロイが止まる（利用者には影響しない）。そのときは candidate のスモークテストの方式を見直す
+
+## 最初の prod へのデプロイ（2026-11-03、run #8）
+
+- ci → cd-dev → 承認 → cd-prod がすべて成功し、prod（`mbta-live-prod-76bt`）で web と収集（1 分ごと）が動き始めた
+- cd-prod: main の最新の確認、plan のハッシュの照合（ci の plan と一致。ci は空のローカルの state、cd-prod は GCS の空の state で plan したが、ハッシュは同じになった）、apply（Cloud SQL の作成を含めて約 6 分）、バックアップ（最初のリリースなので飛ばした）、migrate、candidate のデプロイ、candidate のスモークテスト、トラフィックの切り替えと本番のスモークテスト、ジョブの更新、collector の 1 回の実行
+- **IAP はタグ付きの URL も守る**: candidate の URL（`https://candidate---web-....a.run.app`）に対するスモークテストで、ID トークン付きの `/api/health` が 200、認証なしは拒否された（未確認だった点を確かめた）
+- 承認から cd-prod の完了まで約 8 分 20 秒（SC-003 の 15 分以内）。2 回目以降は Cloud SQL の作成がないので、さらに短くなる

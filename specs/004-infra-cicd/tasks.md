@@ -117,7 +117,7 @@ description: "004 インフラと CI/CD の実装タスク"
 - [X] T031 [US3] `cd-prod` ジョブの前半を書く: `environment: prod`（Required reviewers）、`needs: cd-dev`、`concurrency: deploy-prod`。`github.sha` が main の HEAD でなければ失敗 → deployer-prod として WIF で認証 → `terraform plan`（envs/prod）のハッシュが `prod_plan_hash` と違えば失敗 → `terraform apply`（ハッシュを確かめた plan ファイルをそのまま適用する）: `.github/workflows/pipeline.yml`
 - [X] T032 [US3] `cd-prod` にマイグレーション前のバックアップを加える（FR-019）: 新しいマイグレーションがあるときだけ `gcloud sql backups create` を実行し、完了を待ってから migrate Job を動かす: `.github/workflows/pipeline.yml`
 - [X] T033 [US3] `cd-prod` に段階的な切り替えを加える（FR-018）: web の新しいリビジョンを `--no-traffic --tag candidate` でデプロイ → タグ付き URL に対してスモークテスト（失敗したら切り替えずに終了）→ トラフィックを 100% に切り替え → 本番 URL に対してスモークテスト（失敗したら直前のリビジョンに戻して失敗）→ 各 Job のイメージを更新 → collector Job を 1 回実行（`--wait`）。タグ付き URL を IAP を通して ID トークンで呼べるかは、最初の prod へのデプロイで確かめて research.md に記録する: `.github/workflows/pipeline.yml`、`scripts/smoke.sh`
-- [ ] T034 [US3] 確認（TR-004）: (1) 承認待ちの古い run を承認すると失敗する、(2) 承認後に prod の Terraform を手で変えると plan のハッシュが合わずに失敗する、(3) スモークテストが失敗するリビジョン（`/api/health` が 503 を返すようにした一時的な変更）でトラフィックが切り替わらない、をそれぞれ一度ずつ試して確かめる（SC-003 の所要時間も記録する）
+- [ ] T034 [US3] 確認（TR-004。通常の流れは run #8 で確かめた: 承認後に prod へデプロイされ、candidate と本番のスモークテストが成功、承認から約 8 分 20 秒。安全装置の 3 つは未実施）: (1) 承認待ちの古い run を承認すると失敗する、(2) 承認後に prod の Terraform を手で変えると plan のハッシュが合わずに失敗する、(3) スモークテストが失敗するリビジョン（`/api/health` が 503 を返すようにした一時的な変更）でトラフィックが切り替わらない、をそれぞれ一度ずつ試して確かめる（SC-003 の所要時間も記録する）
 
 **チェックポイント**: US1〜US3 が動く。prod で収集が始まる
 
