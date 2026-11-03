@@ -105,6 +105,18 @@ resource "google_storage_bucket_iam_member" "deployer_state" {
   member = google_service_account.deployer[each.key].member
 }
 
+# Cloud Run のサービスとジョブを作る・更新するとき、呼び出した deployer 自身にもイメージを読む権限が要る
+# （パイプラインの 3 回目の実行で、deployer-dev が downloadArtifacts を拒否された。research.md）
+resource "google_artifact_registry_repository_iam_member" "deployer_pull" {
+  for_each = local.envs
+
+  project    = google_artifact_registry_repository.images.project
+  location   = google_artifact_registry_repository.images.location
+  repository = google_artifact_registry_repository.images.name
+  role       = "roles/artifactregistry.reader"
+  member     = google_service_account.deployer[each.key].member
+}
+
 # ---- smoke-tester（環境ごと）
 
 resource "google_service_account" "smoke_tester" {

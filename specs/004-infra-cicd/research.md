@@ -236,3 +236,9 @@
 - 失敗 1: ci の plan で、state がまだない（最初のデプロイの前）ため、GCS の backend の `terraform init` が空の state とロックのオブジェクトを書こうとして、読み取りだけの ci-builder では `storage.objects.create` が拒否された。`-lock=false` を付けても、GCS の backend は state がないときに空の state を書く
   - **対応**: state のオブジェクトがまだない環境（`gcloud storage ls` が「matched no objects」で失敗したとき）だけ、`backend_override.tf` で local の backend に切り替え、空の state で plan する。state がない場合は GCS でもローカルでも plan の結果は同じなので、prod の plan のハッシュも cd-prod の plan と一致する。ls がほかの理由（権限など）で失敗したときは止める
 - 失敗 2: `docker inspect` の `RepoDigests` の最初の要素が、Artifact Registry ではなくローカルの名前（`mbta-live@sha256:...`）だった。Artifact Registry のパスで始まるものを選ぶようにした
+
+## パイプラインの 3 回目の実行（2026-11-03、run #3）
+
+- ci はすべて合格した（plan は dev / prod とも空の state で作られた）
+- cd-dev: Terraform の apply で、Cloud SQL（作成に約 9 分）、DB とユーザー、Secret Manager、実行用の SA などが作られた。Cloud Run のサービスとジョブの作成で `Permission 'artifactregistry.repositories.downloadArtifacts' denied`（prod のプロジェクトの Artifact Registry）
+  - dev の Cloud Run のサービスエージェントには読み取り権限を付けてあった。作成を呼び出した deployer 自身にもイメージを読む権限が要ると判断し、両方の deployer に Artifact Registry のリポジトリの `roles/artifactregistry.reader` を付けた（`bootstrap/iam.tf`）。prod の deployer も同じ理由で失敗するはずなので、一緒に付けた
