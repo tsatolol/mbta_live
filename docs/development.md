@@ -46,6 +46,7 @@ pnpm infra:validate            # Terraform の各ディレクトリで init（ba
 scripts/check-container.sh <イメージ> <DATABASE_URL>      # コンテナの起動確認（Docker が必要）
 scripts/check-migration-compat.sh <DATABASE_URL>          # マイグレーションの互換性テスト（PROD_SHA で比べるコミットを指定できる）
 scripts/plan-summary.sh <plan の JSON> / scripts/plan-hash.sh <plan の JSON>
+scripts/smoke.sh <URL>                                    # IAP を通したスモークテスト（SMOKE_TESTER_SA と IAP_CLIENT_ID、deployer の gcloud の認証が必要）
 ```
 
 ## MBTA API を呼ぶときの注意

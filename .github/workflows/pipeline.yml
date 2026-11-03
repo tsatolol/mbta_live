@@ -1,5 +1,5 @@
 # リリース用のパイプライン（specs/004-infra-cicd/contracts/pipeline.md の「pipeline.yml」）
-# main への push（= PR のマージ）ごとに、ci を 1 回 → cd-dev（承認なし）→ cd-prod（承認後。フェーズ 5 で追加）。
+# main への push（= PR のマージ）ごとに、ci を 1 回 → cd-dev（承認なし）→ cd-prod（Environment prod の承認後）。
 # リポジトリは public なので、ログ・ジョブサマリーに秘密の値を出さない。plan ファイルは artifact にしない。
 name: pipeline
 
@@ -258,15 +258,165 @@ jobs:
           IAP_CLIENT_ID: ${{ vars.IAP_CLIENT_ID }}
         run: |
           url="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format='value(status.url)')"
-          if [ -z "$IAP_CLIENT_ID" ]; then
-            echo "GitHub の Environment の variable IAP_CLIENT_ID がありません（bootstrap の iap_oauth_clients）" >&2
-            exit 1
-          fi
-          # smoke-tester の ID トークンで IAP を通る。トークンはログで伏せ字にする
-          token="$(scripts/smoke-id-token.sh "$SMOKE_TESTER_SA" "$IAP_CLIENT_ID")"
-          echo "::add-mask::$token"
-          SMOKE_BASE_URL="$url" SMOKE_ID_TOKEN="$token" pnpm test:smoke
+          scripts/smoke.sh "$url"
 
       - name: Run collector once
         # Secret Manager、DB、MBTA API への接続をまとめて確かめる
         run: gcloud run jobs execute collector --project="$PROJECT" --region="$REGION" --wait
+
+  cd-prod:
+    name: cd-prod
+    needs: [ci, cd-dev]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Required reviewers（オーナー）の承認を待つ。承認者は ci のジョブサマリー（承認用のサマリー）を見て判断する
+    environment: prod
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+      # prod で動いているコミット（新しいマイグレーションの有無）を Environment prod のデプロイ履歴から読む
+      deployments: read
+    env:
+      IMAGE: ${{ needs.ci.outputs.image }}
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+      GH_TOKEN: ${{ github.token }}
+      SMOKE_TESTER_SA: ${{ vars.SMOKE_TESTER_SA }}
+      IAP_CLIENT_ID: ${{ vars.IAP_CLIENT_ID }}
+    steps:
+      - name: Require the latest main (FR-006)
+        # 承認待ちの古い run を承認しても、古いイメージで prod を上書きしない
+        run: |
+          head="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')"
+          if [ "$head" != "$GITHUB_SHA" ]; then
+            echo "この run のコミット（$GITHUB_SHA）は main の最新（$head）ではないので、prod にデプロイしません" >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # 新しいマイグレーションの有無を、prod で動いているコミットとの差分で調べる
+          fetch-depth: 0
+
+      - name: Authenticate to Google Cloud (deployer-prod)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform plan and compare with the approved plan (FR-007)
+        env:
+          TF_VAR_image: ${{ env.IMAGE }}
+          APPROVED_PLAN_HASH: ${{ needs.ci.outputs.prod_plan_hash }}
+        run: |
+          dir=infra/terraform/envs/prod
+          terraform -chdir="$dir" init -input=false -no-color >/dev/null
+          # plan の全文はログに出さない（要約だけを出す）
+          terraform -chdir="$dir" plan -input=false -no-color -out="$RUNNER_TEMP/prod.tfplan" >/dev/null
+          terraform -chdir="$dir" show -json "$RUNNER_TEMP/prod.tfplan" > "$RUNNER_TEMP/prod.plan.json"
+          scripts/plan-summary.sh "$RUNNER_TEMP/prod.plan.json"
+          hash="$(scripts/plan-hash.sh "$RUNNER_TEMP/prod.plan.json")"
+          if [ "$hash" != "$APPROVED_PLAN_HASH" ]; then
+            echo "prod の plan が、承認時（ci）の plan と違います（承認時: $APPROVED_PLAN_HASH、今: $hash）。適用しません" >&2
+            exit 1
+          fi
+          echo "plan は承認時と同じです（$hash）"
+
+      - name: Terraform apply (envs/prod)
+        # 確かめた plan ファイルをそのまま適用する
+        run: terraform -chdir=infra/terraform/envs/prod apply -input=false -no-color "$RUNNER_TEMP/prod.tfplan"
+
+      - name: Back up the database before new migrations (FR-019)
+        run: |
+          prod_sha="$(scripts/prod-deployed-sha.sh)"
+          if [ -z "$prod_sha" ]; then
+            echo "prod へのデプロイはまだない（最初のリリース）ので、バックアップを取りません"
+            exit 0
+          fi
+          if ! git diff --name-only --diff-filter=A "$prod_sha" HEAD -- prisma/migrations | grep -q 'migration.sql$'; then
+            echo "prod（$prod_sha）からの新しいマイグレーションはないので、バックアップを取りません"
+            exit 0
+          fi
+          instance="$(terraform -chdir=infra/terraform/envs/prod output -raw sql_instance)"
+          # 完了まで待つ（--async を付けない）
+          gcloud sql backups create --instance="$instance" --project="$PROJECT" \
+            --description="before migrations of $GITHUB_SHA"
+
+      - name: Migrate
+        run: |
+          gcloud run jobs update migrate --image="$IMAGE" --project="$PROJECT" --region="$REGION" --quiet
+          gcloud run jobs execute migrate --project="$PROJECT" --region="$REGION" --wait
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy web as candidate (no traffic)
+        id: candidate
+        run: |
+          # 切り替え前に流れているリビジョン（失敗したときの戻し先）
+          previous="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format=json \
+            | jq -r '[.status.traffic[] | select(.percent == 100)][0].revisionName // ""')"
+          gcloud run deploy web --image="$IMAGE" --project="$PROJECT" --region="$REGION" \
+            --no-traffic --tag=candidate --quiet
+          service="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format=json)"
+          revision="$(jq -r '.status.traffic[] | select(.tag == "candidate") | .revisionName' <<<"$service")"
+          url="$(jq -r '.status.traffic[] | select(.tag == "candidate") | .url' <<<"$service")"
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "直前のリビジョン: ${previous:-なし}、新しいリビジョン: $revision（$url）"
+
+      - name: Smoke test the candidate (FR-018)
+        # 失敗したら、トラフィックを切り替えずに終わる（利用者は前のリビジョンを使い続ける）
+        run: scripts/smoke.sh "${{ steps.candidate.outputs.url }}"
+
+      - name: Switch traffic and smoke test (FR-018)
+        env:
+          PREVIOUS: ${{ steps.candidate.outputs.previous }}
+          REVISION: ${{ steps.candidate.outputs.revision }}
+        run: |
+          gcloud run services update-traffic web --to-revisions="$REVISION=100" \
+            --project="$PROJECT" --region="$REGION" --quiet
+          url="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format='value(status.url)')"
+          if ! scripts/smoke.sh "$url"; then
+            if [ -n "$PREVIOUS" ] && [ "$PREVIOUS" != "$REVISION" ]; then
+              echo "切り替え後のスモークテストに失敗したので、直前のリビジョン（$PREVIOUS）に戻します" >&2
+              gcloud run services update-traffic web --to-revisions="$PREVIOUS=100" \
+                --project="$PROJECT" --region="$REGION" --quiet
+            fi
+            exit 1
+          fi
+
+      - name: Update jobs
+        run: |
+          for job in collector sync-static aggregate; do
+            gcloud run jobs update "$job" --image="$IMAGE" --project="$PROJECT" --region="$REGION" --quiet
+          done
+
+      - name: Run collector once
+        run: gcloud run jobs execute collector --project="$PROJECT" --region="$REGION" --wait
+
+      - name: Remove plan files
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/*.tfplan "$RUNNER_TEMP"/*.plan.json
