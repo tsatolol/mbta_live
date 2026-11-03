@@ -2,26 +2,46 @@
 
 ## 1. 事前に用意するもの（人が行う）
 
-- GCP プロジェクトを 2 つ（dev / prod）作り、請求先アカウントをひも付ける
-- MBTA API キーを 2 つ（dev 用 / prod 用）取得する
-- GitHub に Environment `dev` と `prod` を作る。`prod` に Required reviewers（オーナー）を設定し、両方とも Deployment branches を `main` だけにする
-- main にブランチ保護を設定する: PR 経由のマージだけを許可、`pr-checks` の合格を必須、force push と削除を禁止（承認者の人数は 0）
-- secret scanning と Dependabot alerts を有効にする
+- 請求先アカウントの ID（Cloud Console の「お支払い」で確かめる。コミットしない）
+- dev / prod のプロジェクト ID（GCP 全体で一意。プロジェクトは bootstrap が作る）
+- MBTA API キーを 2 つ（dev 用 / prod 用。https://api-v3.mbta.com で登録）
+- GitHub の fine-grained personal access token（対象はこのリポジトリだけ、権限は Administration・Environments・Secrets・Variables の読み書き。bootstrap の apply が終わったら削除する）
+
+GitHub の Environment・variables・secrets・ルールセット・セキュリティ設定は bootstrap が作るので、画面での操作はいらない。
 
 ## 2. bootstrap（最初に一度だけ）
 
 ```bash
+gcloud auth application-default login            # 請求先アカウントのユーザー権限がある Google アカウント
+export GITHUB_TOKEN=<fine-grained personal access token>
+export TF_VAR_billing_account=<請求先アカウントの ID>
+export TF_VAR_iap_members='["user:you@example.com"]'   # IAP で許可するユーザー（GitHub の Environment の secrets に入る）
+export TF_VAR_alert_email=<監視の通知先>
+
 cd infra/terraform/bootstrap
+cp terraform.tfvars.example terraform.tfvars   # プロジェクト ID などを書く（このファイルはコミットしない）
 terraform init
-terraform apply -var="dev_project_id=<dev>" -var="prod_project_id=<prod>"
+terraform plan                                  # 作られるもの（プロジェクト、バケット、WIF、SA、GitHub の設定）を確かめる
+terraform apply
+
+# state を GCS に移す
+cp backend.tf.example backend.tf
+terraform init -migrate-state
+
+# ロックファイルを作って PR でコミットする
+terraform providers lock -platform=linux_amd64 -platform=darwin_arm64
 ```
 
-出力された WIF provider と SA のメールアドレスを、GitHub の Environment の variables に登録する（`specs/004-infra-cicd/contracts/pipeline.md`）。
+apply が終わったら、GitHub のトークンを削除する（bootstrap を変更するときに作り直す）。
 
-## 3. 秘密の値を入れる
+## 3. MBTA API キーを入れる
 
-- 各プロジェクトの Secret Manager に MBTA API キーを入れる
-- GitHub の Environment の secrets に `TF_VAR_iap_members`（IAP で許可するユーザー）を入れる
+envs の初回の apply（main へのマージで動く cd-dev / cd-prod）で、各プロジェクトに Secret Manager のシークレット `MBTA_API_KEY` の入れ物ができる。その後に値を入れる。
+
+```bash
+printf '%s' '<dev 用のキー>'  | gcloud secrets versions add MBTA_API_KEY --project=<dev のプロジェクト ID>  --data-file=-
+printf '%s' '<prod 用のキー>' | gcloud secrets versions add MBTA_API_KEY --project=<prod のプロジェクト ID> --data-file=-
+```
 
 ## 4. 最初のデプロイ
 

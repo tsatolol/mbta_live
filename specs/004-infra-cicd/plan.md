@@ -12,9 +12,9 @@ Terraform で dev / prod の 2 つの GCP プロジェクトにアプリ一式�
 
 **言語/バージョン**: Terraform（HCL）、GitHub Actions（YAML）、Dockerfile
 
-**主な依存関係**: Google provider、google-github-actions/auth（WIF）、gcloud、Gitleaks、actions/dependency-review-action、Playwright
+**主な依存関係**: Google provider、GitHub provider（`integrations/github`。bootstrap だけ）、google-github-actions/auth（WIF）、gcloud、Gitleaks、actions/dependency-review-action、Playwright
 
-**ストレージ**: Terraform state は各環境のプロジェクトの GCS バケット
+**ストレージ**: Terraform state は GCS バケット（envs は各環境のプロジェクト、bootstrap は prod プロジェクト）。bootstrap の初回だけはローカルの state で apply し、その後 GCS に移す
 
 **テスト**: PR のチェック、`terraform fmt -check` / `validate` / `plan`、セキュリティ検査、コンテナの起動確認、マイグレーションの互換性テスト、デプロイ後のスモークテスト（IAP 経由の API と collector）、dev での E2E。要件は spec.md のテスト要件（Testing Requirements）
 
@@ -96,8 +96,9 @@ specs/004-infra-cicd/
 
 ```text
 infra/terraform/
-├── bootstrap/          # 最初に一度だけ手動で apply: API の有効化、state バケット、
-│                       # Artifact Registry、WIF、deployer / ci-builder の SA
+├── bootstrap/          # 最初に一度だけ人が apply: GCP プロジェクト（dev / prod）、API の有効化、
+│                       # state バケット、Artifact Registry、WIF、SA、
+│                       # GitHub の Environment・variables・secrets・ルールセット・セキュリティ設定
 ├── modules/app/        # Cloud SQL、Secret Manager、Cloud Run（web）、Cloud Run Jobs、
 │                       # Cloud Scheduler、IAP、実行用の SA、予算アラート
 └── envs/
@@ -112,7 +113,7 @@ tests/smoke/            # スモークテスト（dev / prod 共通）
 Dockerfile
 ```
 
-**構成の決定**: パイプラインの前提（state バケット、WIF、SA、Artifact Registry）は `bootstrap/` に分け、人が一度だけ apply する。それ以外はパイプラインが apply する。
+**構成の決定**: パイプラインの前提（GCP プロジェクト、state バケット、WIF、SA、Artifact Registry、GitHub の Environment と variables・secrets、main のルールセット）は `bootstrap/` に分け、人が一度だけ apply する（ご自身の Google アカウントと、GitHub のトークンの権限で）。それ以外はパイプラインが apply する。人の手作業は、請求先アカウントとプロジェクト ID を決めること、MBTA API キーの取得と Secret Manager への登録、bootstrap の apply だけにする
 
 ## 複雑さの記録（Complexity Tracking）
 

@@ -92,7 +92,7 @@ ci のジョブサマリーに次を出し、prod の承認時に確認する。
 
 ## GitHub の設定
 
-### main のブランチ保護
+### main のブランチ保護（ルールセット `main`）
 
 - PR 経由のマージだけを許可する（直接 push は不可）
 - `pr-checks` の合格を必須にする
@@ -105,12 +105,14 @@ ci のジョブサマリーに次を出し、prod の承認時に確認する。
 |---|---|---|
 | 保護ルール | なし | Required reviewers（リポジトリのオーナー） |
 | Deployment branches | `main` だけ | `main` だけ |
-| variables | `GCP_PROJECT_ID`, `WIF_PROVIDER`, `DEPLOYER_SA`, `SMOKE_TESTER_SA`, `WEB_URL` | 同左 |
-| secrets | `TF_VAR_iap_members` など | 同左 |
+| variables | `GCP_PROJECT_ID`, `WIF_PROVIDER`, `DEPLOYER_SA`, `SMOKE_TESTER_SA` | 同左 |
+| secrets | `TF_VAR_iap_members`, `TF_VAR_alert_email` | 同左 |
 
 リポジトリ全体の variables: `ARTIFACT_REGISTRY`（prod プロジェクトのリポジトリ）、`CI_BUILDER_SA`、`CI_WIF_PROVIDER`。
 
-その他: GitHub の secret scanning と Dependabot alerts を有効にする（public リポジトリでは無料）。
+その他: Dependency graph、Dependabot alerts、secret scanning と push protection を有効にする（public リポジトリでは無料。Dependency graph がないと依存関係の検査が動かない）。
+
+この節の設定（ルールセット、Environment・variables・secrets、リポジトリの variables、セキュリティ設定）は、すべて bootstrap の Terraform（`infra/terraform/bootstrap/github.tf`）が作る。画面で変えない。web の URL は variables に置かず、ジョブの中で `gcloud run services describe` で取得する。
 
 ## 守ること
 

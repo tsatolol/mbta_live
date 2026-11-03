@@ -56,7 +56,7 @@ pnpm test:e2e
 
 ## 未決事項
 
-- dev / prod の GCP プロジェクト ID、請求先アカウント、予算額
+- dev / prod の GCP プロジェクト ID と予算額、請求先アカウント（プロジェクトと GitHub の Environment などは bootstrap の Terraform が作る。`specs/004-infra-cicd/quickstart.md`）
 - prod の承認者（現状はリポジトリのオーナーのみを想定）
 - MBTA API キーの取得（dev 用・prod 用）
 - 独自ドメインを使うか
