@@ -9,8 +9,10 @@ import {
   GAP_BASELINE_DAYS,
   GAP_MULTIPLIER,
   MAX_HEADWAY_SEC,
+  PREDICTION_WITHIN_SEC,
 } from "@/lib/metrics/constants";
 import { GREEN_BRANCHES, GREEN_COMBINED } from "@/lib/metrics/headways";
+import { UNKNOWN_UPDATE_TYPE } from "@/lib/metrics/prediction-accuracy";
 import { BOSTON_TZ, serviceDateToDbDate, type ServiceDate } from "@/lib/time";
 import type { DbLike } from "./types";
 
@@ -125,4 +127,73 @@ export async function insertHeadwayStats(db: DbLike, serviceDate: ServiceDate): 
     SELECT ${d}::date, x."route_id", x."direction_id", x."stop_id", x."hour",
       x."n", x."mean_sec", x."p50_sec", x."p90_sec", x."max_sec", x."bunching_count", x."gap_count"
     FROM (${headwayStatsSql(serviceDate)}) x`;
+}
+
+/**
+ * 到着予測の精度（運行日 1 つ分）。列は daily_prediction_accuracy と同じ（service_date を除く）。
+ * - 予測サンプルを (運行日, 便, 親駅) で到着と突き合わせる。補間（interpolated）の到着は除く
+ * - 誤差 = 実際の到着 − 予測した到着（正 = 予測より遅く到着）。時間帯は実際の到着の ET の時
+ */
+export function predictionAccuracySql(serviceDate: ServiceDate): Prisma.Sql {
+  const d = serviceDateToDbDate(serviceDate);
+  return Prisma.sql`
+    WITH "e" AS (
+      SELECT p."route_id", p."direction_id", p."lead_bucket_min"::int AS "lead_bucket_min",
+        COALESCE(p."update_type", ${UNKNOWN_UPDATE_TYPE}) AS "update_type",
+        EXTRACT(HOUR FROM a."arrived_at" AT TIME ZONE ${BOSTON_TZ})::int AS "hour",
+        EXTRACT(EPOCH FROM a."arrived_at" - p."predicted_arrival_at")::float8 AS "err"
+      FROM "prediction_samples" p
+      JOIN "arrival_events" a
+        ON a."service_date" = p."service_date" AND a."trip_id" = p."trip_id"
+        AND a."stop_id" = p."stop_id"
+      WHERE p."service_date" = ${d}::date AND a."service_date" = ${d}::date
+        AND a."source" <> 'interpolated'
+    )
+    SELECT "route_id", "direction_id", "lead_bucket_min", "update_type", "hour",
+      count(*)::int AS "n",
+      avg("err") AS "mean_error_sec",
+      avg(abs("err")) AS "mean_abs_error_sec",
+      percentile_cont(0.9) WITHIN GROUP (ORDER BY abs("err")) AS "p90_abs_error_sec",
+      (count(*) FILTER (WHERE abs("err") <= ${PREDICTION_WITHIN_SEC}))::float8 / count(*) AS "within_60s_ratio"
+    FROM "e"
+    GROUP BY "route_id", "direction_id", "lead_bucket_min", "update_type", "hour"
+    ORDER BY "route_id", "direction_id", "lead_bucket_min", "update_type", "hour"`;
+}
+
+export const predictionAccuracySqlRowSchema = z.object({
+  route_id: z.string(),
+  direction_id: z.number().int(),
+  lead_bucket_min: z.number().int(),
+  update_type: z.string(),
+  hour: z.number().int(),
+  n: z.number().int(),
+  mean_error_sec: z.number(),
+  mean_abs_error_sec: z.number(),
+  p90_abs_error_sec: z.number(),
+  within_60s_ratio: z.number(),
+});
+export type PredictionAccuracySqlRow = z.infer<typeof predictionAccuracySqlRowSchema>;
+
+/** 到着予測の精度を計算する（運行日 1 つ分。書き込まない） */
+export async function computePredictionAccuracy(
+  db: DbLike,
+  serviceDate: ServiceDate,
+): Promise<PredictionAccuracySqlRow[]> {
+  const rows = await db.$queryRaw<unknown[]>(predictionAccuracySql(serviceDate));
+  return z.array(predictionAccuracySqlRowSchema).parse(rows);
+}
+
+/** 到着予測の精度を daily_prediction_accuracy に入れる。入れた行数を返す */
+export async function insertPredictionAccuracy(
+  db: DbLike,
+  serviceDate: ServiceDate,
+): Promise<number> {
+  const d = serviceDateToDbDate(serviceDate);
+  return db.$executeRaw`
+    INSERT INTO "daily_prediction_accuracy" ("service_date", "route_id", "direction_id",
+      "lead_bucket_min", "update_type", "hour", "n", "mean_error_sec", "mean_abs_error_sec",
+      "p90_abs_error_sec", "within_60s_ratio")
+    SELECT ${d}::date, x."route_id", x."direction_id", x."lead_bucket_min", x."update_type", x."hour",
+      x."n", x."mean_error_sec", x."mean_abs_error_sec", x."p90_abs_error_sec", x."within_60s_ratio"
+    FROM (${predictionAccuracySql(serviceDate)}) x`;
 }

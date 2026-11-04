@@ -83,3 +83,41 @@ export async function stopNames(db: Db, ids: readonly string[]): Promise<Map<str
   });
   return new Map(stops.map((s) => [s.id, s.name]));
 }
+
+export interface AccuracyFilter {
+  routeId?: string;
+  directionId?: number;
+  updateType?: string;
+}
+
+export interface AccuracyReadRow {
+  serviceDate: ServiceDate;
+  routeId: string;
+  directionId: number;
+  leadBucketMin: number;
+  updateType: string;
+  hour: number;
+  n: number;
+  meanErrorSec: number;
+  meanAbsErrorSec: number;
+  p90AbsErrorSec: number;
+  within60sRatio: number;
+}
+
+/** 集計済みの予測精度（daily_prediction_accuracy）を読む */
+export async function readPredictionAccuracy(
+  db: Db,
+  from: ServiceDate,
+  to: ServiceDate,
+  filter: AccuracyFilter,
+): Promise<AccuracyReadRow[]> {
+  const rows = await db.dailyPredictionAccuracy.findMany({
+    where: {
+      serviceDate: { gte: serviceDateToDbDate(from), lte: serviceDateToDbDate(to) },
+      ...(filter.routeId !== undefined ? { routeId: filter.routeId } : {}),
+      ...(filter.directionId !== undefined ? { directionId: filter.directionId } : {}),
+      ...(filter.updateType !== undefined ? { updateType: filter.updateType } : {}),
+    },
+  });
+  return rows.map((r) => ({ ...r, serviceDate: dbDateToServiceDate(r.serviceDate) }));
+}

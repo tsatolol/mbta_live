@@ -84,17 +84,17 @@ description: "003 分析の実装タスク"
 
 ### ユーザーストーリー 2 のテスト
 
-- [ ] T021 [P] [US2] 予測誤差の TypeScript 版の単体テスト（TR-001）: 誤差の符号（正 = 予測より遅く到着）、補間の到着の除外、到着のない予測の除外、リード時間と種類（空は `UNKNOWN`）での分割、±60 秒（境界を含む）: `tests/unit/metrics/prediction-accuracy.test.ts`
-- [ ] T022 [P] [US2] 予測誤差の SQL と TypeScript 版の突き合わせ（TR-002）: `tests/integration/analytics/prediction-accuracy-sql.test.ts`
+- [X] T021 [P] [US2] 予測誤差の TypeScript 版の単体テスト（TR-001）: 誤差の符号（正 = 予測より遅く到着）、補間の到着の除外、到着のない予測の除外、リード時間と種類（空は `UNKNOWN`）での分割、±60 秒（境界を含む）: `tests/unit/metrics/prediction-accuracy.test.ts`
+- [X] T022 [P] [US2] 予測誤差の SQL と TypeScript 版の突き合わせ（TR-002）: `tests/integration/analytics/prediction-accuracy-sql.test.ts`
 
 ### ユーザーストーリー 2 の実装
 
-- [ ] T023 [US2] 予測誤差の TypeScript 版を書く（T021 を通す）: `src/lib/metrics/prediction-accuracy.ts`
-- [ ] T024 [US2] 予測誤差の集計 SQL を書き、aggregate ジョブに登録する（T022 を通す）: `src/lib/db/analytics-sql.ts`、`src/lib/db/aggregate.ts`
-- [ ] T025 [P] [US2] `GET /api/analytics/predictions` の結合テスト: リード時間ごとの統計、`updateType` での絞り込み、当日分の結合、不正な値で 400: `tests/integration/api/analytics-predictions.test.ts`
-- [ ] T026 [US2] `GET /api/analytics/predictions` を書く（T025 を通す）: `src/app/api/analytics/predictions/route.ts`、`src/lib/api/analytics-predictions.ts`、`src/lib/db/analytics-read.ts`
-- [ ] T027 [US2] 予測精度の画面を書く: 路線・方向・予測の種類・期間の絞り込み、リード時間ごとの平均誤差と平均絶対誤差・p90、±60 秒以内の割合。変換の単体テスト: `src/app/analytics/predictions/page.tsx`、`src/components/analytics/prediction-charts.ts`、`tests/unit/analytics/prediction-charts.test.ts`
-- [ ] T028 [US2] 予測精度の画面の E2E: `tests/e2e/analytics.spec.ts`
+- [X] T023 [US2] 予測誤差の TypeScript 版を書く（T021 を通す）: `src/lib/metrics/prediction-accuracy.ts`
+- [X] T024 [US2] 予測誤差の集計 SQL を書き、aggregate ジョブに登録する（T022 を通す）: `src/lib/db/analytics-sql.ts`、`src/lib/db/aggregate.ts`
+- [X] T025 [P] [US2] `GET /api/analytics/predictions` の結合テスト: リード時間ごとの統計、`updateType` での絞り込み、当日分の結合、不正な値で 400: `tests/integration/api/analytics-predictions.test.ts`
+- [X] T026 [US2] `GET /api/analytics/predictions` を書く（T025 を通す）: `src/app/api/analytics/predictions/route.ts`、`src/lib/api/analytics-predictions.ts`、`src/lib/db/analytics-read.ts`
+- [X] T027 [US2] 予測精度の画面を書く: 路線・方向・予測の種類・期間の絞り込み、リード時間ごとの平均誤差と平均絶対誤差・p90、±60 秒以内の割合。変換の単体テスト: `src/app/analytics/predictions/page.tsx`、`src/components/analytics/prediction-charts.ts`、`tests/unit/analytics/prediction-charts.test.ts`
+- [X] T028 [US2] 予測精度の画面の E2E: `tests/e2e/analytics.spec.ts`
 
 **チェックポイント**: US1 と US2 が動く
 

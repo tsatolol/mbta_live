@@ -8,6 +8,6 @@
 | パス | パラメータ | 返す内容 |
 |---|---|---|
 | `GET /api/analytics/headways` | `route`（`Green` 可。既定は `Red`）, `direction`（0 / 1、省略時は両方向）, `stop`（親駅）, `from`, `to` | 日別（`daily`）・時間帯別（`byHour`。運行日の時間帯の並び）の運行間隔の統計（n・平均・p50・p90・最大・団子運転・間隔の開き）、合計（`totals`）、期間内にデータのある駅の一覧（`stops`）。日別・時間帯別の p50 / p90 は、元の行を件数で重み付けした平均（近似） |
-| `GET /api/analytics/predictions` | `route`, `direction`, `updateType`, `from`, `to` | リード時間のバケットごとの誤差の統計 |
+| `GET /api/analytics/predictions` | `route`（省略時はすべての路線。`Green` は不可）, `direction`, `updateType`（`MID_TRIP` / `AT_TERMINAL` / `REVERSE_TRIP` / `UNKNOWN`）, `from`, `to` | リード時間ごと（`byLead`、短い順）・予測の種類ごと（`byUpdateType`）・日別（`daily`）の誤差の統計（n・平均誤差・平均絶対誤差・p90 絶対誤差・±60 秒以内の割合）と合計（`totals`。データがなければ null）。まとめた p90 は件数で重み付けした平均（近似） |
 | `GET /api/analytics/alerts` | `route`, `from`, `to` | 日別の effect × cause の件数と継続時間（遅延系／お知らせ系の区分付き） |
 | `GET /api/analytics/heatmap` | `metric`（`headway_p90` / `prediction_abs_error` / `alert_minutes`）, `route`, `from`, `to` | 曜日 × 時間帯（ET）の行列 |

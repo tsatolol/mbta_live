@@ -87,3 +87,39 @@ test.describe("分析: 運行間隔", () => {
     await expect(page.getByTestId("stat-headways-value")).toHaveText("0");
   });
 });
+
+test.describe("分析: 予測精度", () => {
+  test.beforeAll(() => {
+    seedE2e("analytics");
+  });
+
+  test("リード時間ごとの誤差と ±60 秒以内の割合、合計の数値が出る", async ({ page }) => {
+    await page.goto("/analytics/predictions");
+    await expect(page.getByTestId("analytics-tab-predictions")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    const byLead = await chartData(page, "prediction-error-by-lead");
+    expect(byLead.categories).toEqual(["1 min", "3 min", "5 min", "10 min", "15 min"]);
+    // テスト用データの誤差は「リード時間 × 10 秒」
+    expect(byLead.series[0]!.data).toEqual([10, 30, 50, 100, 150]);
+
+    const within = await chartData(page, "prediction-within-by-lead");
+    expect(within.series[0]!.data).toEqual([100, 100, 100, 0, 0]);
+
+    const trend = await chartData(page, "prediction-trend");
+    expect(trend.categories.length).toBeGreaterThanOrEqual(6);
+
+    await expect(page.getByTestId("stat-within-value")).toHaveText("60%");
+    await expect(page.getByTestId("precision-note")).toBeVisible();
+  });
+
+  test("予測の種類で絞り込むと、その種類だけの精度になる", async ({ page }) => {
+    await page.goto("/analytics/predictions");
+    await expect(page.getByTestId("stat-bias-value")).toHaveText(/^(0 s|[+-]\d+ s)/);
+    await page.getByTestId("filter-update-type").selectOption("AT_TERMINAL");
+    await expect(page).toHaveURL(/updateType=AT_TERMINAL/);
+    // テスト用データの AT_TERMINAL は偶数の便だけで、誤差はすべて正（予測より遅く到着）
+    await expect(page.getByTestId("stat-bias-value")).toHaveText(/^\+\d+ s \(late\)$/);
+  });
+});

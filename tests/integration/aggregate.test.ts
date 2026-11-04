@@ -201,7 +201,7 @@ describe("aggregate ジョブの集計", () => {
 });
 
 describe("登録済みの指標の集計（既定の aggregators）", () => {
-  it("運行間隔: 前の運行日の daily_headway_stats を入れ、2 回目も同じ行になる", async () => {
+  it("運行間隔と予測精度: 前の運行日の行を入れ、2 回目も同じ行になる", async () => {
     await seedStaticFromFixtures(db);
     await insertAnalyticsSeed(db, "2026-11-09", "2026-11-09");
     const first = await runAggregate({
@@ -220,6 +220,10 @@ describe("登録済みの指標の集計（既定の aggregators）", () => {
     );
     const jobRun = await db.collectorRun.findUniqueOrThrow({ where: { id: first.runId } });
     expect(jobRun.counts).toMatchObject({ headwaysRows: rows.length });
+    // 予測精度も同じ運行日の分が入る
+    const accuracy = await db.dailyPredictionAccuracy.count();
+    expect(accuracy).toBeGreaterThan(0);
+    expect(jobRun.counts).toMatchObject({ predictionAccuracyRows: accuracy });
 
     await runAggregate({
       db,
