@@ -219,33 +219,53 @@ export interface AlertRow {
   informedEntity: unknown;
   inFeed: boolean;
   updatedAt: Date | null;
+  lastSeenAt: Date;
   routeIds: string[];
 }
 
-/** 指定の路線のどれかに関係する、今のフィードにあるアラート（alert_routes）。重要度の高い順 */
-export async function listFeedAlertsForRoutes(
-  db: Db,
-  routeIds: readonly string[],
-): Promise<AlertRow[]> {
-  if (routeIds.length === 0) return [];
-  const links = await db.alertRoute.findMany({
-    where: { routeId: { in: [...routeIds] } },
-    select: { alertId: true },
+export interface AlertFilter {
+  /** これらの路線のどれかに関係するもの（alert_routes）。省略時はすべて */
+  routeIds?: readonly string[];
+  /** 今のフィードにあるものだけ */
+  inFeedOnly?: boolean;
+  /** 影響の種類（effect）のどれか。省略時はすべて */
+  effects?: readonly string[];
+}
+
+/**
+ * アラートを重要度の高い順（同じなら更新の新しい順）に返す。各アラートの路線（routeIds）は路線の並び順。
+ * 期間での絞り込みと状態の計算は、呼ぶ側が純粋関数（src/lib/metrics/alerts.ts）で行う
+ */
+export async function listAlerts(db: Db, filter: AlertFilter = {}): Promise<AlertRow[]> {
+  let alertIds: string[] | undefined;
+  if (filter.routeIds) {
+    if (filter.routeIds.length === 0) return [];
+    const links = await db.alertRoute.findMany({
+      where: { routeId: { in: [...filter.routeIds] } },
+      select: { alertId: true },
+    });
+    alertIds = [...new Set(links.map((l) => l.alertId))];
+  }
+  const alerts = await db.alert.findMany({
+    where: {
+      ...(alertIds ? { id: { in: alertIds } } : {}),
+      ...(filter.inFeedOnly ? { inFeed: true } : {}),
+      ...(filter.effects ? { effect: { in: [...filter.effects] } } : {}),
+    },
+    orderBy: [{ severity: "desc" }, { updatedAt: { sort: "desc", nulls: "last" } }, { id: "asc" }],
   });
-  const alertIds = [...new Set(links.map((l) => l.alertId))];
-  const [alerts, allLinks] = await Promise.all([
-    db.alert.findMany({
-      where: { id: { in: alertIds }, inFeed: true },
-      orderBy: [{ severity: "desc" }, { id: "asc" }],
-    }),
-    db.alertRoute.findMany({
-      where: { alertId: { in: alertIds } },
-      orderBy: { routeId: "asc" },
-    }),
+  const [allLinks, routes] = await Promise.all([
+    db.alertRoute.findMany({ where: { alertId: { in: alerts.map((a) => a.id) } } }),
+    db.route.findMany({ select: { id: true, sortOrder: true } }),
   ]);
+  const order = new Map(routes.map((r) => [r.id, r.sortOrder]));
+  const rank = (id: string) => order.get(id) ?? Number.MAX_SAFE_INTEGER;
   const routesByAlert = new Map<string, string[]>();
   for (const l of allLinks) {
     routesByAlert.set(l.alertId, [...(routesByAlert.get(l.alertId) ?? []), l.routeId]);
+  }
+  for (const ids of routesByAlert.values()) {
+    ids.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   }
   return alerts.map((a) => ({
     id: a.id,
@@ -262,6 +282,7 @@ export async function listFeedAlertsForRoutes(
     informedEntity: a.informedEntity,
     inFeed: a.inFeed,
     updatedAt: a.updatedAt,
+    lastSeenAt: a.lastSeenAt,
     routeIds: routesByAlert.get(a.id) ?? [],
   }));
 }

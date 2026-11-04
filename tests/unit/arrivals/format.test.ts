@@ -1,7 +1,6 @@
 // 駅の到着表示の文言
 import { describe, expect, it } from "vitest";
 import { countdownClock, countdownLabel, matchesStationQuery } from "@/components/arrivals/format";
-import { effectLabel } from "@/components/arrivals/station-alerts";
 
 const now = new Date("2026-11-02T15:20:00Z");
 const at = (sec: number) => new Date(now.getTime() + sec * 1000);
@@ -31,12 +30,5 @@ describe("matchesStationQuery", () => {
     expect(matchesStationQuery("Park Street", "STREET")).toBe(true);
     expect(matchesStationQuery("Park Street", "harvard")).toBe(false);
     expect(matchesStationQuery("Park Street", "")).toBe(true);
-  });
-});
-
-describe("effectLabel", () => {
-  it("effect を読みやすくする", () => {
-    expect(effectLabel("STATION_ISSUE")).toBe("Station Issue");
-    expect(effectLabel("DELAY")).toBe("Delay");
   });
 });

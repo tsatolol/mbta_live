@@ -3,7 +3,8 @@ import "server-only";
 import { z } from "zod";
 import type { AlertRow } from "@/lib/db/live";
 import type { AlertItem } from "@/lib/api-schemas/alerts";
-import { alertStatus, type ActivePeriod } from "@/lib/metrics/live";
+import type { ActivePeriod } from "@/lib/metrics/live";
+import { alertStatusOf, effectivePeriods } from "@/lib/metrics/alerts";
 import type { InformedEntity } from "@/lib/metrics/arrival-board";
 
 const activePeriodSchema = z.array(
@@ -34,6 +35,7 @@ export function parseInformedEntity(value: unknown): InformedEntity[] {
 
 export function toAlertItem(row: AlertRow, now: Date): AlertItem {
   const periods = parseActivePeriod(row.activePeriod);
+  const timing = { periods, inFeed: row.inFeed, lastSeenAt: row.lastSeenAt };
   return {
     id: row.id,
     effect: row.effect,
@@ -45,8 +47,9 @@ export function toAlertItem(row: AlertRow, now: Date): AlertItem {
     serviceEffect: row.serviceEffect,
     timeframe: row.timeframe,
     lifecycle: row.lifecycle,
-    status: alertStatus(periods, now),
-    activePeriod: periods.map((p) => ({
+    status: alertStatusOf(timing, now),
+    // フィードから消えたアラートは、最後に見た時刻で終わらせた区間を返す（effectivePeriods）
+    activePeriod: effectivePeriods(timing).map((p) => ({
       start: p.start.toISOString(),
       end: p.end?.toISOString() ?? null,
     })),

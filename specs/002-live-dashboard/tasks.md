@@ -106,13 +106,13 @@ description: "002 リアルタイム画面の実装タスク"
 
 ### ユーザーストーリー 3 のテスト
 
-- [ ] T025 [P] [US3] `GET /api/live/alerts` の結合テスト（TR-001）: `status`（`active` / `upcoming` / `all`）の計算と絞り込み、`routes` での絞り込み、`from` / `to`（期間が重なるもの）、重要度の高い順、不正な値で 400: `tests/integration/api/live-alerts.test.ts`
+- [X] T025 [P] [US3] `GET /api/live/alerts` の結合テスト（TR-001）: `status`（`active` / `upcoming` / `all`）の計算と絞り込み、`routes` での絞り込み、`from` / `to`（期間が重なるもの）、重要度の高い順、不正な値で 400: `tests/integration/api/live-alerts.test.ts`
 
 ### ユーザーストーリー 3 の実装
 
-- [ ] T026 [US3] `GET /api/live/alerts` を書く: `alerts` と `alert_routes` を読み、状態は `alertStatus`（T006）で計算する。過去のアラート（フィードから消えたもの）も検索の対象にする: `src/app/api/live/alerts/route.ts`、`src/lib/db/live.ts`
-- [ ] T027 [US3] アラートの画面を書く: 有効なアラートを路線ごとに重要度の高い順で、影響の種類（effect）のバッジ付きで表示。予告（`upcoming`）は別の区画に。過去のアラートの検索（期間・路線・種類）: `src/app/alerts/page.tsx`、`src/components/alerts/`
-- [ ] T028 [US3] アラートの E2E（TR-003）: 有効なアラートの一覧、予告の区別、過去のアラートの検索: `tests/e2e/alerts.spec.ts`
+- [X] T026 [US3] `GET /api/live/alerts` を書く: `alerts` と `alert_routes` を読み、状態は `alertStatus`（T006）で計算する。過去のアラート（フィードから消えたもの）も検索の対象にする: `src/app/api/live/alerts/route.ts`、`src/lib/db/live.ts`
+- [X] T027 [US3] アラートの画面を書く: 有効なアラートを路線ごとに重要度の高い順で、影響の種類（effect）のバッジ付きで表示。予告（`upcoming`）は別の区画に。過去のアラートの検索（期間・路線・種類）: `src/app/alerts/page.tsx`、`src/components/alerts/`
+- [X] T028 [US3] アラートの E2E（TR-003）: 有効なアラートの一覧、予告の区別、過去のアラートの検索: `tests/e2e/alerts.spec.ts`
 
 **チェックポイント**: US1〜US3 が動く
 

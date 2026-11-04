@@ -16,4 +16,9 @@ export const E2E_FIXTURES = {
   station: "place-pktrm",
   /** 有効なアラート（STATION_ISSUE 2 件）がある駅（Jackson Square） */
   alertStation: "place-jaksn",
+  /** フィードから消えた過去のアラート（3 日前の Red の遅延。シードで作る） */
+  pastAlert: {
+    id: "e2e-past-delay",
+    header: "Red Line delays of about 15 minutes due to a disabled train",
+  },
 } as const;

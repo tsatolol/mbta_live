@@ -125,6 +125,28 @@ async function markFixtures(db: Db, now: Date): Promise<void> {
     where: { id: skipped.id },
     data: { scheduleRelationship: "SKIPPED" },
   });
+
+  // フィードから消えた過去のアラート（アラートの画面の検索）。3 日前に 2 時間だけ出ていた
+  const start = new Date(now.getTime() - 3 * 24 * 3600_000);
+  const lastSeen = new Date(start.getTime() + 2 * 3600_000);
+  await db.alert.create({
+    data: {
+      id: E2E_FIXTURES.pastAlert.id,
+      effect: "DELAY",
+      cause: "DISABLED_TRAIN",
+      severity: 5,
+      header: E2E_FIXTURES.pastAlert.header,
+      lifecycle: "NEW",
+      activePeriod: [{ start: start.toISOString(), end: null }],
+      informedEntity: [{ route: "Red", route_type: 1 }],
+      createdAt: start,
+      updatedAt: start,
+      firstSeenAt: start,
+      lastSeenAt: lastSeen,
+      inFeed: false,
+    },
+  });
+  await db.alertRoute.create({ data: { alertId: E2E_FIXTURES.pastAlert.id, routeId: "Red" } });
 }
 
 async function seed(db: Db, scenario: E2eScenario): Promise<void> {

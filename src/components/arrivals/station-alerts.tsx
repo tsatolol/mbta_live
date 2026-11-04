@@ -1,15 +1,7 @@
 // 駅の到着表示に出す、その駅と路線に有効なアラート
 import type { AlertItem } from "@/lib/api-schemas/alerts";
 import { Badge } from "@/components/ui/badge";
-
-/** effect（DELAY、STATION_ISSUE など）を読みやすくする */
-export function effectLabel(effect: string): string {
-  return effect
-    .toLowerCase()
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
+import { effectLabel } from "@/components/alerts/format";
 
 export function StationAlerts({ alerts }: { alerts: readonly AlertItem[] }) {
   if (alerts.length === 0) return null;

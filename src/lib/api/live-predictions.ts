@@ -4,7 +4,7 @@ import "server-only";
 import { z } from "zod";
 import {
   getStation,
-  listFeedAlertsForRoutes,
+  listAlerts,
   listPredictionsAtStops,
   listStationDirections,
 } from "@/lib/db/live";
@@ -36,7 +36,7 @@ export function getPredictions(deps: ApiDeps) {
       const [meta, predictions, alerts] = await Promise.all([
         liveMeta(deps.db, deps.clock),
         listPredictionsAtStops(deps.db, station.platformIds),
-        listFeedAlertsForRoutes(deps.db, routeIds),
+        listAlerts(deps.db, { routeIds, inFeedOnly: true }),
       ]);
       const stopIds = [station.id, ...station.platformIds];
 
