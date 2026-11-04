@@ -4,6 +4,7 @@ import { fixedClock } from "@/lib/clock";
 import { getAnalyticsPredictions } from "@/lib/api/analytics-predictions";
 import { predictionsResponseSchema } from "@/lib/api-schemas/analytics-predictions";
 import { errorResponseSchema } from "@/lib/api-schemas/common";
+import { clearTodayCache } from "@/lib/api/today-cache";
 import { runAggregate } from "@/jobs/aggregate";
 import { insertAnalyticsSeed } from "../../helpers/analytics-seed";
 import { createTestDb, resetData, testDatabaseUrl } from "../../helpers/db";
@@ -28,6 +29,8 @@ async function ok(query: string, now = NOW) {
 }
 
 beforeAll(async () => {
+  // 時計を止めているので、今日の分の使い回しが切れない。ファイルごとに消す
+  clearTodayCache();
   await resetData(db);
   await seedStaticFromFixtures(db);
   await insertAnalyticsSeed(db, "2026-11-03", "2026-11-10", NOW);

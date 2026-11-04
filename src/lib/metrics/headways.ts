@@ -7,6 +7,7 @@ import {
   MAX_HEADWAY_SEC,
 } from "./constants";
 import { addServiceDays, bostonHourOf, dayTypeOf, type ServiceDate } from "@/lib/time";
+import { appendTo } from "@/lib/collections";
 
 /** Green の 4 支線（幹線では合算して route_id = Green でも計算する） */
 export const GREEN_BRANCHES = ["Green-B", "Green-C", "Green-D", "Green-E"] as const;
@@ -155,7 +156,7 @@ export function gapBaselines(
     if (h.serviceDate < from || h.serviceDate >= serviceDate) continue;
     if (dayTypeOf(h.serviceDate) !== dayType) continue;
     const k = headwayKeyString(h);
-    values.set(k, [...(values.get(k) ?? []), h.p50Sec]);
+    appendTo(values, k, h.p50Sec);
   }
   const medians = new Map(
     [...values].map(([k, v]) => [
@@ -237,7 +238,7 @@ export function summarizeHeadways(
 } {
   const group = <K>(key: (r: DatedHeadwayStat) => K) => {
     const m = new Map<K, DatedHeadwayStat[]>();
-    for (const r of rows) m.set(key(r), [...(m.get(key(r)) ?? []), r]);
+    for (const r of rows) appendTo(m, key(r), r);
     return m;
   };
   const byDate = group((r) => r.serviceDate);

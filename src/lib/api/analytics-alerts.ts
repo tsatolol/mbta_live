@@ -9,6 +9,7 @@ import { ALL_ROUTES, summarizeAlertStats } from "@/lib/metrics/alert-stats";
 import { addServiceDays, type ServiceDate } from "@/lib/time";
 import { alertsAnalyticsResponseSchema } from "@/lib/api-schemas/analytics-alerts";
 import { analyticsContext, analyticsMeta, rangeQuerySchema } from "./analytics";
+import { cachedToday } from "./today-cache";
 import { okResponse, parseQuery, withErrorHandling } from "./handler";
 import type { ApiDeps } from "./live-vehicles";
 
@@ -32,7 +33,11 @@ export function getAnalyticsAlerts(deps: ApiDeps) {
         ctx.aggregated
           ? readAlertStats(deps.db, ctx.aggregated.from, ctx.aggregated.to, routeId)
           : Promise.resolve([]),
-        ctx.todayIncluded ? computeAlertStats(deps.db, ctx.today) : Promise.resolve(null),
+        ctx.todayIncluded
+          ? cachedToday(`alerts|${ctx.today}`, deps.clock.now().getTime(), () =>
+              computeAlertStats(deps.db, ctx.today),
+            )
+          : Promise.resolve(null),
       ]);
       const todayRows: AlertStatReadRow[] = (today?.daily ?? [])
         .filter((r) => r.route_id === routeId)

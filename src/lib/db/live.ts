@@ -1,5 +1,6 @@
 // リアルタイム画面（002）の内部 API が読むクエリ。DB を読むだけ（Web は読み取り専用。憲章）。
 import "server-only";
+import { appendTo } from "@/lib/collections";
 import type { Db } from "./client";
 
 /** 最後に collector が成功した時刻（collector_runs）。一度もなければ null */
@@ -262,7 +263,7 @@ export async function listAlerts(db: Db, filter: AlertFilter = {}): Promise<Aler
   const rank = (id: string) => order.get(id) ?? Number.MAX_SAFE_INTEGER;
   const routesByAlert = new Map<string, string[]>();
   for (const l of allLinks) {
-    routesByAlert.set(l.alertId, [...(routesByAlert.get(l.alertId) ?? []), l.routeId]);
+    appendTo(routesByAlert, l.alertId, l.routeId);
   }
   for (const ids of routesByAlert.values()) {
     ids.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));

@@ -56,14 +56,30 @@ specs/003-analytics/
 リポジトリ全体の構成は [docs/architecture.md](../../docs/architecture.md) を参照。この feature で使う部分:
 
 ```text
+prisma/migrations/*_add_analytics_tables/   # 集計テーブル 4 つ（expand のみ）
 src/
-├── jobs/aggregate.ts
-├── lib/db/analytics-sql.ts           # 集計クエリ（運行日 1 つ分の SELECT。ジョブと当日分の計算で共有）
-├── lib/metrics/                     # 指標の定義（純粋関数）+ constants.ts
+├── jobs/aggregate.ts                # 前の運行日（または --from / --to）を集計 → 生データのパーティションを管理
+├── lib/
+│   ├── db/aggregate.ts              # 運行日ごとの集計（1 トランザクション）と、指標ごとの集計の登録
+│   ├── db/analytics-sql.ts          # 集計クエリ（運行日 1 つ分の SELECT。ジョブと当日分の計算で共有）
+│   ├── db/analytics-read.ts         # 集計テーブルを読むクエリ
+│   ├── metrics/{headways,prediction-accuracy,alert-stats,heatmap}.ts   # 指標の定義（純粋関数）
+│   ├── metrics/constants.ts         # しきい値と定義の版
+│   ├── api/analytics*.ts            # 分析 API の中身（期間の解釈、今日の分の結合）
+│   ├── api/today-cache.ts           # 今日の分の計算結果を 60 秒残す
+│   └── api-schemas/analytics*.ts    # 応答の zod スキーマ
 ├── app/analytics/{headways,predictions,alerts,patterns}/page.tsx
-├── app/api/analytics/...
-└── components/charts/
-tests/unit/metrics/
+├── app/api/analytics/{headways,predictions,alerts,heatmap}/route.ts
+├── components/analytics/            # 絞り込み、注記、グラフに渡すデータへの変換（純粋関数）
+└── components/charts/               # ECharts を包む部品と、グラフの色・軸の共通設定
+tests/
+├── unit/{metrics,analytics,api}/    # 指標・グラフのデータ・期間の解釈
+├── integration/analytics/           # 集計 SQL と TypeScript 版の突き合わせ（TR-002・TR-003）
+├── integration/api/analytics-*.ts   # 分析 API（TR-004・TR-005）
+├── integration/aggregate.test.ts    # 集計ジョブ（冪等性・aggregate_runs・失敗）
+├── helpers/analytics-seed.ts        # 決まった規則で作るテスト用データ（結合テストと E2E で共有）
+├── e2e/analytics.spec.ts            # 4 画面の E2E（analytics シナリオ）
+└── perf/analytics-perf.ts           # prod 規模のデータでの応答時間の測定
 ```
 
 **構成の決定**: 集計は SQL（`$queryRaw`）で DB 内で行う。同じ定義を TypeScript の純粋関数でも持ち、小さなフィクスチャで両者の結果が一致することをテストする（定義のずれを防ぐため）。

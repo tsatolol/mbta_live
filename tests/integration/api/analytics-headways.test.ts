@@ -5,6 +5,7 @@ import { getAnalyticsHeadways } from "@/lib/api/analytics-headways";
 import { headwaysResponseSchema } from "@/lib/api-schemas/analytics-headways";
 import { errorResponseSchema } from "@/lib/api-schemas/common";
 import { AGGREGATE_DEFINITION_VERSION } from "@/lib/metrics/constants";
+import { clearTodayCache } from "@/lib/api/today-cache";
 import { runAggregate } from "@/jobs/aggregate";
 import { insertAnalyticsSeed } from "../../helpers/analytics-seed";
 import { createTestDb, resetData, testDatabaseUrl } from "../../helpers/db";
@@ -39,6 +40,8 @@ function aggregate(now: Date, range?: { from: string; to: string }) {
 }
 
 beforeAll(async () => {
+  // 時計を止めているので、今日の分の使い回しが切れない。ファイルごとに消す
+  clearTodayCache();
   await resetData(db);
   await seedStaticFromFixtures(db);
   // 11-03〜11-09 は 1 日分、今日（11-10）は 10:00 ET まで

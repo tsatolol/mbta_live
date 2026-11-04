@@ -1,6 +1,6 @@
 // 003 TR-005: 分析の画面。analytics シナリオ（前の 7 日を集計済み + 今日の今まで）を使う。
 // 今日の分は実行する時刻によって量が変わるので、件数や値は過去の日で確かめる
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { chartData } from "./helpers/charts";
 import { seedE2e } from "./helpers/seed";
 
@@ -163,3 +163,49 @@ test.describe("分析: アラートの傾向", () => {
     await expect(page.getByTestId("stat-notice-alerts-value")).toHaveText("0");
   });
 });
+
+test.describe("分析: 曜日 × 時間帯のパターン", () => {
+  test.beforeAll(() => {
+    seedE2e("analytics");
+  });
+
+  test("ヒートマップが出て、指標を切り替えられる", async ({ page }) => {
+    await page.goto("/analytics/patterns");
+    await expect(page.getByTestId("analytics-tab-patterns")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(page.getByTestId("filter-metric")).toHaveValue("headway_p90");
+
+    const headway = await heatmapData(page);
+    expect(headway.y).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+    expect(headway.x[0]).toBe("3:00");
+    // 既定の期間（今日を含む 7 日）のうち、過去の 6 日の曜日には 05:00〜00:00 台のデータがある
+    // （今日の分は実行する時刻によって変わる）
+    expect(headway.cells.length).toBeGreaterThanOrEqual(6 * 19);
+
+    await page.getByTestId("filter-metric").selectOption("alert_minutes");
+    await expect(page).toHaveURL(/metric=alert_minutes/);
+    // Red の遅延は毎日 08:00〜09:00 ET（x = 5 は 8:00 の列）
+    await expect
+      .poll(async () => (await heatmapData(page)).cells.some(([x, , v]) => x === 5 && v === 60))
+      .toBe(true);
+  });
+});
+
+/** ヒートマップの軸とセル（[x, y, 値]） */
+async function heatmapData(page: Page) {
+  await page.waitForFunction(() => {
+    const o = window.__mbtaCharts?.["pattern-heatmap"]?.getOption() as
+      { series?: unknown[] } | undefined;
+    return (o?.series?.length ?? 0) > 0;
+  });
+  return page.evaluate(() => {
+    const o = window.__mbtaCharts!["pattern-heatmap"]!.getOption() as {
+      xAxis: { data: string[] }[];
+      yAxis: { data: string[] }[];
+      series: { data: number[][] }[];
+    };
+    return { x: o.xAxis[0]!.data, y: o.yAxis[0]!.data, cells: o.series[0]!.data };
+  });
+}

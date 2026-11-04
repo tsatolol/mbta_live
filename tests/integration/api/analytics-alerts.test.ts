@@ -4,6 +4,7 @@ import { fixedClock } from "@/lib/clock";
 import { getAnalyticsAlerts } from "@/lib/api/analytics-alerts";
 import { alertsAnalyticsResponseSchema } from "@/lib/api-schemas/analytics-alerts";
 import { errorResponseSchema } from "@/lib/api-schemas/common";
+import { clearTodayCache } from "@/lib/api/today-cache";
 import { runAggregate } from "@/jobs/aggregate";
 import { insertAnalyticsAlerts } from "../../helpers/analytics-seed";
 import { createTestDb, resetData, testDatabaseUrl } from "../../helpers/db";
@@ -28,6 +29,8 @@ async function ok(query: string, now = NOW) {
 }
 
 beforeAll(async () => {
+  // 時計を止めているので、今日の分の使い回しが切れない。ファイルごとに消す
+  clearTodayCache();
   await resetData(db);
   await seedStaticFromFixtures(db);
   // 11-03 から観測。Blue のシャトルは 11-05 の 12:00〜16:00 ET

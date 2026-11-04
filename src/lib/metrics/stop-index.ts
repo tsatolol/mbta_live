@@ -1,4 +1,6 @@
 // 駅の索引: ホーム → 親駅の対応と、路線パターンごとの停車順（親駅）。到着検出で使う純粋なデータ構造
+import { appendTo } from "@/lib/collections";
+
 export interface StopRecord {
   id: string;
   locationType: number;
@@ -41,7 +43,7 @@ export function createStopIndex(
   const byRoute = new Map<string, PatternRecord[]>();
   for (const p of [...patterns].sort((a, b) => a.typicality - b.typicality)) {
     const key = `${p.routeId}|${p.directionId}`;
-    byRoute.set(key, [...(byRoute.get(key) ?? []), p]);
+    appendTo(byRoute, key, p);
   }
   return {
     parentOf: (stopId) => parent.get(stopId) ?? null,

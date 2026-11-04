@@ -3,6 +3,7 @@
 import { PREDICTION_WITHIN_SEC } from "./constants";
 import { percentileCont } from "./headways";
 import { bostonHourOf, type ServiceDate } from "@/lib/time";
+import { appendTo } from "@/lib/collections";
 
 /** 予測の種類が空のときの値 */
 export const UNKNOWN_UPDATE_TYPE = "UNKNOWN";
@@ -137,7 +138,7 @@ export function groupAccuracy<T extends AccuracyValues, K>(
   keyOf: (r: T) => K,
 ): Map<K, AccuracyValues> {
   const groups = new Map<K, T[]>();
-  for (const r of rows) groups.set(keyOf(r), [...(groups.get(keyOf(r)) ?? []), r]);
+  for (const r of rows) appendTo(groups, keyOf(r), r);
   const out = new Map<K, AccuracyValues>();
   for (const [k, list] of groups) {
     const c = combineAccuracy(list);

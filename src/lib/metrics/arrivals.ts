@@ -2,6 +2,7 @@
 import { serviceDateOf, type ServiceDate } from "@/lib/time";
 import { STALE_VEHICLE_SEC } from "./constants";
 import type { StopIndex } from "./stop-index";
+import { appendTo } from "@/lib/collections";
 
 /** 前回の記録がないときに、到着時刻の精度として使う収集間隔（秒） */
 export const DEFAULT_POLL_INTERVAL_SEC = 60;
@@ -100,7 +101,7 @@ export function detectArrivals(input: DetectArrivalsInput): DetectArrivalsResult
   const prevById = new Map(input.prevVehicles.map((v) => [v.vehicleId, v]));
   const predsByTrip = new Map<string, PredictionObservation[]>();
   for (const p of input.prevPredictions) {
-    predsByTrip.set(p.tripId, [...(predsByTrip.get(p.tripId) ?? []), p]);
+    appendTo(predsByTrip, p.tripId, p);
   }
 
   const events = new Map<string, ArrivalEventRow>();

@@ -12,6 +12,7 @@ import {
   updateTypeSchema,
 } from "@/lib/api-schemas/analytics-predictions";
 import { analyticsContext, analyticsMeta, rangeQuerySchema } from "./analytics";
+import { cachedToday } from "./today-cache";
 import { okResponse, parseQuery, withErrorHandling } from "./handler";
 import type { ApiDeps } from "./live-vehicles";
 
@@ -38,7 +39,11 @@ export function getAnalyticsPredictions(deps: ApiDeps) {
         ctx.aggregated
           ? readPredictionAccuracy(deps.db, ctx.aggregated.from, ctx.aggregated.to, filter)
           : Promise.resolve([]),
-        ctx.todayIncluded ? computePredictionAccuracy(deps.db, ctx.today) : Promise.resolve([]),
+        ctx.todayIncluded
+          ? cachedToday(`predictions|${ctx.today}`, deps.clock.now().getTime(), () =>
+              computePredictionAccuracy(deps.db, ctx.today),
+            )
+          : Promise.resolve([]),
       ]);
       const todayRows: AccuracyReadRow[] = today
         .filter(
@@ -49,11 +54,8 @@ export function getAnalyticsPredictions(deps: ApiDeps) {
         )
         .map((r) => ({
           serviceDate: ctx.today,
-          routeId: r.route_id,
-          directionId: r.direction_id,
           leadBucketMin: r.lead_bucket_min,
           updateType: r.update_type,
-          hour: r.hour,
           n: r.n,
           meanErrorSec: r.mean_error_sec,
           meanAbsErrorSec: r.mean_abs_error_sec,
