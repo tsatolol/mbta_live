@@ -140,11 +140,11 @@ description: "002 リアルタイム画面の実装タスク"
 
 **目的**: パイプラインへの組み込み、004 の残り、文書の反映、全体の確認
 
-- [ ] T033 リリース用の CI で E2E を動かす: `pipeline.yml` の ci ジョブに、Playwright のブラウザの用意と `pnpm test:e2e`（Postgres のサービスコンテナに E2E 用の DB を作る）を足す。所要時間が延びすぎないか（SC-002 とは別に、CI 全体）を確かめる: `.github/workflows/pipeline.yml`
+- [X] T033 リリース用の CI で E2E を動かす: `pipeline.yml` の ci ジョブに、Playwright のブラウザの用意と `pnpm test:e2e`（Postgres のサービスコンテナに E2E 用の DB を作る）を足す。所要時間が延びすぎないか（SC-002 とは別に、CI 全体）を確かめる: `.github/workflows/pipeline.yml`
 - [X] T034 004 の T048 を行う: スモークテストに `/api/live/vehicles`・`/api/static/routes`・`/api/live/alerts` の確認を足す（共有のスキーマで解析できる）: `tests/smoke/smoke.test.ts`
-- [ ] T035 004 の T049 を行う: dev の URL に対して、IAP を通して読み取りだけの短い E2E を cd-dev の最後に実行する: `tests/e2e/dev/`、`.github/workflows/pipeline.yml`
+- [X] T035 004 の T049 を行う: dev の URL に対して、IAP を通して読み取りだけの短い E2E を cd-dev の最後に実行する: `tests/e2e/dev/`、`.github/workflows/pipeline.yml`
 - [X] T036 [P] 文書を更新する（flow-back）: `contracts/live-api.md` に実際の応答の形とパラメータ、`docs/architecture.md` に画面と内部 API の構成、`docs/development.md` に `pnpm test:e2e` と E2E 用の DB、CLAUDE.md のコマンド
-- [ ] T037 確認: dev で各画面を開き、初回表示（SC-002。3 秒以内、コールドスタートを除く）と、地図に路線と車両が出ることを確かめる。結果を research.md に記録する
+- [X] T037 確認: dev で各画面を開き、初回表示（SC-002。3 秒以内、コールドスタートを除く）と、地図に路線と車両が出ることを確かめる。結果を research.md に記録する
 - [X] T038 `/speckit-analyze` で 002 の文書とタスクの食い違いを点検し、見つかったものを反映する
 
 ---
