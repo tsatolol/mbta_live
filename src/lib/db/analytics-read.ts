@@ -1,5 +1,8 @@
 // 分析（003）の内部 API が読むクエリ。集計テーブルと aggregate_runs を読むだけ（Web は読み取り専用。憲章）
 import "server-only";
+import { z } from "zod";
+import { Prisma } from "@/generated/prisma/client";
+import { GREEN_COMBINED } from "@/lib/metrics/headways";
 import { serviceDateToDbDate, type ServiceDate } from "@/lib/time";
 import type { Db } from "./client";
 
@@ -149,5 +152,84 @@ export async function readAlertStats(
     cause: r.cause,
     alertCount: r.alertCount,
     activeMinutes: r.activeMinutes,
+  }));
+}
+
+// ---- ヒートマップ（003 US4）: (運行日, 時間帯) ごとに集約して読む ----
+
+const hourlyRowSchema = z.object({
+  service_date: z.date(),
+  hour: z.number().int(),
+  n: z.number(),
+  weighted_sum: z.number(),
+});
+
+function toWeightedRows(rows: unknown[]) {
+  return z
+    .array(hourlyRowSchema)
+    .parse(rows)
+    .map((r) => ({
+      serviceDate: dbDateToServiceDate(r.service_date),
+      hour: r.hour,
+      n: r.n,
+      weightedSum: r.weighted_sum,
+    }));
+}
+
+/**
+ * 運行間隔の p90 の、(運行日, 時間帯) ごとの件数と p90 × 件数の合計。
+ * 路線を指定しなければ、Green の合算を除いたすべての路線（支線と二重に数えないため）
+ */
+export async function readHeadwayHourly(
+  db: Db,
+  from: ServiceDate,
+  to: ServiceDate,
+  routeId?: string,
+) {
+  const rows = await db.$queryRaw<unknown[]>`
+    SELECT "service_date", "hour"::int AS "hour", sum("n")::int AS "n",
+      sum("p90_sec" * "n")::float8 AS "weighted_sum"
+    FROM "daily_headway_stats"
+    WHERE "service_date" BETWEEN ${serviceDateToDbDate(from)}::date AND ${serviceDateToDbDate(to)}::date
+      AND ${routeId === undefined ? Prisma.sql`"route_id" <> ${GREEN_COMBINED}` : Prisma.sql`"route_id" = ${routeId}`}
+    GROUP BY "service_date", "hour"`;
+  return toWeightedRows(rows);
+}
+
+/** 予測の平均絶対誤差の、(運行日, 時間帯) ごとの件数と平均絶対誤差 × 件数の合計 */
+export async function readPredictionHourly(
+  db: Db,
+  from: ServiceDate,
+  to: ServiceDate,
+  routeId?: string,
+) {
+  const rows = await db.$queryRaw<unknown[]>`
+    SELECT "service_date", "hour"::int AS "hour", sum("n")::int AS "n",
+      sum("mean_abs_error_sec" * "n")::float8 AS "weighted_sum"
+    FROM "daily_prediction_accuracy"
+    WHERE "service_date" BETWEEN ${serviceDateToDbDate(from)}::date AND ${serviceDateToDbDate(to)}::date
+      ${routeId === undefined ? Prisma.empty : Prisma.sql`AND "route_id" = ${routeId}`}
+    GROUP BY "service_date", "hour"`;
+  return toWeightedRows(rows);
+}
+
+/** 遅延系のアラートが有効だった分数の、(運行日, 時間帯) ごとの値（routeId は路線か ALL_ROUTES） */
+export async function readDisruptionMinutesHourly(
+  db: Db,
+  from: ServiceDate,
+  to: ServiceDate,
+  routeId: string,
+) {
+  const rows = await db.hourlyAlertMinute.findMany({
+    where: {
+      serviceDate: { gte: serviceDateToDbDate(from), lte: serviceDateToDbDate(to) },
+      routeId,
+      category: "disruption",
+    },
+  });
+  return rows.map((r) => ({
+    serviceDate: dbDateToServiceDate(r.serviceDate),
+    hour: r.hour,
+    minutes: r.activeMinutes,
   }));
 }

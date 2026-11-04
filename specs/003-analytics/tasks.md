@@ -128,15 +128,15 @@ description: "003 分析の実装タスク"
 
 ### ユーザーストーリー 4 のテスト
 
-- [ ] T037 [P] [US4] ヒートマップの集約の単体テスト: 件数で重み付けした平均、アラートの分数の日あたりの平均、データのないセルは空、時間帯の並び（3〜2）: `tests/unit/metrics/heatmap.test.ts`
-- [ ] T038 [P] [US4] `GET /api/analytics/heatmap` の結合テスト: 3 つの指標、`route` での絞り込み、当日分の結合、不正な `metric` で 400: `tests/integration/api/analytics-heatmap.test.ts`
+- [X] T037 [P] [US4] ヒートマップの集約の単体テスト: 件数で重み付けした平均、アラートの分数の日あたりの平均、データのないセルは空、時間帯の並び（3〜2）: `tests/unit/metrics/heatmap.test.ts`
+- [X] T038 [P] [US4] `GET /api/analytics/heatmap` の結合テスト: 3 つの指標、`route` での絞り込み、当日分の結合、不正な `metric` で 400: `tests/integration/api/analytics-heatmap.test.ts`
 
 ### ユーザーストーリー 4 の実装
 
-- [ ] T039 [US4] ヒートマップの集約を書く（T037 を通す）: `src/lib/metrics/heatmap.ts`
-- [ ] T040 [US4] `GET /api/analytics/heatmap` を書く（T038 を通す）: `src/app/api/analytics/heatmap/route.ts`、`src/lib/api/analytics-heatmap.ts`、`src/lib/db/analytics-read.ts`
-- [ ] T041 [US4] パターンの画面を書く: 指標の切り替え、曜日 × 時間帯のヒートマップ、近似であることの注記。変換の単体テスト: `src/app/analytics/patterns/page.tsx`、`src/components/analytics/heatmap-chart.ts`、`tests/unit/analytics/heatmap-chart.test.ts`
-- [ ] T042 [US4] パターンの画面の E2E: `tests/e2e/analytics.spec.ts`
+- [X] T039 [US4] ヒートマップの集約を書く（T037 を通す）: `src/lib/metrics/heatmap.ts`
+- [X] T040 [US4] `GET /api/analytics/heatmap` を書く（T038 を通す）: `src/app/api/analytics/heatmap/route.ts`、`src/lib/api/analytics-heatmap.ts`、`src/lib/db/analytics-read.ts`
+- [X] T041 [US4] パターンの画面を書く: 指標の切り替え、曜日 × 時間帯のヒートマップ、近似であることの注記。変換の単体テスト: `src/app/analytics/patterns/page.tsx`、`src/components/analytics/heatmap-chart.ts`、`tests/unit/analytics/heatmap-chart.test.ts`
+- [X] T042 [US4] パターンの画面の E2E: `tests/e2e/analytics.spec.ts`
 
 **チェックポイント**: すべてのユーザーストーリーが動く
 
