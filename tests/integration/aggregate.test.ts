@@ -12,7 +12,9 @@ import {
   serviceDatesToAggregate,
   type AggregateRange,
 } from "@/jobs/aggregate";
+import { insertAnalyticsSeed } from "../helpers/analytics-seed";
 import { createTestDb, resetData, testDatabaseUrl } from "../helpers/db";
+import { seedStaticFromFixtures } from "../helpers/seed";
 
 const db = createTestDb();
 /** 2026-11-10（火）の 04:30 ET（aggregate ジョブが動く時刻） */
@@ -195,5 +197,39 @@ describe("aggregate ジョブの集計", () => {
     const dates = new Set((await listPartitions(db)).map((p) => p.serviceDate));
     expect(dates.has("2026-11-06")).toBe(false);
     expect(dates.has("2026-11-07")).toBe(true);
+  });
+});
+
+describe("登録済みの指標の集計（既定の aggregators）", () => {
+  it("運行間隔: 前の運行日の daily_headway_stats を入れ、2 回目も同じ行になる", async () => {
+    await seedStaticFromFixtures(db);
+    await insertAnalyticsSeed(db, "2026-11-09", "2026-11-09");
+    const first = await runAggregate({
+      db,
+      clock: fixedClock(NOW),
+      connectionString: testDatabaseUrl(),
+      retentionDays: 28,
+    });
+    expect(first.status).toBe("success");
+    const rows = await db.dailyHeadwayStat.findMany({
+      orderBy: [{ routeId: "asc" }, { directionId: "asc" }, { stopId: "asc" }, { hour: "asc" }],
+    });
+    expect(rows.length).toBeGreaterThan(0);
+    expect(new Set(rows.map((r) => r.serviceDate.toISOString().slice(0, 10)))).toEqual(
+      new Set(["2026-11-09"]),
+    );
+    const jobRun = await db.collectorRun.findUniqueOrThrow({ where: { id: first.runId } });
+    expect(jobRun.counts).toMatchObject({ headwaysRows: rows.length });
+
+    await runAggregate({
+      db,
+      clock: fixedClock(NOW),
+      connectionString: testDatabaseUrl(),
+      retentionDays: 28,
+    });
+    const again = await db.dailyHeadwayStat.findMany({
+      orderBy: [{ routeId: "asc" }, { directionId: "asc" }, { stopId: "asc" }, { hour: "asc" }],
+    });
+    expect(again).toEqual(rows);
   });
 });

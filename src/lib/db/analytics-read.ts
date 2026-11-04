@@ -37,3 +37,49 @@ export async function getLastAggregatedServiceDate(db: Db): Promise<ServiceDate 
   });
   return run ? dbDateToServiceDate(run.serviceDate) : null;
 }
+
+export interface HeadwayFilter {
+  routeId: string;
+  directionId?: number;
+}
+
+export interface HeadwayReadRow {
+  serviceDate: ServiceDate;
+  directionId: number;
+  stopId: string;
+  hour: number;
+  n: number;
+  meanSec: number;
+  p50Sec: number;
+  p90Sec: number;
+  maxSec: number;
+  bunchingCount: number;
+  gapCount: number;
+}
+
+/** 集計済みの運行間隔（daily_headway_stats）を読む */
+export async function readHeadwayStats(
+  db: Db,
+  from: ServiceDate,
+  to: ServiceDate,
+  filter: HeadwayFilter,
+): Promise<HeadwayReadRow[]> {
+  const rows = await db.dailyHeadwayStat.findMany({
+    where: {
+      serviceDate: { gte: serviceDateToDbDate(from), lte: serviceDateToDbDate(to) },
+      routeId: filter.routeId,
+      ...(filter.directionId !== undefined ? { directionId: filter.directionId } : {}),
+    },
+  });
+  return rows.map((r) => ({ ...r, serviceDate: dbDateToServiceDate(r.serviceDate) }));
+}
+
+/** 親駅の名前 */
+export async function stopNames(db: Db, ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const stops = await db.stop.findMany({
+    where: { id: { in: [...ids] } },
+    select: { id: true, name: true },
+  });
+  return new Map(stops.map((s) => [s.id, s.name]));
+}

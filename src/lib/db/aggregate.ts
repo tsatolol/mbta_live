@@ -3,6 +3,7 @@
 import type { ServiceDate } from "@/lib/time";
 import { serviceDateToDbDate } from "@/lib/time";
 import { AGGREGATE_DEFINITION_VERSION } from "@/lib/metrics/constants";
+import { insertHeadwayStats } from "./analytics-sql";
 import type { Db } from "./client";
 import type { DbTx } from "./types";
 
@@ -27,7 +28,9 @@ export interface MetricAggregator {
  * 登録済みの指標の集計。各ユーザーストーリーで足す（運行間隔 → 予測精度 → アラート）。
  * 3 つがそろったら AGGREGATE_DEFINITION_VERSION を 1 にする
  */
-export const METRIC_AGGREGATORS: readonly MetricAggregator[] = [];
+export const METRIC_AGGREGATORS: readonly MetricAggregator[] = [
+  { name: "headways", tables: ["daily_headway_stats"], run: insertHeadwayStats },
+];
 
 /** 1 日分の集計にかかる時間の上限（トランザクションのタイムアウト） */
 const AGGREGATE_TX_TIMEOUT_MS = 5 * 60_000;

@@ -59,18 +59,18 @@ description: "003 分析の実装タスク"
 
 ### ユーザーストーリー 1 のテスト
 
-- [ ] T012 [P] [US1] 運行間隔の TypeScript 版の単体テスト（TR-001）: 連続する到着の差、60 分超の除外、団子運転（< 2 分）、間隔の開き（基準の中央値 × 2 より大きい。基準がなければ数えない）、時間帯は後の到着の時刻、統計（n・平均・p50・p90・最大）。間隔が負にならない不変条件を fast-check で: `tests/unit/metrics/headways.test.ts`
-- [ ] T013 [P] [US1] 運行間隔の SQL と TypeScript 版の突き合わせ（TR-002、TR-003）: 同じ小さなデータで行が一致する。Green の幹線の合算、運行日の日付またぎ（ET 02:59 と 03:00）、夏時間の切り替え日（25 時間の日）、到着が 0 件の日: `tests/integration/analytics/headways-sql.test.ts`
+- [X] T012 [P] [US1] 運行間隔の TypeScript 版の単体テスト（TR-001）: 連続する到着の差、60 分超の除外、団子運転（< 2 分）、間隔の開き（基準の中央値 × 2 より大きい。基準がなければ数えない）、時間帯は後の到着の時刻、統計（n・平均・p50・p90・最大）。間隔が負にならない不変条件を fast-check で: `tests/unit/metrics/headways.test.ts`
+- [X] T013 [P] [US1] 運行間隔の SQL と TypeScript 版の突き合わせ（TR-002、TR-003）: 同じ小さなデータで行が一致する。Green の幹線の合算、運行日の日付またぎ（ET 02:59 と 03:00）、夏時間の切り替え日（25 時間の日）、到着が 0 件の日: `tests/integration/analytics/headways-sql.test.ts`
 
 ### ユーザーストーリー 1 の実装
 
-- [ ] T014 [US1] 運行間隔の TypeScript 版を書く（T012 を通す）: `src/lib/metrics/headways.ts`
-- [ ] T015 [US1] 運行間隔の集計 SQL を書く（T013 を通す）: 運行日 1 つ分の SELECT。基準の中央値は前の 28 日の `daily_headway_stats.p50_sec` から。Green の幹線の駅は路線パターンから求める: `src/lib/db/analytics-sql.ts`
-- [ ] T016 [US1] aggregate ジョブに運行間隔の集計を登録する。T006 のテストに運行間隔の行が入ることを足す: `src/lib/db/aggregate.ts`
-- [ ] T017 [P] [US1] `GET /api/analytics/headways` の結合テスト: 日別・時間帯別の統計と件数、`route=Green`、`stop` での絞り込み、当日分を生データから計算して結合する、当日分の値と翌日に集計した値が一致する（TR-004）、`definitionVersions`、不正な値で 400: `tests/integration/api/analytics-headways.test.ts`
-- [ ] T018 [US1] `GET /api/analytics/headways` を書く（T017 を通す）: `src/app/api/analytics/headways/route.ts`、`src/lib/api/analytics-headways.ts`、`src/lib/db/analytics-read.ts`
-- [ ] T019 [US1] 運行間隔の画面を書く: 路線・方向・駅（その路線の駅）・期間の絞り込み、日別の p50 / p90 の推移、時間帯別の分布、団子運転と間隔の開きの件数。グラフに渡すデータへの変換は関数にして単体テストする: `src/app/analytics/headways/page.tsx`、`src/components/analytics/headway-charts.ts`、`tests/unit/analytics/headway-charts.test.ts`
-- [ ] T020 [US1] 運行間隔の画面の E2E（TR-005）: 絞り込みを変えるとグラフのデータが変わる、Green の合算、件数、推定精度の注記: `tests/e2e/analytics.spec.ts`
+- [X] T014 [US1] 運行間隔の TypeScript 版を書く（T012 を通す）: `src/lib/metrics/headways.ts`
+- [X] T015 [US1] 運行間隔の集計 SQL を書く（T013 を通す）: 運行日 1 つ分の SELECT。基準の中央値は前の 28 日の `daily_headway_stats.p50_sec` から。Green の幹線の駅は路線パターンから求める: `src/lib/db/analytics-sql.ts`
+- [X] T016 [US1] aggregate ジョブに運行間隔の集計を登録する。T006 のテストに運行間隔の行が入ることを足す: `src/lib/db/aggregate.ts`
+- [X] T017 [P] [US1] `GET /api/analytics/headways` の結合テスト: 日別・時間帯別の統計と件数、`route=Green`、`stop` での絞り込み、当日分を生データから計算して結合する、当日分の値と翌日に集計した値が一致する（TR-004）、`definitionVersions`、不正な値で 400: `tests/integration/api/analytics-headways.test.ts`
+- [X] T018 [US1] `GET /api/analytics/headways` を書く（T017 を通す）: `src/app/api/analytics/headways/route.ts`、`src/lib/api/analytics-headways.ts`、`src/lib/db/analytics-read.ts`
+- [X] T019 [US1] 運行間隔の画面を書く: 路線・方向・駅（その路線の駅）・期間の絞り込み、日別の p50 / p90 の推移、時間帯別の分布、団子運転と間隔の開きの件数。グラフに渡すデータへの変換は関数にして単体テストする: `src/app/analytics/headways/page.tsx`、`src/components/analytics/headway-charts.ts`、`tests/unit/analytics/headway-charts.test.ts`
+- [X] T020 [US1] 運行間隔の画面の E2E（TR-005）: 絞り込みを変えるとグラフのデータが変わる、Green の合算、件数、推定精度の注記: `tests/e2e/analytics.spec.ts`
 
 **チェックポイント**: 運行間隔の画面が動く（MVP）
 

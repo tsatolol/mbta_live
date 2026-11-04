@@ -43,6 +43,14 @@ export function FilterBar({
   children?: ReactNode;
 }) {
   const route = filters.route ?? (allowAllRoutes ? "" : (defaultRoute ?? ""));
+  // 方向の名前は選んだ路線から（Green の合算は支線の B と同じ。4 支線で方向 ID の意味は同じ）
+  const routeInfo = routes.find((r) => r.id === (route === "Green" ? "Green-B" : route));
+  const directionLabel = (d: 0 | 1) => {
+    const name = routeInfo?.directionNames[d];
+    const destination = route === "Green" ? null : routeInfo?.directionDestinations[d];
+    if (!name) return `Direction ${d}`;
+    return destination ? `${name} → ${destination}` : name;
+  };
   return (
     <form
       className="flex flex-wrap items-end gap-3"
@@ -93,8 +101,8 @@ export function FilterBar({
             data-testid="filter-direction"
           >
             <option value="">Both directions</option>
-            <option value="0">Direction 0</option>
-            <option value="1">Direction 1</option>
+            <option value="0">{directionLabel(0)}</option>
+            <option value="1">{directionLabel(1)}</option>
           </select>
         </FilterField>
       )}
