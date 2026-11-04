@@ -9,6 +9,7 @@ import { SERVICE_DAY_HOURS } from "@/lib/time";
 import { analyticsRouteSchema, directionParamSchema } from "@/lib/api-schemas/analytics";
 import { headwaysResponseSchema } from "@/lib/api-schemas/analytics-headways";
 import { analyticsContext, analyticsMeta, rangeQuerySchema } from "./analytics";
+import { cachedToday } from "./today-cache";
 import { okResponse, parseQuery, withErrorHandling } from "./handler";
 import type { ApiDeps } from "./live-vehicles";
 
@@ -40,7 +41,11 @@ export function getAnalyticsHeadways(deps: ApiDeps) {
         ctx.aggregated
           ? readHeadwayStats(deps.db, ctx.aggregated.from, ctx.aggregated.to, filter)
           : Promise.resolve([]),
-        ctx.todayIncluded ? computeHeadwayStats(deps.db, ctx.today) : Promise.resolve([]),
+        ctx.todayIncluded
+          ? cachedToday(`headways|${ctx.today}`, deps.clock.now().getTime(), () =>
+              computeHeadwayStats(deps.db, ctx.today),
+            )
+          : Promise.resolve([]),
       ]);
       const todayRows: HeadwayReadRow[] = today
         .filter(

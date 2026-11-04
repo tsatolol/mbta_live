@@ -144,11 +144,11 @@ description: "003 分析の実装タスク"
 
 ## フェーズ 7: 仕上げと横断的な作業
 
-- [ ] T043 dev での E2E に分析の 4 画面を足す（表示されることだけ。dev は生データが 3 日分）: `tests/e2e/dev/dev.spec.ts`
-- [ ] T044 [P] 性能の確認（SC-002）: 28 日分の集計データを入れた DB で、各分析 API の応答時間を測る。遅ければ索引を足す。結果を research.md に記録する
-- [ ] T045 [P] 文書を更新する（flow-back）: 契約に実際の応答の形とパラメータ、`docs/architecture.md` に分析の画面と集計テーブル、`docs/development.md` に `pnpm job:aggregate --from/--to`
+- [X] T043 dev での E2E に分析の 4 画面を足す（表示されることだけ。dev は生データが 3 日分）: `tests/e2e/dev/dev.spec.ts`
+- [X] T044 [P] 性能の確認（SC-002）: 28 日分の集計データを入れた DB で、各分析 API の応答時間を測る。遅ければ索引を足す。結果を research.md に記録する
+- [X] T045 [P] 文書を更新する（flow-back）: 契約に実際の応答の形とパラメータ、`docs/architecture.md` に分析の画面と集計テーブル、`docs/development.md` に `pnpm job:aggregate --from/--to`
 - [ ] T046 確認: dev / prod で aggregate ジョブが動いて `aggregate_runs` が記録され、生データのパーティションが保持期間で消えること（これまでは集計がなく、消されずに残っていた）、`/api/health` の `previousServiceDateAggregated` が true になること、各画面が表示されることを確かめる。結果を research.md に記録する
-- [ ] T047 文書とタスクの食い違いを点検し、見つかったものを反映する（`/speckit-analyze` 相当）
+- [X] T047 文書とタスクの食い違いを点検し、見つかったものを反映する（`/speckit-analyze` 相当）
 
 ---
 

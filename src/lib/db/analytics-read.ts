@@ -93,13 +93,11 @@ export interface AccuracyFilter {
   updateType?: string;
 }
 
+/** 予測精度の行（API がまとめるのに使う次元だけ） */
 export interface AccuracyReadRow {
   serviceDate: ServiceDate;
-  routeId: string;
-  directionId: number;
   leadBucketMin: number;
   updateType: string;
-  hour: number;
   n: number;
   meanErrorSec: number;
   meanAbsErrorSec: number;
@@ -107,22 +105,54 @@ export interface AccuracyReadRow {
   within60sRatio: number;
 }
 
-/** 集計済みの予測精度（daily_prediction_accuracy）を読む */
+const accuracySummarySchema = z.object({
+  service_date: z.date(),
+  lead_bucket_min: z.number().int(),
+  update_type: z.string(),
+  n: z.number().int(),
+  mean_error_sec: z.number(),
+  mean_abs_error_sec: z.number(),
+  p90_abs_error_sec: z.number(),
+  within_60s_ratio: z.number(),
+});
+
+/**
+ * 集計済みの予測精度（daily_prediction_accuracy）を、(運行日, リード時間, 予測の種類) ごとにまとめて読む
+ * （路線・方向・時間帯は SQL で件数の重み付きでまとめる。28 日・全路線で 13 万行を読まないため。003 T044）
+ */
 export async function readPredictionAccuracy(
   db: Db,
   from: ServiceDate,
   to: ServiceDate,
   filter: AccuracyFilter,
 ): Promise<AccuracyReadRow[]> {
-  const rows = await db.dailyPredictionAccuracy.findMany({
-    where: {
-      serviceDate: { gte: serviceDateToDbDate(from), lte: serviceDateToDbDate(to) },
-      ...(filter.routeId !== undefined ? { routeId: filter.routeId } : {}),
-      ...(filter.directionId !== undefined ? { directionId: filter.directionId } : {}),
-      ...(filter.updateType !== undefined ? { updateType: filter.updateType } : {}),
-    },
-  });
-  return rows.map((r) => ({ ...r, serviceDate: dbDateToServiceDate(r.serviceDate) }));
+  const rows = await db.$queryRaw<unknown[]>`
+    SELECT "service_date", "lead_bucket_min"::int AS "lead_bucket_min", "update_type",
+      sum("n")::int AS "n",
+      (sum("mean_error_sec" * "n") / sum("n"))::float8 AS "mean_error_sec",
+      (sum("mean_abs_error_sec" * "n") / sum("n"))::float8 AS "mean_abs_error_sec",
+      (sum("p90_abs_error_sec" * "n") / sum("n"))::float8 AS "p90_abs_error_sec",
+      (sum("within_60s_ratio" * "n") / sum("n"))::float8 AS "within_60s_ratio"
+    FROM "daily_prediction_accuracy"
+    WHERE "service_date" BETWEEN ${serviceDateToDbDate(from)}::date AND ${serviceDateToDbDate(to)}::date
+      ${filter.routeId !== undefined ? Prisma.sql`AND "route_id" = ${filter.routeId}` : Prisma.empty}
+      ${filter.directionId !== undefined ? Prisma.sql`AND "direction_id" = ${filter.directionId}` : Prisma.empty}
+      ${filter.updateType !== undefined ? Prisma.sql`AND "update_type" = ${filter.updateType}` : Prisma.empty}
+    GROUP BY "service_date", "lead_bucket_min", "update_type"
+    HAVING sum("n") > 0`;
+  return z
+    .array(accuracySummarySchema)
+    .parse(rows)
+    .map((r) => ({
+      serviceDate: dbDateToServiceDate(r.service_date),
+      leadBucketMin: r.lead_bucket_min,
+      updateType: r.update_type,
+      n: r.n,
+      meanErrorSec: r.mean_error_sec,
+      meanAbsErrorSec: r.mean_abs_error_sec,
+      p90AbsErrorSec: r.p90_abs_error_sec,
+      within60sRatio: r.within_60s_ratio,
+    }));
 }
 
 export interface AlertStatReadRow {

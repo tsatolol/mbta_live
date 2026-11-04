@@ -63,7 +63,7 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 ├── src/
 │   ├── app/                 # App Router のページと api/ 配下の Route Handlers（002, 003）
 │   ├── generated/prisma/    # prisma generate の出力（gitignore）
-│   ├── components/          # UI コンポーネント（layout/, map/, arrivals/, charts/, ui/）（002, 003）
+│   ├── components/          # UI コンポーネント（layout/, map/, arrivals/, alerts/, status/, analytics/, charts/, ui/）（002, 003）
 │   ├── hooks/               # 画面で共有する React のフック（use-now.ts など）
 │   ├── lib/
 │   │   ├── mbta/            # API クライアント、zod スキーマ、JSON:API → ドメイン型、constants.ts（server-only）
@@ -81,7 +81,9 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 │   ├── unit/                # 純粋関数（Vitest）
 │   ├── integration/         # 本物の PostgreSQL を使うテスト（Vitest）
 │   ├── replay/              # 記録した連続ポーリングを collector に流すテスト
-│   ├── e2e/                 # Playwright
+│   ├── e2e/                 # Playwright（e2e/dev/ は dev に対する読み取りだけの E2E）
+│   ├── smoke/               # デプロイ後のスモークテスト
+│   ├── perf/                # 分析 API の性能の測定（手で実行）
 │   └── fixtures/mbta/       # 実 API から記録した JSON（記録日をファイル名に含める）
 ├── infra/terraform/         # 004
 ├── .github/workflows/       # 004
@@ -109,6 +111,29 @@ web は Next.js の App Router。画面はすべてクライアントで描画�
 - 時刻は API では UTC の ISO 8601、画面でボストン時間に変換する（`formatInBoston`）
 - テスト: E2E（`tests/e2e/`）はフィクスチャを collector で取り込んだ DB に、本番と同じビルドを起動して実行する（リリース用の CI でも実行）。デプロイ後は dev に対して IAP を通した読み取りだけの E2E（`tests/e2e/dev/`）を実行する
 
+## 分析（003）
+
+aggregate ジョブ（毎日 04:30 ET）が、前の運行日の生データ（`arrival_events`・`prediction_samples`・`alerts`）を集計テーブルに書き、そのあと保持期間を過ぎた生データのパーティションを消す（集計が定義の版 1 以上で成功した運行日だけ）。集計テーブルは無期限に残す。定義は `specs/003-analytics/data-model.md`。
+
+| 集計テーブル | 単位 |
+|---|---|
+| `daily_headway_stats` | 運行日 × 路線（Green の合算を含む）× 方向 × 親駅 × 時間帯 |
+| `daily_prediction_accuracy` | 運行日 × 路線 × 方向 × リード時間 × 予測の種類 × 時間帯 |
+| `daily_alert_stats` | 運行日 × 路線（`All` を含む）× effect × cause |
+| `hourly_alert_minutes` | 運行日 × 路線（`All` を含む）× 時間帯 × 区分（遅延系 / お知らせ系） |
+
+| 画面 | パス | 使う内部 API |
+|---|---|---|
+| Headways | `/analytics/headways` | `/api/analytics/headways`, `/api/static/routes` |
+| Prediction accuracy | `/analytics/predictions` | `/api/analytics/predictions` |
+| Alert trends | `/analytics/alerts` | `/api/analytics/alerts` |
+| Patterns | `/analytics/patterns` | `/api/analytics/heatmap` |
+
+- 集計の SQL は指標ごとに「運行日 1 つ分の SELECT」を 1 つだけ持ち（`src/lib/db/analytics-sql.ts`）、ジョブ（INSERT）と分析 API（今日の分の計算）で共有する。同じ定義の TypeScript 版（`src/lib/metrics/`）と、小さなデータで結果を突き合わせるテストがある
+- 分析 API は、今日より前を集計テーブルから、今日の分を生データから計算して結合する。今日の分の計算結果は Web のプロセスに 60 秒だけ残す（`src/lib/api/today-cache.ts`）
+- 絞り込み（期間・路線・方向・駅など）は URL のクエリに持つ。グラフは Apache ECharts（`src/components/charts/`）
+- 過去の運行日の再集計: `pnpm job:aggregate --from … --to …`。Cloud Run Job では引数を丸ごと置き換えるので、先頭に `jobs/aggregate.mjs` を付ける（`docs/development.md`）
+
 ## 認証・監視・ロールバック
 
 - **IAP**: Cloud Run に直接組み込む IAP（`iap_enabled`）。プロジェクトが組織に属していないので、OAuth クライアントは Cloud Console で作り、bootstrap が IAP の設定（プロジェクト単位）に入れる。許可するユーザーと smoke-tester は、bootstrap がプロジェクト単位の `roles/iap.httpsResourceAccessor` で付ける（`specs/004-infra-cicd/research.md`）
@@ -124,7 +149,7 @@ web は Next.js の App Router。画面はすべてクライアントで描画�
 | web | `node server.js`（既定。`PORT=8080`） | `pnpm dev` / `pnpm start` |
 | collector | `node jobs/collect.mjs` | `pnpm job:collect` |
 | sync-static | `node jobs/sync-static.mjs` | `pnpm job:sync-static` |
-| aggregate | `node jobs/aggregate.mjs` | `pnpm job:aggregate` |
+| aggregate | `node jobs/aggregate.mjs [--from YYYY-MM-DD --to YYYY-MM-DD]` | `pnpm job:aggregate` |
 | migrate | `node migrate/node_modules/prisma/build/index.js migrate deploy --config migrate/prisma.config.ts` | `pnpm db:migrate` |
 
 `jobs/*.mjs` は `src/jobs/` を依存ごと 1 ファイルにまとめたもの（`pnpm build:jobs`）。イメージの中身と決めた理由は `specs/004-infra-cicd/research.md` の「イメージの中身」。

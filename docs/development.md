@@ -22,7 +22,7 @@ docker build -t mbta-live .    # web とジョブ共通のイメージ（起動�
 pnpm job:sync-static           # 静的データの同期
 pnpm job:collect               # collector を 1 回
 pnpm job:aggregate             # 前の運行日を集計
-pnpm job:aggregate --from 2026-11-01 --to 2026-11-03   # 期間を指定して再集計
+pnpm job:aggregate --from 2026-11-01 --to 2026-11-03   # 期間を指定して再集計（生データが残っている範囲。今日以降は不可、一度に 92 日まで）
 
 pnpm lint && pnpm typecheck && pnpm test   # PR を出す前に実行（PR では軽いチェックだけが走る）
 pnpm test:unit                 # 純粋関数
@@ -50,6 +50,23 @@ scripts/check-migration-compat.sh <DATABASE_URL>          # マイグレーシ�
 scripts/plan-summary.sh <plan の JSON> / scripts/plan-hash.sh <plan の JSON>
 scripts/smoke.sh <URL>                                    # IAP を通したスモークテスト（SMOKE_TESTER_SA と IAP_CLIENT_ID、deployer の gcloud の認証が必要）
 scripts/dev-e2e.sh <URL>                                  # IAP を通した dev での E2E（読み取りだけ。条件は smoke.sh と同じ。Chromium が必要）
+```
+
+## 過去の運行日を dev / prod で集計し直す
+
+集計の定義を変えたとき（`AGGREGATE_DEFINITION_VERSION` を上げたとき）や、集計に失敗した日があるときは、aggregate の Cloud Run Job を引数付きで実行する。`--args` は引数を丸ごと置き換えるので、先頭に `jobs/aggregate.mjs` を付ける。
+
+```bash
+gcloud run jobs execute aggregate --project=<プロジェクト ID> --region=us-east4 \
+  --args=jobs/aggregate.mjs,--from,2026-11-01,--to,2026-11-03 --wait
+```
+
+同じ日を何度集計しても結果は同じ。生データが残っていない日（prod 28 日 / dev 3 日より前）は、0 行で集計済みになるので指定しない。
+
+## 分析 API の性能を測る
+
+```bash
+pnpm tsx --conditions=react-server tests/perf/analytics-perf.ts   # prod 規模のデータ（28 日分）で各 API を測る（PERF_DATABASE_URL の DB を作り直す）
 ```
 
 ## MBTA API を呼ぶときの注意

@@ -30,6 +30,7 @@ import {
   rangeQuerySchema,
   type AnalyticsContext,
 } from "./analytics";
+import { cachedToday } from "./today-cache";
 import { errorResponse, okResponse, parseQuery, withErrorHandling } from "./handler";
 import type { ApiDeps } from "./live-vehicles";
 
@@ -65,7 +66,11 @@ async function headwayCells(
 ): Promise<HeatmapCell[]> {
   const [aggregated, today] = await Promise.all([
     ctx.aggregated ? readHeadwayHourly(deps.db, ctx.aggregated.from, ctx.aggregated.to, route) : [],
-    ctx.todayIncluded ? computeHeadwayStats(deps.db, ctx.today) : [],
+    ctx.todayIncluded
+      ? cachedToday(`headways|${ctx.today}`, deps.clock.now().getTime(), () =>
+          computeHeadwayStats(deps.db, ctx.today),
+        )
+      : [],
   ]);
   const todayRows = sumByHour(
     today.filter((r) =>
@@ -88,7 +93,11 @@ async function predictionCells(
     ctx.aggregated
       ? readPredictionHourly(deps.db, ctx.aggregated.from, ctx.aggregated.to, route)
       : [],
-    ctx.todayIncluded ? computePredictionAccuracy(deps.db, ctx.today) : [],
+    ctx.todayIncluded
+      ? cachedToday(`predictions|${ctx.today}`, deps.clock.now().getTime(), () =>
+          computePredictionAccuracy(deps.db, ctx.today),
+        )
+      : [],
   ]);
   const todayRows = sumByHour(
     today.filter((r) => route === undefined || r.route_id === route),
@@ -111,7 +120,11 @@ async function alertCells(
     ctx.aggregated
       ? readDisruptionMinutesHourly(deps.db, ctx.aggregated.from, ctx.aggregated.to, routeId)
       : [],
-    ctx.todayIncluded ? computeAlertStats(deps.db, ctx.today) : null,
+    ctx.todayIncluded
+      ? cachedToday(`alerts|${ctx.today}`, deps.clock.now().getTime(), () =>
+          computeAlertStats(deps.db, ctx.today),
+        )
+      : null,
   ]);
   const todayRows: MinutesHourRow[] = (today?.hourly ?? [])
     .filter((r) => r.route_id === routeId && r.category === "disruption")

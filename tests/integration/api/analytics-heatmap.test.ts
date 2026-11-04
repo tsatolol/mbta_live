@@ -4,6 +4,7 @@ import { fixedClock } from "@/lib/clock";
 import { getAnalyticsHeatmap } from "@/lib/api/analytics-heatmap";
 import { heatmapResponseSchema, type HeatmapResponse } from "@/lib/api-schemas/analytics-heatmap";
 import { errorResponseSchema } from "@/lib/api-schemas/common";
+import { clearTodayCache } from "@/lib/api/today-cache";
 import { runAggregate } from "@/jobs/aggregate";
 import { insertAnalyticsAlerts, insertAnalyticsSeed } from "../../helpers/analytics-seed";
 import { createTestDb, resetData, testDatabaseUrl } from "../../helpers/db";
@@ -34,6 +35,8 @@ const cell = (res: HeatmapResponse, dayOfWeek: number, hour: number) =>
   res.cells.find((c) => c.dayOfWeek === dayOfWeek && c.hour === hour)!;
 
 beforeAll(async () => {
+  // 時計を止めているので、今日の分の使い回しが切れない。ファイルごとに消す
+  clearTodayCache();
   await resetData(db);
   await seedStaticFromFixtures(db);
   // 11-03（火）〜11-09（月）を集計。今日（11-10 火）は 10:00 ET まで

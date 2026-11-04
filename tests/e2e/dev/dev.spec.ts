@@ -73,3 +73,18 @@ test("初回表示が 3 秒以内（SC-002。コールドスタートを除く�
   console.log(`初回表示: ${elapsedMs} ms`);
   expect(elapsedMs).toBeLessThan(3_000);
 });
+
+// 分析の 4 画面（003 T043）。dev のデータの量は時刻と集計の進み具合で変わるので、
+// 「グラフかデータがないという表示のどちらかが出て、エラーが出ない」ことを確かめる
+for (const tab of ["headways", "predictions", "alerts", "patterns"] as const) {
+  test(`分析の画面（${tab}）が表示される`, async ({ page }) => {
+    await page.goto(`/analytics/${tab}`);
+    await expect(page.getByTestId(`analytics-tab-${tab}`)).toHaveAttribute("aria-current", "page");
+    await expect(page.getByTestId("aggregation-note")).toBeVisible();
+    await expect(
+      page.locator('[data-testid^="chart-"]').first().or(page.getByTestId("analytics-empty")),
+    ).toBeVisible();
+    await expect(page.getByText(/^Unable to load/)).toHaveCount(0);
+    await expect(page.getByTestId("precision-note")).toBeVisible();
+  });
+}
