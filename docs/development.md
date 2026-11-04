@@ -28,7 +28,8 @@ pnpm lint && pnpm typecheck && pnpm test   # PR を出す前に実行（PR で�
 pnpm test:unit                 # 純粋関数
 pnpm test:integration          # 本物の PostgreSQL を使うテスト（docker compose の DB）
 pnpm test:replay               # 記録した連続ポーリングを collector に流すテスト
-pnpm test:e2e                  # Playwright
+pnpm test:e2e                  # Playwright（E2E 用の DB を作り直し、本番と同じビルドを APP_ENV=dev で起動する）
+pnpm e2e:seed [--migrate] base # E2E 用の DB にシードだけ入れる（シナリオ: base / stale-collection / out-of-service）
 pnpm test:smoke                # デプロイ後のスモークテスト（SMOKE_BASE_URL と SMOKE_ID_TOKEN が必要。パイプラインが実行する）
 pnpm fixtures:record           # 実 API から 1 回分のフィクスチャを記録（7 リクエスト）
 pnpm fixtures:cases            # 記録済みのフィクスチャから特殊ケースのフィクスチャを作る（API は呼ばない）
@@ -61,6 +62,7 @@ scripts/smoke.sh <URL>                                    # IAP を通したス�
 |---|---|
 | `DATABASE_URL` | ローカル用の接続文字列 |
 | `TEST_DATABASE_URL` | 結合テスト・再生テスト用の DB（既定値 `postgresql://postgres:postgres@localhost:5432/mbta_live_test`）。テストの開始時に中身を消して作り直す |
+| `E2E_DATABASE_URL` | E2E 用の DB（既定値 `postgresql://postgres:postgres@localhost:5432/mbta_live_e2e`）。E2E の開始時に作り直す |
 | `TEST_SKIP_MIGRATE` | `1` で、テストの開始時に DB を作り直さない（マイグレーションの互換性テスト用。普段は設定しない） |
 | `SMOKE_BASE_URL`, `SMOKE_ID_TOKEN` | スモークテストの対象の URL と、IAP を通るための ID トークン（パイプラインが渡す） |
 | `INSTANCE_CONNECTION_NAME`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Cloud Run 用（Unix ソケット `/cloudsql/<INSTANCE_CONNECTION_NAME>`。パスワードは Secret Manager から注入） |

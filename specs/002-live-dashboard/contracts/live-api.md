@@ -3,7 +3,8 @@
 - すべて GET、読み取り専用。DB だけを読み、MBTA API は呼ばない
 - クエリパラメータは zod で検証し、不正な値には `400 { "error": string }` を返す
 - 時刻は ISO 8601 の UTC 文字列で返す。ボストン時間への変換は画面側で行う
-- すべての応答に、最後に収集に成功した時刻 `lastCollectedAt` を含める（画面の「Last updated」と stale 判定に使う）
+- すべての応答に、最後に収集に成功した時刻 `lastCollectedAt` と、応答を作った時刻 `generatedAt` を含める（画面の「Last updated」と stale 判定に使う）
+- 応答の型の正は `src/lib/api-schemas/`（vehicles、predictions、alerts、routes、stops、status）。Route Handler は返す前にこのスキーマで確かめる（`src/lib/api/handler.ts`）
 
 | パス | パラメータ | 返す内容 |
 |---|---|---|

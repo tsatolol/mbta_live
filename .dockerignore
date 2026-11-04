@@ -20,3 +20,6 @@ docker
 docker-compose.yml
 Dockerfile
 .dockerignore
+playwright.config.ts
+test-results
+playwright-report

@@ -4,6 +4,7 @@ import type { Clock } from "@/lib/clock";
 import { addServiceDays, serviceDateOf, serviceDateToDbDate } from "@/lib/time";
 import type { HealthErrorResponse, HealthResponse } from "@/lib/api-schemas/health";
 import type { Db } from "./client";
+import { getLastCollectedAt } from "./live";
 
 /** そのジョブが、ある時刻以降に一度でも成功しているか（collector_runs） */
 export async function hasJobSucceededSince(db: Db, job: string, since: Date): Promise<boolean> {
@@ -21,12 +22,8 @@ export async function checkHealth(db: Db, clock: Clock): Promise<HealthResult> {
   const now = clock.now();
   const previousServiceDate = addServiceDays(serviceDateOf(now), -1);
   try {
-    const [lastCollect, aggregate] = await Promise.all([
-      db.collectorRun.findFirst({
-        where: { job: "collect", status: "success" },
-        orderBy: { startedAt: "desc" },
-        select: { finishedAt: true },
-      }),
+    const [lastCollectedAt, aggregate] = await Promise.all([
+      getLastCollectedAt(db),
       db.aggregateRun.findUnique({
         where: { serviceDate: serviceDateToDbDate(previousServiceDate) },
         select: { status: true },
@@ -37,7 +34,7 @@ export async function checkHealth(db: Db, clock: Clock): Promise<HealthResult> {
       body: {
         status: "ok",
         checkedAt: now.toISOString(),
-        lastCollectedAt: lastCollect?.finishedAt?.toISOString() ?? null,
+        lastCollectedAt: lastCollectedAt?.toISOString() ?? null,
         previousServiceDate,
         previousServiceDateAggregated: aggregate?.status === "success",
       },

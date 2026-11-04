@@ -22,3 +22,10 @@ crash.log
 dist/
 # Terraform の override（ci で一時的に作る）
 *_override.tf
+
+# Playwright
+/test-results/
+/playwright-report/
+
+# ビルドの前にコピーするファイル（scripts/copy-maplibre-worker.mjs）
+/public/vendor/

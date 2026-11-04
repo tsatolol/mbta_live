@@ -50,7 +50,7 @@ specs/002-live-dashboard/
 ├── research.md
 ├── contracts/
 │   └── live-api.md     # 内部 API、読むテーブル、計算して返す値
-└── tasks.md             # /speckit-tasks で作成
+└── tasks.md             # /speckit-tasks で作成（作成済み）
 ```
 
 ### ソースコード（リポジトリのルートから）
