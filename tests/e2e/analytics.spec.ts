@@ -123,3 +123,43 @@ test.describe("分析: 予測精度", () => {
     await expect(page.getByTestId("stat-bias-value")).toHaveText(/^\+\d+ s \(late\)$/);
   });
 });
+
+test.describe("分析: アラートの傾向", () => {
+  test.beforeAll(() => {
+    seedE2e("analytics");
+  });
+
+  test("遅延系とお知らせ系を分けて、日別の時間と件数、effect ごとの内訳が出る", async ({
+    page,
+  }) => {
+    await page.goto("/analytics/alerts");
+    await expect(page.getByTestId("analytics-tab-alerts")).toHaveAttribute("aria-current", "page");
+
+    const hours = await chartData(page, "alert-hours");
+    expect(hours.series.map((s) => s.name)).toEqual(["Disruptions", "Notices"]);
+    // 過去の日（集計済み）: Red の遅延が毎日 1 時間、Orange のお知らせが 1 日中
+    // （夏時間の切り替え日は 23 / 25 時間）
+    for (const v of hours.series[0]!.data.slice(1, 6)) expect(v).toBeGreaterThanOrEqual(1);
+    for (const v of hours.series[1]!.data.slice(0, 6)) {
+      expect(v).toBeGreaterThanOrEqual(23);
+      expect(v).toBeLessThanOrEqual(25);
+    }
+
+    const effects = await chartData(page, "alert-effects");
+    expect(effects.categories).toEqual(["Station Issue", "Delay", "Shuttle"]);
+    // 予告だけの運休（Green）は数えない
+    expect(effects.categories).not.toContain("Suspension");
+
+    await expect(page.getByTestId("stat-notice-alerts-value")).not.toHaveText("0");
+  });
+
+  test("路線で絞り込むと、その路線のアラートだけになる", async ({ page }) => {
+    await page.goto("/analytics/alerts");
+    await page.getByTestId("filter-route").selectOption("Blue");
+    await expect(page).toHaveURL(/route=Blue/);
+    const effects = await chartData(page, "alert-effects");
+    expect(effects.categories).toEqual(["Shuttle"]);
+    await expect(page.getByTestId("stat-disruption-hours-value")).toHaveText("4");
+    await expect(page.getByTestId("stat-notice-alerts-value")).toHaveText("0");
+  });
+});

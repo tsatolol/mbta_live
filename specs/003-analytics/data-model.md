@@ -36,6 +36,9 @@
 
 ### アラート
 
-- 件数: (運行日, route, effect, cause) ごとに、`active_period` がその日に重なり、かつその日にフィードで観測されたアラートの数（予告だけの UPCOMING は数えない）
-- 継続時間: `active_period` と `first_seen_at`〜`last_seen_at` が重なる区間のうち、その日に含まれる分数
+- 運行日の各分（運行日の始まりから 1 分ごとの時刻 t）について、アラートが「有効」かを見る: `active_period` のどれかに入り（start ≤ t < end。end がなければ終わりなし）、かつフィードで観測されていた（`first_seen_at` ≤ t ≤ `last_seen_at`）
+- 件数: (運行日, route, effect, cause) ごとに、その日に有効な分が 1 分以上あったアラートの数（予告だけの UPCOMING の日は数えない）。複数の日に続くアラートは日ごとに 1 件（画面では「alert-days」）
+- 継続時間（`daily_alert_stats.active_minutes`）: アラートごとの有効な分数の合計
+- 時間帯ごとの分数（`hourly_alert_minutes.active_minutes`）: その時間帯に、その区分のアラートが 1 件以上有効だった分数（同時に 2 件あっても 1 分。最大 60）
+- `route_id = All`: 路線をまとめた行。複数の路線に関係するアラートを 1 回だけ数える（路線ごとの行を足すと重複するため）
 - 画面では、遅延系（`DELAY`, `SUSPENSION`, `SHUTTLE`, `STATION_CLOSURE`）とお知らせ系（`NOTICE`, `STATION_ISSUE` など、それ以外すべて）に分ける

@@ -11,8 +11,11 @@ export const STALE_LIVE_DATA_SEC = 180;
 
 // ---- 003 分析（specs/003-analytics/data-model.md の「指標の定義」）----
 
-/** 指標の定義の版。定義を変えたら上げ、生データが残っている期間を再集計する。3 つの指標がそろうまでは 0 */
-export const AGGREGATE_DEFINITION_VERSION = 0;
+/**
+ * 指標の定義の版。定義を変えたら上げ、生データが残っている期間を再集計する。
+ * 0 = 指標がそろう前（003 のフェーズ 2〜4）、1 = 運行間隔・予測精度・アラートの 3 つ
+ */
+export const AGGREGATE_DEFINITION_VERSION = 1;
 
 /** この版以上で集計が成功した運行日だけ、001 の生データを消してよい（指標がそろう前の集計では消さない） */
 export const MIN_DROPPABLE_DEFINITION_VERSION = 1;

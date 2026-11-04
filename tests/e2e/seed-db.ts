@@ -20,7 +20,7 @@ import { createMbtaClient } from "@/lib/mbta/client";
 import { runAggregate } from "@/jobs/aggregate";
 import { runCollect } from "@/jobs/collect";
 import { addServiceDays, serviceDateOf } from "@/lib/time";
-import { insertAnalyticsSeed } from "../helpers/analytics-seed";
+import { insertAnalyticsAlerts, insertAnalyticsSeed } from "../helpers/analytics-seed";
 import { resetData } from "../helpers/db";
 import { fakeMbtaFetch } from "../helpers/fake-mbta";
 import { readFixture, WEEKDAY } from "../helpers/fixtures";
@@ -189,6 +189,7 @@ async function seed(db: Db, scenario: E2eScenario): Promise<void> {
     const today = serviceDateOf(now);
     const from = addServiceDays(today, -ANALYTICS_DAYS);
     await insertAnalyticsSeed(db, from, today, now);
+    await insertAnalyticsAlerts(db, from, today, now);
     const result = await runAggregate({
       db,
       clock: fixedClock(now),

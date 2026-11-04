@@ -121,3 +121,33 @@ export async function readPredictionAccuracy(
   });
   return rows.map((r) => ({ ...r, serviceDate: dbDateToServiceDate(r.serviceDate) }));
 }
+
+export interface AlertStatReadRow {
+  serviceDate: ServiceDate;
+  effect: string;
+  cause: string;
+  alertCount: number;
+  activeMinutes: number;
+}
+
+/** 集計済みのアラートの日次の統計（daily_alert_stats）を読む。routeId は路線か ALL_ROUTES */
+export async function readAlertStats(
+  db: Db,
+  from: ServiceDate,
+  to: ServiceDate,
+  routeId: string,
+): Promise<AlertStatReadRow[]> {
+  const rows = await db.dailyAlertStat.findMany({
+    where: {
+      serviceDate: { gte: serviceDateToDbDate(from), lte: serviceDateToDbDate(to) },
+      routeId,
+    },
+  });
+  return rows.map((r) => ({
+    serviceDate: dbDateToServiceDate(r.serviceDate),
+    effect: r.effect,
+    cause: r.cause,
+    alertCount: r.alertCount,
+    activeMinutes: r.activeMinutes,
+  }));
+}

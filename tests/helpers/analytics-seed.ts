@@ -188,3 +188,94 @@ export async function insertAnalyticsSeed(
   }
   return { arrivals, samples };
 }
+
+/** テスト用のアラート（insertAnalyticsAlerts が入れるもの） */
+export const ANALYTICS_SEED_ALERTS = {
+  /** Red の遅延: 毎日 08:00〜09:00 ET（60 分） */
+  redDelay: "seed-red-delay",
+  /** Orange のお知らせ: 期間の初めからずっと（終わりなし） */
+  orangeNotice: "seed-orange-notice",
+  /** Blue のシャトル: from の 2 日後の 12:00〜16:00 ET だけ（240 分）。フィードから消えた */
+  blueShuttle: "seed-blue-shuttle",
+  /** Green-B・Green-C の運休: まだ始まっていない（予告だけなので数えない） */
+  greenSuspension: "seed-green-suspension",
+} as const;
+
+/**
+ * テスト用のアラートを入れる。from の運行日の始まりから now まで観測していたことにする
+ * （青のシャトルだけは、その日のうちにフィードから消えた）
+ */
+export async function insertAnalyticsAlerts(
+  db: Db,
+  from: ServiceDate,
+  to: ServiceDate,
+  now: Date,
+): Promise<void> {
+  const firstSeenAt = serviceDayRange(from).start;
+  const etHour = (d: ServiceDate, hour: number) =>
+    new Date(serviceDayRange(d).start.getTime() + (hour - 3) * 3_600_000);
+  const dates: ServiceDate[] = [];
+  for (let d = from; d <= to; d = addServiceDays(d, 1)) dates.push(d);
+  const shuttleDay = addServiceDays(from, 2);
+  const alerts = [
+    {
+      id: ANALYTICS_SEED_ALERTS.redDelay,
+      effect: "DELAY",
+      cause: "SIGNAL_PROBLEM",
+      routes: ["Red"],
+      periods: dates.map((d) => ({ start: etHour(d, 8), end: etHour(d, 9) })),
+      lastSeenAt: now,
+      inFeed: true,
+    },
+    {
+      id: ANALYTICS_SEED_ALERTS.orangeNotice,
+      effect: "STATION_ISSUE",
+      cause: "CONSTRUCTION",
+      routes: ["Orange"],
+      periods: [{ start: new Date(firstSeenAt.getTime() - 86_400_000), end: null }],
+      lastSeenAt: now,
+      inFeed: true,
+    },
+    {
+      id: ANALYTICS_SEED_ALERTS.blueShuttle,
+      effect: "SHUTTLE",
+      cause: "MAINTENANCE",
+      routes: ["Blue"],
+      periods: [{ start: etHour(shuttleDay, 12), end: etHour(shuttleDay, 16) }],
+      lastSeenAt: etHour(shuttleDay, 16),
+      inFeed: false,
+    },
+    {
+      id: ANALYTICS_SEED_ALERTS.greenSuspension,
+      effect: "SUSPENSION",
+      cause: "CONSTRUCTION",
+      routes: ["Green-B", "Green-C"],
+      periods: [{ start: new Date(now.getTime() + 3 * 86_400_000), end: null }],
+      lastSeenAt: now,
+      inFeed: true,
+    },
+  ];
+  for (const a of alerts) {
+    await db.alert.create({
+      data: {
+        id: a.id,
+        effect: a.effect,
+        cause: a.cause,
+        severity: 5,
+        header: `${a.effect} on ${a.routes.join(", ")} (test data)`,
+        lifecycle: "ONGOING",
+        activePeriod: a.periods.map((p) => ({
+          start: p.start.toISOString(),
+          end: p.end?.toISOString() ?? null,
+        })),
+        informedEntity: a.routes.map((route) => ({ route, route_type: 1 })),
+        firstSeenAt,
+        lastSeenAt: a.lastSeenAt,
+        inFeed: a.inFeed,
+      },
+    });
+    await db.alertRoute.createMany({
+      data: a.routes.map((routeId) => ({ alertId: a.id, routeId })),
+    });
+  }
+}

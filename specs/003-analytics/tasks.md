@@ -106,17 +106,17 @@ description: "003 分析の実装タスク"
 
 ### ユーザーストーリー 3 のテスト
 
-- [ ] T029 [P] [US3] アラートの集計の TypeScript 版の単体テスト（TR-001）: その日にフィードで観測され、有効だった分数がある日だけ数える（予告だけの日は数えない）、日をまたぐ継続時間（その日に含まれる分数）、`active_period` と `first_seen_at`〜`last_seen_at` の重なり、時間帯ごとの分数、遅延系とお知らせ系の区分: `tests/unit/metrics/alert-stats.test.ts`
-- [ ] T030 [P] [US3] アラートの集計 SQL と TypeScript 版の突き合わせ（TR-002）: `tests/integration/analytics/alert-stats-sql.test.ts`
+- [X] T029 [P] [US3] アラートの集計の TypeScript 版の単体テスト（TR-001）: その日にフィードで観測され、有効だった分数がある日だけ数える（予告だけの日は数えない）、日をまたぐ継続時間（その日に含まれる分数）、`active_period` と `first_seen_at`〜`last_seen_at` の重なり、時間帯ごとの分数、遅延系とお知らせ系の区分: `tests/unit/metrics/alert-stats.test.ts`
+- [X] T030 [P] [US3] アラートの集計 SQL と TypeScript 版の突き合わせ（TR-002）: `tests/integration/analytics/alert-stats-sql.test.ts`
 
 ### ユーザーストーリー 3 の実装
 
-- [ ] T031 [US3] アラートの集計の TypeScript 版を書く（T029 を通す）: `src/lib/metrics/alert-stats.ts`
-- [ ] T032 [US3] アラートの集計 SQL（`daily_alert_stats` と `hourly_alert_minutes`）を書き、aggregate ジョブに登録する（T030 を通す）。3 つの指標がそろうので `AGGREGATE_DEFINITION_VERSION` を 1 にする（ここから生データの削除が始まる）: `src/lib/db/analytics-sql.ts`、`src/lib/db/aggregate.ts`、`src/lib/metrics/constants.ts`
-- [ ] T033 [P] [US3] `GET /api/analytics/alerts` の結合テスト: 日別の effect × cause の件数と分数、区分、`route` での絞り込み、当日分の結合: `tests/integration/api/analytics-alerts.test.ts`
-- [ ] T034 [US3] `GET /api/analytics/alerts` を書く（T033 を通す）: `src/app/api/analytics/alerts/route.ts`、`src/lib/api/analytics-alerts.ts`、`src/lib/db/analytics-read.ts`
-- [ ] T035 [US3] アラートの傾向の画面を書く: 遅延系とお知らせ系を分けた、日別の件数と分数の推移、effect 別・cause 別の内訳。変換の単体テスト: `src/app/analytics/alerts/page.tsx`、`src/components/analytics/alert-charts.ts`、`tests/unit/analytics/alert-charts.test.ts`
-- [ ] T036 [US3] アラートの傾向の画面の E2E: `tests/e2e/analytics.spec.ts`
+- [X] T031 [US3] アラートの集計の TypeScript 版を書く（T029 を通す）: `src/lib/metrics/alert-stats.ts`
+- [X] T032 [US3] アラートの集計 SQL（`daily_alert_stats` と `hourly_alert_minutes`）を書き、aggregate ジョブに登録する（T030 を通す）。3 つの指標がそろうので `AGGREGATE_DEFINITION_VERSION` を 1 にする（ここから生データの削除が始まる）: `src/lib/db/analytics-sql.ts`、`src/lib/db/aggregate.ts`、`src/lib/metrics/constants.ts`
+- [X] T033 [P] [US3] `GET /api/analytics/alerts` の結合テスト: 日別の effect × cause の件数と分数、区分、`route` での絞り込み、当日分の結合: `tests/integration/api/analytics-alerts.test.ts`
+- [X] T034 [US3] `GET /api/analytics/alerts` を書く（T033 を通す）: `src/app/api/analytics/alerts/route.ts`、`src/lib/api/analytics-alerts.ts`、`src/lib/db/analytics-read.ts`
+- [X] T035 [US3] アラートの傾向の画面を書く: 遅延系とお知らせ系を分けた、日別の件数と分数の推移、effect 別・cause 別の内訳。変換の単体テスト: `src/app/analytics/alerts/page.tsx`、`src/components/analytics/alert-charts.ts`、`tests/unit/analytics/alert-charts.test.ts`
+- [X] T036 [US3] アラートの傾向の画面の E2E: `tests/e2e/analytics.spec.ts`
 
 **チェックポイント**: US1〜US3 が動く
 

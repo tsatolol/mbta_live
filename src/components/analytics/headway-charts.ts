@@ -4,6 +4,7 @@ import type { EChartOption } from "@/components/charts/echart";
 import {
   barSeries,
   baseCartesian,
+  integerYAxis,
   hourLabel,
   lineSeries,
   secToMin,
@@ -55,7 +56,7 @@ export function headwayByHourOption(res: Pick<HeadwaysResponse, "byHour">): ECha
 
 /** 日別の団子運転と間隔の開きの件数 */
 export function headwayIncidentsOption(res: Pick<HeadwaysResponse, "daily">): EChartOption {
-  return {
+  return integerYAxis({
     ...baseCartesian({
       categories: res.daily.map((d) => d.serviceDate),
       legend: true,
@@ -72,7 +73,7 @@ export function headwayIncidentsOption(res: Pick<HeadwaysResponse, "daily">): EC
         1,
       ),
     ],
-  };
+  });
 }
 
 /** 期間全体の運行間隔の中央値（件数で重み付けした近似、分）。データがなければ null */

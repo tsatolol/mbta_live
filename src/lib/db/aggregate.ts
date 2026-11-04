@@ -3,7 +3,7 @@
 import type { ServiceDate } from "@/lib/time";
 import { serviceDateToDbDate } from "@/lib/time";
 import { AGGREGATE_DEFINITION_VERSION } from "@/lib/metrics/constants";
-import { insertHeadwayStats, insertPredictionAccuracy } from "./analytics-sql";
+import { insertAlertStats, insertHeadwayStats, insertPredictionAccuracy } from "./analytics-sql";
 import type { Db } from "./client";
 import type { DbTx } from "./types";
 
@@ -25,8 +25,8 @@ export interface MetricAggregator {
 }
 
 /**
- * 登録済みの指標の集計。各ユーザーストーリーで足す（運行間隔 → 予測精度 → アラート）。
- * 3 つがそろったら AGGREGATE_DEFINITION_VERSION を 1 にする
+ * 登録済みの指標の集計（運行間隔・予測精度・アラート）。3 つがそろったので、定義の版は 1 から
+ * （specs/003-analytics/research.md の「指標がそろうまで生データを消さない」）
  */
 export const METRIC_AGGREGATORS: readonly MetricAggregator[] = [
   { name: "headways", tables: ["daily_headway_stats"], run: insertHeadwayStats },
@@ -34,6 +34,11 @@ export const METRIC_AGGREGATORS: readonly MetricAggregator[] = [
     name: "predictionAccuracy",
     tables: ["daily_prediction_accuracy"],
     run: insertPredictionAccuracy,
+  },
+  {
+    name: "alerts",
+    tables: ["daily_alert_stats", "hourly_alert_minutes"],
+    run: insertAlertStats,
   },
 ];
 

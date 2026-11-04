@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import {
   BUNCHING_THRESHOLD_SEC,
+  DISRUPTION_EFFECTS,
   GAP_BASELINE_DAYS,
   GAP_MULTIPLIER,
   MAX_HEADWAY_SEC,
@@ -13,7 +14,8 @@ import {
 } from "@/lib/metrics/constants";
 import { GREEN_BRANCHES, GREEN_COMBINED } from "@/lib/metrics/headways";
 import { UNKNOWN_UPDATE_TYPE } from "@/lib/metrics/prediction-accuracy";
-import { BOSTON_TZ, serviceDateToDbDate, type ServiceDate } from "@/lib/time";
+import { ALL_ROUTES } from "@/lib/metrics/alert-stats";
+import { BOSTON_TZ, serviceDateToDbDate, serviceDayRange, type ServiceDate } from "@/lib/time";
 import type { DbLike } from "./types";
 
 /** 曜日種別（src/lib/time.ts の dayTypeOf と同じ。date 型の式を受け取る） */
@@ -196,4 +198,111 @@ export async function insertPredictionAccuracy(
     SELECT ${d}::date, x."route_id", x."direction_id", x."lead_bucket_min", x."update_type", x."hour",
       x."n", x."mean_error_sec", x."mean_abs_error_sec", x."p90_abs_error_sec", x."within_60s_ratio"
     FROM (${predictionAccuracySql(serviceDate)}) x`;
+}
+
+/**
+ * アラートが有効だった分（運行日 1 つ分）。運行日の各分の始まり t について、active_period のどれかに入り
+ * （start ≤ t < end）、かつフィードで観測されていた（first_seen_at ≤ t ≤ last_seen_at）アラートと路線の組。
+ * 路線をまとめた ALL_ROUTES も足す（複数の路線のアラートを 1 回だけ数えるため）
+ */
+function alertMinutesCte(serviceDate: ServiceDate): Prisma.Sql {
+  const { start, end } = serviceDayRange(serviceDate);
+  return Prisma.sql`
+    "mins" AS (
+      SELECT generate_series(${start}::timestamptz, ${end}::timestamptz - interval '1 minute',
+        interval '1 minute') AS "t"
+    ),
+    "ap" AS (
+      SELECT a."id", a."effect", a."cause", a."first_seen_at", a."last_seen_at",
+        (p ->> 'start')::timestamptz AS "ps", (p ->> 'end')::timestamptz AS "pe"
+      FROM "alerts" a, jsonb_array_elements(a."active_period") AS p
+      WHERE a."first_seen_at" < ${end}::timestamptz AND a."last_seen_at" >= ${start}::timestamptz
+    ),
+    "am" AS (
+      SELECT DISTINCT ap."id", ap."effect", ap."cause", m."t"
+      FROM "ap" JOIN "mins" m
+        ON m."t" >= ap."ps" AND (ap."pe" IS NULL OR m."t" < ap."pe")
+        AND m."t" >= ap."first_seen_at" AND m."t" <= ap."last_seen_at"
+    ),
+    "ar" AS (
+      SELECT am."id", am."effect", am."cause", am."t", r."route_id"
+      FROM "am" JOIN "alert_routes" r ON r."alert_id" = am."id"
+      UNION
+      SELECT am."id", am."effect", am."cause", am."t", ${ALL_ROUTES}::text
+      FROM "am" WHERE EXISTS (SELECT 1 FROM "alert_routes" r WHERE r."alert_id" = am."id")
+    )`;
+}
+
+/** アラートの日次の統計（運行日 1 つ分）。列は daily_alert_stats と同じ（service_date を除く） */
+export function alertDailyStatsSql(serviceDate: ServiceDate): Prisma.Sql {
+  return Prisma.sql`
+    WITH ${alertMinutesCte(serviceDate)}
+    SELECT "route_id", "effect", "cause",
+      count(DISTINCT "id")::int AS "alert_count",
+      count(*)::int AS "active_minutes"
+    FROM "ar"
+    GROUP BY "route_id", "effect", "cause"
+    ORDER BY "route_id", "effect", "cause"`;
+}
+
+/** 時間帯ごとのアラートの分数（運行日 1 つ分）。列は hourly_alert_minutes と同じ（service_date を除く） */
+export function alertHourlyMinutesSql(serviceDate: ServiceDate): Prisma.Sql {
+  return Prisma.sql`
+    WITH ${alertMinutesCte(serviceDate)}
+    SELECT "route_id",
+      EXTRACT(HOUR FROM "t" AT TIME ZONE ${BOSTON_TZ})::int AS "hour",
+      (CASE WHEN "effect" IN (${Prisma.join([...DISRUPTION_EFFECTS])}) THEN 'disruption'
+        ELSE 'notice' END) AS "category",
+      count(DISTINCT "t")::int AS "active_minutes"
+    FROM "ar"
+    GROUP BY 1, 2, 3
+    ORDER BY 1, 2, 3`;
+}
+
+export const alertDailySqlRowSchema = z.object({
+  route_id: z.string(),
+  effect: z.string(),
+  cause: z.string(),
+  alert_count: z.number().int(),
+  active_minutes: z.number().int(),
+});
+export type AlertDailySqlRow = z.infer<typeof alertDailySqlRowSchema>;
+
+export const alertHourlySqlRowSchema = z.object({
+  route_id: z.string(),
+  hour: z.number().int(),
+  category: z.enum(["disruption", "notice"]),
+  active_minutes: z.number().int(),
+});
+export type AlertHourlySqlRow = z.infer<typeof alertHourlySqlRowSchema>;
+
+/** アラートの集計を計算する（運行日 1 つ分。書き込まない） */
+export async function computeAlertStats(
+  db: DbLike,
+  serviceDate: ServiceDate,
+): Promise<{ daily: AlertDailySqlRow[]; hourly: AlertHourlySqlRow[] }> {
+  const [daily, hourly] = await Promise.all([
+    db.$queryRaw<unknown[]>(alertDailyStatsSql(serviceDate)),
+    db.$queryRaw<unknown[]>(alertHourlyMinutesSql(serviceDate)),
+  ]);
+  return {
+    daily: z.array(alertDailySqlRowSchema).parse(daily),
+    hourly: z.array(alertHourlySqlRowSchema).parse(hourly),
+  };
+}
+
+/** アラートの集計を daily_alert_stats と hourly_alert_minutes に入れる。入れた行数の合計を返す */
+export async function insertAlertStats(db: DbLike, serviceDate: ServiceDate): Promise<number> {
+  const d = serviceDateToDbDate(serviceDate);
+  const daily = await db.$executeRaw`
+    INSERT INTO "daily_alert_stats" ("service_date", "route_id", "effect", "cause", "alert_count",
+      "active_minutes")
+    SELECT ${d}::date, x."route_id", x."effect", x."cause", x."alert_count", x."active_minutes"
+    FROM (${alertDailyStatsSql(serviceDate)}) x`;
+  const hourly = await db.$executeRaw`
+    INSERT INTO "hourly_alert_minutes" ("service_date", "route_id", "hour", "category",
+      "active_minutes")
+    SELECT ${d}::date, x."route_id", x."hour", x."category", x."active_minutes"
+    FROM (${alertHourlyMinutesSql(serviceDate)}) x`;
+  return daily + hourly;
 }

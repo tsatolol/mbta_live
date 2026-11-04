@@ -112,3 +112,8 @@ export function secToMin(sec: number): number {
 export function hourLabel(hour: number): string {
   return `${hour}:00`;
 }
+
+/** 件数のグラフ: y 軸の目盛りを整数だけにする */
+export function integerYAxis(option: EChartOption): EChartOption {
+  return { ...option, yAxis: { ...(option.yAxis as object), minInterval: 1 } };
+}
