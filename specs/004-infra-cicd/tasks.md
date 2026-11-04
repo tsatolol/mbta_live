@@ -171,7 +171,7 @@ description: "004 インフラと CI/CD の実装タスク"
 ### 002 の完了後に有効にするもの
 
 - [X] T048 スモークテストに主要な内部 API の確認を加える: `/api/live/vehicles`、`/api/static/routes`、`/api/live/alerts` が 200 を返し、応答が `src/lib/api-schemas/` の共有の zod スキーマで解析できる（TR-002 の残り）: `tests/smoke/smoke.test.ts`
-- [ ] T049 dev での E2E を有効にする（TR-007）: 読み取りだけの短い Playwright のテスト（地図に路線と車両が出る、駅の到着表示が出る、アラートの一覧が出る、地図タイルが読み込まれる）を dev の URL に対して、IAP を通して実行する。`cd-dev` ジョブの最後に加える: `tests/e2e/dev/`、`.github/workflows/pipeline.yml`
+- [X] T049 dev での E2E を有効にする（TR-007）: 読み取りだけの短い Playwright のテスト（地図に路線と車両が出る、駅の到着表示が出る、アラートの一覧が出る、地図タイルが読み込まれる）を dev の URL に対して、IAP を通して実行する。`cd-dev` ジョブの最後に加える: `tests/e2e/dev/`、`.github/workflows/pipeline.yml`
 
 ---
 
