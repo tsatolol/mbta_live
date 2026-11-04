@@ -64,11 +64,14 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 ├── src/
 │   ├── app/                 # App Router のページと api/ 配下の Route Handlers（002, 003）
 │   ├── generated/prisma/    # prisma generate の出力（gitignore）
-│   ├── components/          # UI コンポーネント（map/, charts/, ui/）（002, 003）
+│   ├── components/          # UI コンポーネント（layout/, map/, arrivals/, charts/, ui/）（002, 003）
+│   ├── hooks/               # 画面で共有する React のフック（use-now.ts など）
 │   ├── lib/
 │   │   ├── mbta/            # API クライアント、zod スキーマ、JSON:API → ドメイン型、constants.ts（server-only）
 │   │   ├── db/              # Prisma Client の生成と共有、クエリ関数（server-only）
-│   │   ├── metrics/         # 到着検出・サンプリング・運行間隔・予測誤差（純粋関数）+ constants.ts
+│   │   ├── api/             # 内部 API の中身（DB と時計を受け取る関数。route.ts から呼ぶ）（server-only）
+│   │   ├── api-schemas/     # 内部 API の応答の zod スキーマ（サーバーと画面で共有）
+│   │   ├── metrics/         # 到着検出・サンプリング・運行間隔・予測誤差・画面で計算する値（純粋関数）+ constants.ts
 │   │   ├── clock.ts         # 現在時刻の取得（テストで差し替える）
 │   │   └── time.ts          # 運行日の計算、タイムゾーン変換
 │   └── jobs/

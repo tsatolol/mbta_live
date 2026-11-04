@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { routesResponseSchema } from "@/lib/api-schemas/routes";
 import { vehiclesResponseSchema } from "@/lib/api-schemas/vehicles";
+import { fetchJson } from "@/lib/fetch-json";
 import { cn } from "@/lib/utils";
 
 // MapLibre はブラウザでだけ動くので、サーバーでは描画しない
@@ -15,12 +16,6 @@ const LiveMap = dynamic(() => import("@/components/map/live-map"), {
 
 /** 車両の取得間隔（FR-001）。収集は prod で 1 分間隔 */
 const VEHICLES_REFETCH_MS = 15_000;
-
-async function fetchJson<T>(url: string, parse: (body: unknown) => T): Promise<T> {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`${url} returned ${res.status}`);
-  return parse(await res.json());
-}
 
 export default function LiveMapPage() {
   const routes = useQuery({

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useNow } from "@/hooks/use-now";
 import { healthResponseSchema } from "@/lib/api-schemas/health";
 import { isLiveDataStale } from "@/lib/metrics/live";
 import { formatInBoston } from "@/lib/time";
@@ -24,16 +24,6 @@ async function fetchHealth() {
   const res = await fetch("/api/health", { cache: "no-store" });
   if (!res.ok) throw new Error(`/api/health returned ${res.status}`);
   return healthResponseSchema.parse(await res.json());
-}
-
-/** 一定間隔で現在時刻を更新する（stale の判定を、データの取得と関係なく進めるため） */
-function useNow(intervalMs: number): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), intervalMs);
-    return () => clearInterval(id);
-  }, [intervalMs]);
-  return now;
 }
 
 export function Header({ appEnv }: { appEnv: string }) {

@@ -85,16 +85,16 @@ description: "002 リアルタイム画面の実装タスク"
 
 ### ユーザーストーリー 2 のテスト
 
-- [ ] T018 [P] [US2] `GET /api/static/stops` の結合テスト: 親駅の一覧（路線ごと）、`route` での絞り込み、不正な `route` で 400: `tests/integration/api/static-stops.test.ts`
-- [ ] T019 [P] [US2] `GET /api/live/predictions` の結合テスト（TR-001）: 親駅に属するホームの予測を方向別に、時刻の順で次の 3 本。`SKIPPED` と予定時刻が過ぎた便は除く。始発駅では `departure_time` を使う。運休（`CANCELLED`）の便は `cancelled` として返す。`stop` がない・不正で 400、存在しない駅で 404。その駅と路線に有効なアラートも返す: `tests/integration/api/live-predictions.test.ts`
+- [X] T018 [P] [US2] `GET /api/static/stops` の結合テスト: 親駅の一覧（路線ごと）、`route` での絞り込み、不正な `route` で 400: `tests/integration/api/static-stops.test.ts`
+- [X] T019 [P] [US2] `GET /api/live/predictions` の結合テスト（TR-001）: 親駅に属するホームの予測を方向別に、時刻の順で次の 3 本。`SKIPPED` と予定時刻が過ぎた便は除く。始発駅では `departure_time` を使う。運休（`CANCELLED`）の便は `cancelled` として返す。`stop` がない・不正で 400、存在しない駅で 404。その駅と路線に有効なアラートも返す: `tests/integration/api/live-predictions.test.ts`
 
 ### ユーザーストーリー 2 の実装
 
-- [ ] T020 [US2] `GET /api/static/stops` を書く: 路線パターンの `station_ids` から、路線ごとの親駅を並び順で返す: `src/app/api/static/stops/route.ts`、`src/lib/db/static-read.ts`
-- [ ] T021 [US2] `GET /api/live/predictions` を書く（T019 を通す）: 方向の名前と行先は路線の `direction_names` / `direction_destinations` から付ける（予測には便ごとの行先がないため。research.md に記録）: `src/app/api/live/predictions/route.ts`、`src/lib/db/live.ts`
-- [ ] T022 [US2] 駅の一覧の画面を書く: 駅名で検索、路線ごとにまとめて表示（FR-003）: `src/app/stations/page.tsx`
-- [ ] T023 [US2] 到着表示の画面を書く: 方向ごとに次の 3 本を「n min」で、30 秒ごとに取得し、毎秒カウントダウン（FR-004）。`Cancelled` の表示、有効なアラートの表示: `src/app/stations/[stopId]/page.tsx`、`src/components/arrivals/`
-- [ ] T024 [US2] 駅の E2E（TR-003）: 駅の検索、到着表示とカウントダウン（Playwright の時計を進める）、`Cancelled` の表示、`SKIPPED` の便が出ない、アラートの表示: `tests/e2e/stations.spec.ts`
+- [X] T020 [US2] `GET /api/static/stops` を書く: 路線パターンの `station_ids` から、路線ごとの親駅を並び順で返す: `src/app/api/static/stops/route.ts`、`src/lib/db/static-read.ts`
+- [X] T021 [US2] `GET /api/live/predictions` を書く（T019 を通す）: 方向の名前と行先は路線の `direction_names` / `direction_destinations` から付ける（予測には便ごとの行先がないため。research.md に記録）: `src/app/api/live/predictions/route.ts`、`src/lib/db/live.ts`
+- [X] T022 [US2] 駅の一覧の画面を書く: 駅名で検索、路線ごとにまとめて表示（FR-003）: `src/app/stations/page.tsx`
+- [X] T023 [US2] 到着表示の画面を書く: 方向ごとに次の 3 本を「n min」で、30 秒ごとに取得し、毎秒カウントダウン（FR-004）。`Cancelled` の表示、有効なアラートの表示: `src/app/stations/[stopId]/page.tsx`、`src/components/arrivals/`
+- [X] T024 [US2] 駅の E2E（TR-003）: 駅の検索、到着表示とカウントダウン（Playwright の時計を進める）、`Cancelled` の表示、`SKIPPED` の便が出ない、アラートの表示: `tests/e2e/stations.spec.ts`
 
 **チェックポイント**: US1 と US2 が動く
 
@@ -106,13 +106,13 @@ description: "002 リアルタイム画面の実装タスク"
 
 ### ユーザーストーリー 3 のテスト
 
-- [ ] T025 [P] [US3] `GET /api/live/alerts` の結合テスト（TR-001）: `status`（`active` / `upcoming` / `all`）の計算と絞り込み、`routes` での絞り込み、`from` / `to`（期間が重なるもの）、重要度の高い順、不正な値で 400: `tests/integration/api/live-alerts.test.ts`
+- [X] T025 [P] [US3] `GET /api/live/alerts` の結合テスト（TR-001）: `status`（`active` / `upcoming` / `all`）の計算と絞り込み、`routes` での絞り込み、`from` / `to`（期間が重なるもの）、重要度の高い順、不正な値で 400: `tests/integration/api/live-alerts.test.ts`
 
 ### ユーザーストーリー 3 の実装
 
-- [ ] T026 [US3] `GET /api/live/alerts` を書く: `alerts` と `alert_routes` を読み、状態は `alertStatus`（T006）で計算する。過去のアラート（フィードから消えたもの）も検索の対象にする: `src/app/api/live/alerts/route.ts`、`src/lib/db/live.ts`
-- [ ] T027 [US3] アラートの画面を書く: 有効なアラートを路線ごとに重要度の高い順で、影響の種類（effect）のバッジ付きで表示。予告（`upcoming`）は別の区画に。過去のアラートの検索（期間・路線・種類）: `src/app/alerts/page.tsx`、`src/components/alerts/`
-- [ ] T028 [US3] アラートの E2E（TR-003）: 有効なアラートの一覧、予告の区別、過去のアラートの検索: `tests/e2e/alerts.spec.ts`
+- [X] T026 [US3] `GET /api/live/alerts` を書く: `alerts` と `alert_routes` を読み、状態は `alertStatus`（T006）で計算する。過去のアラート（フィードから消えたもの）も検索の対象にする: `src/app/api/live/alerts/route.ts`、`src/lib/db/live.ts`
+- [X] T027 [US3] アラートの画面を書く: 有効なアラートを路線ごとに重要度の高い順で、影響の種類（effect）のバッジ付きで表示。予告（`upcoming`）は別の区画に。過去のアラートの検索（期間・路線・種類）: `src/app/alerts/page.tsx`、`src/components/alerts/`
+- [X] T028 [US3] アラートの E2E（TR-003）: 有効なアラートの一覧、予告の区別、過去のアラートの検索: `tests/e2e/alerts.spec.ts`
 
 **チェックポイント**: US1〜US3 が動く
 
