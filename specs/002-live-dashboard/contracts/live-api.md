@@ -13,7 +13,7 @@
 | `GET /api/live/alerts` | `routes`、`status`（`active` / `upcoming` / `all`。既定は `active`）、`effects`（カンマ区切り）、`from`、`to`（運行日 `YYYY-MM-DD`） | アラートの一覧（重要度の高い順、最大 200 件。超えたら `truncated`）。`status` は `active_period` と現在時刻から計算する。`all` はフィードから消えた過去のアラートも含む。`from` / `to` はその期間に有効だったもの |
 | `GET /api/static/routes` | なし | 路線と路線形状（encoded polyline を GeoJSON に変換済み） |
 | `GET /api/static/stops` | `route`（任意） | 親駅の一覧（路線ごと） |
-| `GET /api/status` | なし | 直近の `collector_runs`、レート制限の残量、テーブルごとの行数 |
+| `GET /api/status` | なし | ジョブ（collect / sync-static / aggregate）ごとの直近 10 回の `collector_runs`、最後の成功、直近 24 時間の実行と失敗の数、レート制限の残量（最後に記録した collector の値）、テーブルごとの行数（履歴テーブルは推定値で、`estimated` で示す） |
 | `GET /api/health` | なし | DB に接続できるか、最後に収集に成功した時刻、前の運行日の集計が成功しているか。Cloud Run の起動確認、スモークテスト、監視に使う。DB に接続できなければ 503。004 で先に作った（応答の型は `src/lib/api-schemas/health.ts`） |
 
 ## 読むテーブル

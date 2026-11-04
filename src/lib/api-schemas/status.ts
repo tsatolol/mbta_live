@@ -19,7 +19,11 @@ export const statusResponseSchema = liveMetaSchema.extend({
       job: z.string(),
       lastRun: jobRunSchema.nullable(),
       lastSuccessAt: isoDateTime.nullable(),
+      /** 新しい順 */
       recentRuns: z.array(jobRunSchema),
+      /** 直近 24 時間の実行の数と、そのうち失敗した数 */
+      runsLast24h: z.number().int(),
+      failedLast24h: z.number().int(),
     }),
   ),
   /** 最後の collector の実行で見た MBTA API のレート制限の残量 */

@@ -124,13 +124,13 @@ description: "002 リアルタイム画面の実装タスク"
 
 ### ユーザーストーリー 4 のテスト
 
-- [ ] T029 [P] [US4] `GET /api/status` の結合テスト: ジョブごとの直近の `collector_runs`（状態・件数・エラー）、レート制限の残量、テーブルごとの行数: `tests/integration/api/status.test.ts`
+- [X] T029 [P] [US4] `GET /api/status` の結合テスト: ジョブごとの直近の `collector_runs`（状態・件数・エラー）、レート制限の残量、テーブルごとの行数: `tests/integration/api/status.test.ts`
 
 ### ユーザーストーリー 4 の実装
 
-- [ ] T030 [US4] `GET /api/status` を書く: テーブルの行数は、パーティションに分かれた大きなテーブルでも速く返せる方法（`pg_class.reltuples` の推定値など）にして、推定値であることを応答に含める: `src/app/api/status/route.ts`、`src/lib/db/status.ts`
-- [ ] T031 [US4] 稼働状況の画面を書く（FR-007）: 直近の収集の結果、レート制限の残量、DB のデータ量: `src/app/status/page.tsx`
-- [ ] T032 [US4] 共通部分と稼働状況の E2E（TR-003）: ヘッダーの最終更新時刻、収集が 3 分止まったときの stale バナー、`DEV` バッジ（`APP_ENV=dev` で起動）、フッターの出典表記、稼働状況の画面: `tests/e2e/layout.spec.ts`、`tests/e2e/status.spec.ts`
+- [X] T030 [US4] `GET /api/status` を書く: テーブルの行数は、パーティションに分かれた大きなテーブルでも速く返せる方法（`pg_class.reltuples` の推定値など）にして、推定値であることを応答に含める: `src/app/api/status/route.ts`、`src/lib/db/status.ts`
+- [X] T031 [US4] 稼働状況の画面を書く（FR-007）: 直近の収集の結果、レート制限の残量、DB のデータ量: `src/app/status/page.tsx`
+- [X] T032 [US4] 共通部分と稼働状況の E2E（TR-003）: ヘッダーの最終更新時刻、収集が 3 分止まったときの stale バナー、`DEV` バッジ（`APP_ENV=dev` で起動）、フッターの出典表記、稼働状況の画面: `tests/e2e/layout.spec.ts`、`tests/e2e/status.spec.ts`
 
 **チェックポイント**: すべてのユーザーストーリーが動く
 
