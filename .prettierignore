@@ -2,3 +2,4 @@ pnpm-lock.yaml
 src/generated/
 tests/fixtures/
 .next/
+public/vendor
