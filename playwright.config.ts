@@ -24,7 +24,9 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: `pnpm build && pnpm start --port ${PORT}`,
-    url: `http://localhost:${PORT}/api/health`,
+    // E2E 用の DB は globalSetup が作るが、Playwright は webServer を globalSetup より先に起動して待つ。
+    // DB がなくても 200 を返すページ（画面はブラウザでデータを取る）で起動を確かめる
+    url: `http://localhost:${PORT}/stations`,
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,
     env: {

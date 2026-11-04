@@ -141,6 +141,7 @@
 - ci ジョブの replay テストのあとに、Chromium の用意と `pnpm test:e2e` を足した。E2E 用の DB は、シード（`tests/e2e/seed-db.ts --migrate`）が Postgres のサービスコンテナに作る
 - ブラウザは `~/.cache/ms-playwright` を `pnpm-lock.yaml` のハッシュでキャッシュし、OS の依存パッケージだけを毎回入れる
 - 失敗したときはトレース（`test-results/`）を 7 日間アーティファクトに残す。データはフィクスチャだけ
+- **最初の CI で分かったこと**: Playwright は `webServer` を `globalSetup` より先に起動して待つ。起動の確認に `/api/health` を使っていたので、E2E 用の DB がまだない CI では 503 のまま 4 分待って失敗した（手元では DB が残っていたので気づかなかった）。起動の確認を、DB がなくても 200 を返すページ（`/stations`）に変えた。DB を消してから実行して確かめた
 - CI 全体の所要時間への影響は、マージ後の最初の実行で確かめる（ローカルではビルドを含めて約 1.7 分）
 
 ### スモークテスト（T034 / 004 T048）
