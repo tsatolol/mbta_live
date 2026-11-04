@@ -53,3 +53,26 @@
 
 - ヘッダーが 30 秒ごとに `/api/health` を取得し続けるので、Playwright の `networkidle` は待てない。TR-004（MBTA API を呼ばない）は、画面が表示されてから少し待ってリクエストを確かめる
 - イメージのビルドでは `tests/` を含めないので、`tests/` を import する `playwright.config.ts` も `.dockerignore` に入れた
+
+## フェーズ 3（US1 地図）の実装で決めたこと（2026-11-04）
+
+### 内部 API の作り方
+
+- Route Handler の中身は、DB と時計を引数で受け取る関数にして `src/lib/api/` に置き（`getVehicles({ db, clock })` など）、`src/app/api/**/route.ts` からは本番の DB と時計を渡して呼ぶだけにした。Next.js の route ファイルは HTTP メソッド以外を export できないので、結合テストはこの関数を直接呼ぶ
+- 結合テストのデータは、E2E と同じく、フィクスチャを本番と同じ collector の処理で取り込む（`tests/helpers/live-seed.ts`）
+- `GET /api/static/routes` もキャッシュせず（`no-store`）、画面側で 1 時間は取り直さない（TanStack Query の `staleTime`）。IAP の背後なので共有のキャッシュは効かず、応答も小さいため
+
+### 路線形状
+
+- 路線・方向ごとの canonical な路線パターンの形状を描く。フィクスチャでは canonical は typicality 1 と一致し、各方向 1 つ（Red だけは分岐で Ashmont と Braintree の 2 つ）
+
+### MapLibre の Web Worker（Next.js でまとめたときの問題）
+
+- MapLibre GL JS 6 は、自分のファイルの場所（`import.meta.url`）の隣の `maplibre-gl-worker.mjs` を Worker として読む。Next.js（Turbopack）でまとめるとファイルの場所が変わり、「Worker failed to load」で地図のソースが読み込まれなかった（E2E で `idle` が来ずに気づいた）
+- **対応**: ビルドの前に `scripts/copy-maplibre-worker.mjs` で Worker を `public/vendor/` にコピーし（`pnpm build` / `pnpm dev` が実行する。git には入れない）、地図のコンポーネントで `setWorkerUrl()` にその URL を渡す。イメージには `public/` も入れる（Dockerfile）
+
+### 地図の E2E
+
+- 地図のタイル（OpenFreeMap）は E2E では外部から取らず、空のスタイルを返す（`tests/e2e/helpers/map.ts`）。地図の中身の確認にタイルは要らず、外部のサーバーの状態に左右されない。タイルの読み込みは dev での E2E（004 T049）で確かめる
+- 地図の中身は canvas の見た目ではなく、地図のインスタンス（`window.__mbtaMap`）のソースのデータ（`getSource(...).serialize()`）とレイヤーのフィルタ（`getFilter()`）で確かめる。ポップアップは、車両の位置を画面の座標に変換（`map.project()`）してクリックして確かめる
+- ヘッドレスの Chromium（Playwright 1.63）でも WebGL で描画でき、クリックで車両を選べた（特別な起動オプションは要らなかった）

@@ -51,6 +51,8 @@ ENV NODE_ENV=production \
 
 COPY --from=build --chown=node:node /src/.next/standalone ./
 COPY --from=build --chown=node:node /src/.next/static ./.next/static
+# 静的ファイル（MapLibre の Web Worker など。pnpm build が public/vendor/ に置く）
+COPY --from=build --chown=node:node /src/public ./public
 COPY --from=build --chown=node:node /src/dist/jobs ./jobs
 COPY --from=migrate-deps --chown=node:node /migrate ./migrate
 

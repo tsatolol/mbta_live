@@ -62,16 +62,16 @@ description: "002 リアルタイム画面の実装タスク"
 
 ### ユーザーストーリー 1 のテスト
 
-- [ ] T011 [P] [US1] `GET /api/live/vehicles` の結合テスト（TR-001）: 全路線と `routes` での絞り込み、不正な `routes`（対象外の路線）で 400、`isStale` の計算、応答が共有のスキーマで解析できる: `tests/integration/api/live-vehicles.test.ts`
-- [ ] T012 [P] [US1] `GET /api/static/routes` の結合テスト: 8 路線が並び順で返り、路線色と、方向ごとの代表的な形状（canonical な路線パターン）が GeoJSON で入る: `tests/integration/api/static-routes.test.ts`
+- [X] T011 [P] [US1] `GET /api/live/vehicles` の結合テスト（TR-001）: 全路線と `routes` での絞り込み、不正な `routes`（対象外の路線）で 400、`isStale` の計算、応答が共有のスキーマで解析できる: `tests/integration/api/live-vehicles.test.ts`
+- [X] T012 [P] [US1] `GET /api/static/routes` の結合テスト: 8 路線が並び順で返り、路線色と、方向ごとの代表的な形状（canonical な路線パターン）が GeoJSON で入る: `tests/integration/api/static-routes.test.ts`
 
 ### ユーザーストーリー 1 の実装
 
-- [ ] T013 [US1] `GET /api/live/vehicles` を書く: `vehicles_current` に路線の色・行先（`direction_destinations`）・次の駅の名前（`stop_id` の親駅）を付けて返す。`stop_id` が null なら次の駅も null: `src/app/api/live/vehicles/route.ts`、`src/lib/db/live.ts`
-- [ ] T014 [US1] `GET /api/static/routes` を書く: `routes` と canonical な `route_patterns` の形状を GeoJSON にして返す。静的データなので長めにキャッシュしてよいかを決めて research.md に記録する: `src/app/api/static/routes/route.ts`、`src/lib/db/static-read.ts`
-- [ ] T015 [US1] 地図のコンポーネントを書く: MapLibre GL JS と OpenFreeMap の `positron`、路線形状を路線色の線で、車両を進行方向（`bearing`）に回転した矢印で描く。更新の止まった車両は灰色。車両のクリックで、路線・行先・次の駅・状態・何秒前の情報かのポップアップ。クライアント側だけで読み込む（`next/dynamic` の `ssr: false`）: `src/components/map/{live-map,vehicle-layer,route-layer}.tsx`
-- [ ] T016 [US1] 地図の画面を書く: 路線フィルタ（FR-002）、車両を 15 秒ごとに取得（TanStack Query の `refetchInterval`）、車両が 0 件のときは「運行時間外」と分かる表示: `src/app/page.tsx`
-- [ ] T017 [US1] 地図の E2E（TR-003、TR-004）: 路線と車両が出る、路線フィルタで絞り込める、車両のポップアップ、更新の止まった車両が灰色、運行時間外の表示、実行中にブラウザから `api-v3.mbta.com` へのリクエストがない。canvas の中身は画面の見た目で比べられないので、地図のソースとレイヤーの状態を確かめる方法（例: 地図のインスタンスから `queryRenderedFeatures` を読む）を検証して research.md に記録する: `tests/e2e/map.spec.ts`
+- [X] T013 [US1] `GET /api/live/vehicles` を書く: `vehicles_current` に路線の色・行先（`direction_destinations`）・次の駅の名前（`stop_id` の親駅）を付けて返す。`stop_id` が null なら次の駅も null: `src/app/api/live/vehicles/route.ts`、`src/lib/db/live.ts`
+- [X] T014 [US1] `GET /api/static/routes` を書く: `routes` と canonical な `route_patterns` の形状を GeoJSON にして返す。静的データなので長めにキャッシュしてよいかを決めて research.md に記録する: `src/app/api/static/routes/route.ts`、`src/lib/db/static-read.ts`
+- [X] T015 [US1] 地図のコンポーネントを書く: MapLibre GL JS と OpenFreeMap の `positron`、路線形状を路線色の線で、車両を進行方向（`bearing`）に回転した矢印で描く。更新の止まった車両は灰色。車両のクリックで、路線・行先・次の駅・状態・何秒前の情報かのポップアップ。クライアント側だけで読み込む（`next/dynamic` の `ssr: false`）: `src/components/map/{live-map,vehicle-layer,route-layer}.tsx`
+- [X] T016 [US1] 地図の画面を書く: 路線フィルタ（FR-002）、車両を 15 秒ごとに取得（TanStack Query の `refetchInterval`）、車両が 0 件のときは「運行時間外」と分かる表示: `src/app/page.tsx`
+- [X] T017 [US1] 地図の E2E（TR-003、TR-004）: 路線と車両が出る、路線フィルタで絞り込める、車両のポップアップ、更新の止まった車両が灰色、運行時間外の表示、実行中にブラウザから `api-v3.mbta.com` へのリクエストがない。canvas の中身は画面の見た目で比べられないので、地図のソースとレイヤーの状態を確かめる方法（例: 地図のインスタンスから `queryRenderedFeatures` を読む）を検証して research.md に記録する: `tests/e2e/map.spec.ts`
 
 **チェックポイント**: 地図の画面が単独で動く（MVP）
 
