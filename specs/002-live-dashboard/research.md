@@ -76,3 +76,25 @@
 - 地図のタイル（OpenFreeMap）は E2E では外部から取らず、空のスタイルを返す（`tests/e2e/helpers/map.ts`）。地図の中身の確認にタイルは要らず、外部のサーバーの状態に左右されない。タイルの読み込みは dev での E2E（004 T049）で確かめる
 - 地図の中身は canvas の見た目ではなく、地図のインスタンス（`window.__mbtaMap`）のソースのデータ（`getSource(...).serialize()`）とレイヤーのフィルタ（`getFilter()`）で確かめる。ポップアップは、車両の位置を画面の座標に変換（`map.project()`）してクリックして確かめる
 - ヘッドレスの Chromium（Playwright 1.63）でも WebGL で描画でき、クリックで車両を選べた（特別な起動オプションは要らなかった）
+
+## フェーズ 4（US2 駅と到着表示）の実装で決めたこと（2026-11-04）
+
+### 駅の一覧（`GET /api/static/stops`）
+
+- 路線ごとの駅の並びは、方向 0 の canonical な路線パターンの `station_ids` をつないで作る。分岐のある路線（Red）は、最初のパターンの駅のあとに、ほかのパターンにだけある駅を続ける（Alewife → … → JFK/UMass → Ashmont 支線 → Braintree 支線、22 駅）
+- 複数の路線が通る駅（Park Street など）は、それぞれの路線に出す。検索は駅名の部分一致（大文字・小文字を区別しない）を画面側で行う（全 8 路線で 150 駅程度なので、一度に取得する）
+
+### 到着表示（`GET /api/live/predictions`）
+
+- **方向の一覧**: 典型的な路線パターン（canonical か typicality 1）のうち、その駅を通り、かつその駅が終点でないものの路線と方向を出す。終点では、その方向の「次の列車」は来ないため（Alewife は Red の方向 0 だけ）。予測がなければ空の一覧（No upcoming trains）を出す
+- **方向の名前と行先**: 予測には便ごとの行先がないので、路線の `direction_names` / `direction_destinations` から付ける（Red の方向 0 は「Ashmont/Braintree」）
+- **時刻**: `arrival_time`、なければ（始発駅）`departure_time` を使い、`timeKind` で区別する（画面は Arrives / Departs）。時刻が今以前の便は除く
+- **運休の便**: MBTA は `CANCELLED` の便の到着・出発時刻をふつう `null` で返す（001 contracts/mbta-api.md）。時刻のない便は並べる場所がないので除き、時刻のある運休の便だけを `cancelled: true` で返す。時刻表（schedules）は収集していないため、時刻のない運休の便を元の時刻に置くことはしない。E2E のシードは、時刻のある便を `CANCELLED` にして表示を確かめる
+- **アラート**: alert_routes で駅の路線に関係する、今のフィードにある（`in_feed`）アラートのうち、状態が `active` で、`informed_entity` のどれかが「駅の路線（路線の指定がなければどれでも）」かつ「駅かそのホームを指す、または駅を指定しない（路線全体）」もの。フィクスチャのアラートはほとんどが駅を指定していて（Jackson Square の STATION_ISSUE など）、路線で絞るだけだと、ほかの駅のアラートまで出てしまうため
+- 判定は純粋関数（`src/lib/metrics/arrival-board.ts`）にして単体テストする。001 の到着の検出（`arrivals.ts`）とは別のファイルにした
+
+### 到着表示の画面
+
+- 「n min」は切り捨てで、1 分未満は「< 1 min」。毎秒進むことが見えるように、隣に m:ss の残り時間も出す。取得のあとに時刻が過ぎた便は、次の取得（30 秒ごと）を待たずに画面から消す
+- 存在しない駅（404）は取り直さず、Station not found と出す
+- カウントダウンの E2E は Playwright の時計（`page.clock`）を止めて進める。シードの時刻は実際の今に合わせてあるので、時計は今の時刻のまま入れる

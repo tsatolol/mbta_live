@@ -59,3 +59,61 @@ export async function listRouteShapes(db: Db): Promise<RouteShapeRow[]> {
       : [],
   );
 }
+
+export interface StationRow {
+  id: string;
+  name: string;
+  lat: number | null;
+  lon: number | null;
+}
+
+export interface RouteStationsRow {
+  routeId: string;
+  routeName: string;
+  routeColor: string;
+  stations: StationRow[];
+}
+
+/** route_patterns.station_ids（親駅 ID の配列）を読む */
+export function stationIdsOf(value: unknown): string[] {
+  return jsonStringArray(value).flatMap((id) => (id ? [id] : []));
+}
+
+/**
+ * 路線ごとの親駅を停車順で返す。方向 0 の canonical な路線パターンの station_ids を順につなぐ
+ * （分岐のある路線は、最初のパターンの駅のあとに、ほかのパターンにだけある駅を続ける。
+ * Red なら Alewife → … → JFK/UMass → Ashmont 支線 → Braintree 支線）。routeId を渡せばその路線だけ
+ */
+export async function listRouteStations(db: Db, routeId?: string): Promise<RouteStationsRow[]> {
+  const [routes, patterns] = await Promise.all([
+    listRoutes(db),
+    db.routePattern.findMany({
+      where: { canonical: true, directionId: 0, ...(routeId ? { routeId } : {}) },
+      orderBy: [{ routeId: "asc" }, { id: "asc" }],
+      select: { routeId: true, stationIds: true },
+    }),
+  ]);
+  const orderByRoute = new Map<string, string[]>();
+  for (const p of patterns) {
+    const order = orderByRoute.get(p.routeId) ?? [];
+    for (const id of stationIdsOf(p.stationIds)) if (!order.includes(id)) order.push(id);
+    orderByRoute.set(p.routeId, order);
+  }
+  const allIds = [...new Set([...orderByRoute.values()].flat())];
+  const stops = await db.stop.findMany({
+    where: { id: { in: allIds }, locationType: 1 },
+    select: { id: true, name: true, lat: true, lon: true },
+  });
+  const stopById = new Map(stops.map((s) => [s.id, s]));
+  return routes
+    .filter((r) => orderByRoute.has(r.id))
+    .map((r) => ({
+      routeId: r.id,
+      routeName: r.longName,
+      routeColor: r.color,
+      stations: (orderByRoute.get(r.id) ?? []).flatMap((id) => {
+        const s = stopById.get(id);
+        return s ? [s] : [];
+      }),
+    }));
+}

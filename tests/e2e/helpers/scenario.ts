@@ -14,4 +14,6 @@ export function e2eDatabaseUrl(): string {
 export const E2E_FIXTURES = {
   /** 運休・通過の便を作る駅（Park Street） */
   station: "place-pktrm",
+  /** 有効なアラート（STATION_ISSUE 2 件）がある駅（Jackson Square） */
+  alertStation: "place-jaksn",
 } as const;

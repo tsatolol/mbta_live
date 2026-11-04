@@ -9,7 +9,7 @@
 | パス | パラメータ | 返す内容 |
 |---|---|---|
 | `GET /api/live/vehicles` | `routes`（カンマ区切り、省略時は全路線） | `vehicles_current` の行（`isStale`: `updated_at` が 3 分以上前か）+ `lastCollectedAt` |
-| `GET /api/live/predictions` | `stop`（親駅 ID, 必須） | その親駅に属するホームの `predictions_current` を方向別に並べたもの。始発駅は `departure_time` を使う。`SKIPPED` と、予定時刻が過ぎた便は除く |
+| `GET /api/live/predictions` | `stop`（親駅 ID, 必須） | その親駅に属するホームの `predictions_current` を路線・方向別に次の 3 本。始発駅は `departure_time` を使う。`SKIPPED` と、予定時刻が過ぎた便、時刻のない便は除く。運休の便は `cancelled`。その駅と路線に有効なアラートも返す。親駅でなければ 404 |
 | `GET /api/live/alerts` | `routes`、`status`（`active` / `upcoming` / `all`）、`from`、`to` | アラートの一覧。`status` は `active_period` と現在時刻から計算する |
 | `GET /api/static/routes` | なし | 路線と路線形状（encoded polyline を GeoJSON に変換済み） |
 | `GET /api/static/stops` | `route`（任意） | 親駅の一覧（路線ごと） |

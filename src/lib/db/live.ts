@@ -92,3 +92,176 @@ export async function listVehicles(db: Db, routeIds?: readonly string[]): Promis
     .sort((a, b) => a.sortOrder - b.sortOrder || a.vehicleId.localeCompare(b.vehicleId))
     .map(({ sortOrder: _sortOrder, ...row }) => row);
 }
+
+export interface StationInfo {
+  id: string;
+  name: string;
+  /** その親駅に属するホーム（location_type 0）の ID */
+  platformIds: string[];
+}
+
+/** 親駅（location_type 1）と、そのホームの ID。親駅でなければ null */
+export async function getStation(db: Db, stationId: string): Promise<StationInfo | null> {
+  const station = await db.stop.findFirst({
+    where: { id: stationId, locationType: 1 },
+    select: { id: true, name: true },
+  });
+  if (!station) return null;
+  const platforms = await db.stop.findMany({
+    where: { parentStationId: station.id, locationType: 0 },
+    select: { id: true },
+    orderBy: { id: "asc" },
+  });
+  return { ...station, platformIds: platforms.map((p) => p.id) };
+}
+
+export interface StationDirection {
+  routeId: string;
+  routeColor: string;
+  directionId: number;
+  directionName: string | null;
+  destination: string | null;
+}
+
+/**
+ * その駅から出る列車の路線と方向。典型的な路線パターン（canonical か typicality 1）のうち、
+ * その駅を通り、かつその駅が終点でないものから決める（終点では、その方向の「次の列車」はない）。
+ * 路線の並び順、方向の順で返す
+ */
+export async function listStationDirections(
+  db: Db,
+  stationId: string,
+): Promise<StationDirection[]> {
+  const [patterns, routes] = await Promise.all([
+    db.routePattern.findMany({
+      where: {
+        OR: [{ canonical: true }, { typicality: 1 }],
+        stationIds: { array_contains: [stationId] },
+      },
+      select: { routeId: true, directionId: true, stationIds: true },
+    }),
+    db.route.findMany({
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+      select: { id: true, color: true, directionNames: true, directionDestinations: true },
+    }),
+  ]);
+  const keys = new Set(
+    patterns
+      .filter((p) => {
+        const ids = jsonStringArray(p.stationIds);
+        return ids.includes(stationId) && ids.at(-1) !== stationId;
+      })
+      .map((p) => `${p.routeId}:${p.directionId}`),
+  );
+  return routes.flatMap((r) =>
+    [0, 1]
+      .filter((d) => keys.has(`${r.id}:${d}`))
+      .map((d) => ({
+        routeId: r.id,
+        routeColor: r.color,
+        directionId: d,
+        directionName: jsonStringArray(r.directionNames)[d] ?? null,
+        destination: jsonStringArray(r.directionDestinations)[d] ?? null,
+      })),
+  );
+}
+
+export interface PredictionRow {
+  id: string;
+  routeId: string;
+  directionId: number;
+  tripId: string;
+  vehicleId: string | null;
+  arrivalTime: Date | null;
+  departureTime: Date | null;
+  status: string | null;
+  scheduleRelationship: string | null;
+  uncertaintySec: number | null;
+}
+
+/** ホームの予測（predictions_current）。SKIPPED の便は除く */
+export async function listPredictionsAtStops(
+  db: Db,
+  stopIds: readonly string[],
+): Promise<PredictionRow[]> {
+  return db.predictionCurrent.findMany({
+    where: {
+      stopId: { in: [...stopIds] },
+      OR: [{ scheduleRelationship: null }, { scheduleRelationship: { not: "SKIPPED" } }],
+    },
+    select: {
+      id: true,
+      routeId: true,
+      directionId: true,
+      tripId: true,
+      vehicleId: true,
+      arrivalTime: true,
+      departureTime: true,
+      status: true,
+      scheduleRelationship: true,
+      uncertaintySec: true,
+    },
+  });
+}
+
+export interface AlertRow {
+  id: string;
+  effect: string;
+  cause: string;
+  severity: number;
+  header: string;
+  shortHeader: string | null;
+  description: string | null;
+  serviceEffect: string | null;
+  timeframe: string | null;
+  lifecycle: string;
+  activePeriod: unknown;
+  informedEntity: unknown;
+  inFeed: boolean;
+  updatedAt: Date | null;
+  routeIds: string[];
+}
+
+/** 指定の路線のどれかに関係する、今のフィードにあるアラート（alert_routes）。重要度の高い順 */
+export async function listFeedAlertsForRoutes(
+  db: Db,
+  routeIds: readonly string[],
+): Promise<AlertRow[]> {
+  if (routeIds.length === 0) return [];
+  const links = await db.alertRoute.findMany({
+    where: { routeId: { in: [...routeIds] } },
+    select: { alertId: true },
+  });
+  const alertIds = [...new Set(links.map((l) => l.alertId))];
+  const [alerts, allLinks] = await Promise.all([
+    db.alert.findMany({
+      where: { id: { in: alertIds }, inFeed: true },
+      orderBy: [{ severity: "desc" }, { id: "asc" }],
+    }),
+    db.alertRoute.findMany({
+      where: { alertId: { in: alertIds } },
+      orderBy: { routeId: "asc" },
+    }),
+  ]);
+  const routesByAlert = new Map<string, string[]>();
+  for (const l of allLinks) {
+    routesByAlert.set(l.alertId, [...(routesByAlert.get(l.alertId) ?? []), l.routeId]);
+  }
+  return alerts.map((a) => ({
+    id: a.id,
+    effect: a.effect,
+    cause: a.cause,
+    severity: a.severity,
+    header: a.header,
+    shortHeader: a.shortHeader,
+    description: a.description,
+    serviceEffect: a.serviceEffect,
+    timeframe: a.timeframe,
+    lifecycle: a.lifecycle,
+    activePeriod: a.activePeriod,
+    informedEntity: a.informedEntity,
+    inFeed: a.inFeed,
+    updatedAt: a.updatedAt,
+    routeIds: routesByAlert.get(a.id) ?? [],
+  }));
+}
