@@ -25,9 +25,9 @@ description: "002 リアルタイム画面の実装タスク"
 
 **目的**: 画面の土台（Tailwind・shadcn/ui・TanStack Query・MapLibre）と E2E の実行環境
 
-- [ ] T001 依存を足す: `maplibre-gl`、`@tanstack/react-query`、Tailwind CSS（v4、`@tailwindcss/postcss`）、shadcn/ui の初期化（`components.json`、`src/components/ui/`、`src/lib/utils.ts`）。それぞれ 2 週間以上前に出た最新の安定版に固定する。`pnpm audit` が 0 件のままであることを確かめる: `package.json`、`pnpm-lock.yaml`、`postcss.config.mjs`、`src/app/globals.css`
-- [ ] T002 [P] Playwright を入れる: `@playwright/test`（開発環境にある Playwright 1.63 と同じバージョン）、`playwright.config.ts`（Chromium だけ、`webServer` で `pnpm build && pnpm start` を E2E 用の DB に向けて起動）、`pnpm test:e2e`。`pnpm test` には含めない: `package.json`、`playwright.config.ts`、`tests/e2e/`
-- [ ] T003 E2E 用のシードを書く: E2E 用の DB を作り直してマイグレーションを適用し、001 のフィクスチャ（平日 10:20 ET の記録）から静的データと現在値を入れる。フィクスチャの時刻（`updated_at`・予測時刻・`polled_at`・アラートの期間・`collector_runs`）を、テストの開始時刻に合わせてずらす（アプリの時計を偽装しない。方式を research.md に記録する）。特定の状態（更新の止まった車両、`Cancelled` の便、`SKIPPED` の便、収集が 3 分止まった状態、運行時間外）を作る関数も用意する: `tests/e2e/helpers/seed.ts`、`tests/e2e/global-setup.ts`
+- [X] T001 依存を足す: `maplibre-gl`、`@tanstack/react-query`、Tailwind CSS（v4、`@tailwindcss/postcss`）、shadcn/ui の初期化（`components.json`、`src/components/ui/`、`src/lib/utils.ts`）。それぞれ 2 週間以上前に出た最新の安定版に固定する。`pnpm audit` が 0 件のままであることを確かめる: `package.json`、`pnpm-lock.yaml`、`postcss.config.mjs`、`src/app/globals.css`
+- [X] T002 [P] Playwright を入れる: `@playwright/test`（開発環境にある Playwright 1.63 と同じバージョン）、`playwright.config.ts`（Chromium だけ、`webServer` で `pnpm build && pnpm start` を E2E 用の DB に向けて起動）、`pnpm test:e2e`。`pnpm test` には含めない: `package.json`、`playwright.config.ts`、`tests/e2e/`
+- [X] T003 E2E 用のシードを書く: E2E 用の DB を作り直してマイグレーションを適用し、001 のフィクスチャ（平日 10:20 ET の記録）から静的データと現在値を入れる。フィクスチャの時刻（`updated_at`・予測時刻・`polled_at`・アラートの期間・`collector_runs`）を、テストの開始時刻に合わせてずらす（アプリの時計を偽装しない。方式を research.md に記録する）。特定の状態（更新の止まった車両、`Cancelled` の便、`SKIPPED` の便、収集が 3 分止まった状態、運行時間外）を作る関数も用意する: `tests/e2e/helpers/seed.ts`、`tests/e2e/global-setup.ts`
 
 ---
 
@@ -39,16 +39,16 @@ description: "002 リアルタイム画面の実装タスク"
 
 ### 基盤のテスト
 
-- [ ] T004 [P] 計算する値の単体テスト（TR-002）: `isStale`（`now - updated_at >= 3 分`。境界の 2:59 / 3:00）、アラートの状態（`active_period` の区間に入っていれば `active`、すべて未来なら `upcoming`、それ以外は `past`。終わりのない区間、複数の区間）、あと何分か（切り捨て、0 分、過ぎた便）、stale バナーの判定（`lastCollectedAt` が null、3 分ちょうど）: `tests/unit/metrics/live.test.ts`
-- [ ] T005 [P] 路線形状のデコードの単体テスト: Google の encoded polyline を GeoJSON の座標（`[lon, lat]`）に変換する。既知の例と、フィクスチャの路線パターンの形状が対象地域（ボストン周辺）の範囲に入ること: `tests/unit/geo/polyline.test.ts`
+- [X] T004 [P] 計算する値の単体テスト（TR-002）: `isStale`（`now - updated_at >= 3 分`。境界の 2:59 / 3:00）、アラートの状態（`active_period` の区間に入っていれば `active`、すべて未来なら `upcoming`、それ以外は `past`。終わりのない区間、複数の区間）、あと何分か（切り捨て、0 分、過ぎた便）、stale バナーの判定（`lastCollectedAt` が null、3 分ちょうど）: `tests/unit/metrics/live.test.ts`
+- [X] T005 [P] 路線形状のデコードの単体テスト: Google の encoded polyline を GeoJSON の座標（`[lon, lat]`）に変換する。既知の例と、フィクスチャの路線パターンの形状が対象地域（ボストン周辺）の範囲に入ること: `tests/unit/geo/polyline.test.ts`
 
 ### 基盤の実装
 
-- [ ] T006 [P] 計算する値を純粋関数で書く（T004 を通す）: `isStale`、`alertStatus`、`minutesUntil`、`isLiveDataStale`。現在時刻は引数で受け取る: `src/lib/metrics/live.ts`
-- [ ] T007 [P] encoded polyline のデコードを書く（T005 を通す。依存を足さずに書く）: `src/lib/geo/polyline.ts`
-- [ ] T008 共有の応答スキーマ（zod）を書く: 車両、予測（方向別）、アラート、路線（GeoJSON）、駅、稼働状況、エラー（`{ error: string }`）。すべての応答に `lastCollectedAt` を含める: `src/lib/api-schemas/{common,vehicles,predictions,alerts,routes,stops,status}.ts`
-- [ ] T009 Route Handler の共通部分を書く: クエリパラメータを zod で検証して不正なら 400、`lastCollectedAt` の取得（`collector_runs` の最後の成功）、`cache-control: no-store`、例外のログ（秘密の値を出さない）: `src/lib/api/handler.ts`、`src/lib/db/live.ts`
-- [ ] T010 共通のレイアウトを書く: TanStack Query の Provider、ナビゲーション（Map / Stations / Alerts / Status）、ヘッダー（最終更新時刻をボストン時間で表示。`/api/health` の `lastCollectedAt` を 30 秒ごとに取得）、`Live data is stale` のバナー（FR-006）、`APP_ENV` が `dev` のときの `DEV` バッジ（実行時の環境変数をサーバー側で読む。`NEXT_PUBLIC_*` を使わない）、フッターの出典表記（`Data provided by MBTA`、`© OpenFreeMap © OpenStreetMap contributors`。FR-008）: `src/app/layout.tsx`、`src/components/layout/{header,footer,providers}.tsx`
+- [X] T006 [P] 計算する値を純粋関数で書く（T004 を通す）: `isStale`、`alertStatus`、`minutesUntil`、`isLiveDataStale`。現在時刻は引数で受け取る: `src/lib/metrics/live.ts`
+- [X] T007 [P] encoded polyline のデコードを書く（T005 を通す。依存を足さずに書く）: `src/lib/geo/polyline.ts`
+- [X] T008 共有の応答スキーマ（zod）を書く: 車両、予測（方向別）、アラート、路線（GeoJSON）、駅、稼働状況、エラー（`{ error: string }`）。すべての応答に `lastCollectedAt` を含める: `src/lib/api-schemas/{common,vehicles,predictions,alerts,routes,stops,status}.ts`
+- [X] T009 Route Handler の共通部分を書く: クエリパラメータを zod で検証して不正なら 400、`lastCollectedAt` の取得（`collector_runs` の最後の成功）、`cache-control: no-store`、例外のログ（秘密の値を出さない）: `src/lib/api/handler.ts`、`src/lib/db/live.ts`
+- [X] T010 共通のレイアウトを書く: TanStack Query の Provider、ナビゲーション（Map / Stations / Alerts / Status）、ヘッダー（最終更新時刻をボストン時間で表示。`/api/health` の `lastCollectedAt` を 30 秒ごとに取得）、`Live data is stale` のバナー（FR-006）、`APP_ENV` が `dev` のときの `DEV` バッジ（実行時の環境変数をサーバー側で読む。`NEXT_PUBLIC_*` を使わない）、フッターの出典表記（`Data provided by MBTA`、`© OpenFreeMap © OpenStreetMap contributors`。FR-008）: `src/app/layout.tsx`、`src/components/layout/{header,footer,providers}.tsx`
 
 **チェックポイント**: 共通の土台ができた。ここから各ユーザーストーリーに入れる
 
