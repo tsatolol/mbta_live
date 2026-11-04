@@ -114,6 +114,22 @@ describe("aggregate ジョブのパーティション管理", () => {
     expect(left.map((e) => e.serviceDate.toISOString().slice(0, 10))).toEqual(["2026-11-03"]);
   });
 
+  it("指標がそろう前（定義の版 0）の集計では、保持期間を過ぎても消さない", async () => {
+    await ensurePartitions(db, ["2026-11-01", "2026-11-02"]);
+    await db.aggregateRun.createMany({
+      data: [
+        { serviceDate: serviceDateToDbDate("2026-11-01"), definitionVersion: 0 },
+        { serviceDate: serviceDateToDbDate("2026-11-02"), definitionVersion: 1 },
+      ].map((r) => ({ ...r, status: "success", finishedAt: NOW })),
+    });
+    const result = await aggregate(3);
+    const kept = await partitionDates();
+    expect(kept).toContain("2026-11-01");
+    expect(kept).not.toContain("2026-11-02");
+    const run = await db.collectorRun.findUniqueOrThrow({ where: { id: result.runId } });
+    expect(run.counts).toMatchObject({ droppedServiceDates: 1, keptUnaggregatedServiceDates: 1 });
+  });
+
   it("保持期間 28 日（prod）では、28 日より前の運行日だけが期限切れ", async () => {
     await ensurePartitions(db, ["2026-10-13", "2026-10-14"]);
     await db.aggregateRun.createMany({

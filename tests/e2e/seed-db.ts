@@ -9,6 +9,7 @@
 //   base              通常の状態（各 E2E の前提）
 //   stale-collection  base に加えて、最後の収集の成功を 4 分前にする（stale バナー）
 //   out-of-service    base に加えて、車両と予測を空にする（運行時間外）
+//   analytics         base に加えて、分析のテスト用データ（前の 7 日と今日の今まで）を入れ、前の 7 日を aggregate ジョブで集計する
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import pg from "pg";
@@ -16,7 +17,10 @@ import { z } from "zod";
 import { fixedClock } from "@/lib/clock";
 import { createDb, type Db } from "@/lib/db/client";
 import { createMbtaClient } from "@/lib/mbta/client";
+import { runAggregate } from "@/jobs/aggregate";
 import { runCollect } from "@/jobs/collect";
+import { addServiceDays, serviceDateOf } from "@/lib/time";
+import { insertAnalyticsSeed } from "../helpers/analytics-seed";
 import { resetData } from "../helpers/db";
 import { fakeMbtaFetch } from "../helpers/fake-mbta";
 import { readFixture, WEEKDAY } from "../helpers/fixtures";
@@ -181,12 +185,28 @@ async function seed(db: Db, scenario: E2eScenario): Promise<void> {
     await db.vehicleCurrent.deleteMany();
     await db.predictionCurrent.deleteMany();
   }
+  if (scenario === "analytics") {
+    const today = serviceDateOf(now);
+    const from = addServiceDays(today, -ANALYTICS_DAYS);
+    await insertAnalyticsSeed(db, from, today, now);
+    const result = await runAggregate({
+      db,
+      clock: fixedClock(now),
+      connectionString: e2eDatabaseUrl(),
+      retentionDays: 28,
+      range: { from, to: addServiceDays(today, -1) },
+    });
+    if (result.status !== "success") throw new Error(`aggregate が失敗しました: ${result.status}`);
+  }
 }
+
+/** analytics シナリオで集計する、今日より前の日数 */
+const ANALYTICS_DAYS = 7;
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const scenario = (args.find((a) => !a.startsWith("--")) ?? "base") as E2eScenario;
-  if (!["base", "stale-collection", "out-of-service"].includes(scenario)) {
+  if (!["base", "stale-collection", "out-of-service", "analytics"].includes(scenario)) {
     throw new Error(`不明なシナリオです: ${scenario}`);
   }
   const url = e2eDatabaseUrl();

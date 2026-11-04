@@ -25,9 +25,9 @@ description: "003 分析の実装タスク"
 
 **目的**: 依存の追加、集計テーブル、指標の定数
 
-- [ ] T001 Apache ECharts（6.1.0）を依存に加える。グラフの部品は `echarts/core` から必要なものだけを読み込む: `package.json`
-- [ ] T002 [P] 集計テーブルのマイグレーション（expand のみ）: `daily_headway_stats`、`daily_prediction_accuracy`、`daily_alert_stats`、`hourly_alert_minutes`。主キーは次元の列すべて、`service_date` に索引: `prisma/schema.prisma`、`prisma/migrations/`
-- [ ] T003 [P] 指標の定数を足す: 運休とみなす間隔（60 分）、団子運転（2 分）、間隔の開きの倍率（2）と基準の日数（28）、±60 秒、定義の版（`AGGREGATE_DEFINITION_VERSION`。指標がそろうまでは 0）と、生データを消してよい最小の版（`MIN_DROPPABLE_DEFINITION_VERSION = 1`）、遅延系の effect の一覧: `src/lib/metrics/constants.ts`
+- [X] T001 Apache ECharts（6.1.0）を依存に加える。グラフの部品は `echarts/core` から必要なものだけを読み込む: `package.json`
+- [X] T002 [P] 集計テーブルのマイグレーション（expand のみ）: `daily_headway_stats`、`daily_prediction_accuracy`、`daily_alert_stats`、`hourly_alert_minutes`。主キーは次元の列すべて、`service_date` に索引: `prisma/schema.prisma`、`prisma/migrations/`
+- [X] T003 [P] 指標の定数を足す: 運休とみなす間隔（60 分）、団子運転（2 分）、間隔の開きの倍率（2）と基準の日数（28）、±60 秒、定義の版（`AGGREGATE_DEFINITION_VERSION`。指標がそろうまでは 0）と、生データを消してよい最小の版（`MIN_DROPPABLE_DEFINITION_VERSION = 1`）、遅延系の effect の一覧: `src/lib/metrics/constants.ts`
 
 ---
 
@@ -37,15 +37,15 @@ description: "003 分析の実装タスク"
 
 **⚠️ 重要**: このフェーズが終わるまで、ユーザーストーリーの作業は始めない
 
-- [ ] T004 [P] 曜日種別と時間帯の単体テスト: `dayTypeOf(serviceDate)`（平日・土曜・日曜）、`bostonHourOf(instant)`（夏時間の切り替え日を含む）、運行日の時間帯の並び（3〜23, 0〜2）: `tests/unit/time.test.ts`
-- [ ] T005 [P] `dayTypeOf`、`bostonHourOf`、`SERVICE_DAY_HOURS` を書く（T004 を通す）: `src/lib/time.ts`
-- [ ] T006 aggregate ジョブの骨組みの結合テスト: 前の運行日を集計して `aggregate_runs` を `success`・定義の版付きで記録する、`--from` / `--to` で古い順に集計する、同じ運行日を 2 回集計しても行が変わらない（TR-004）、集計に失敗した運行日は `failed` を記録してパーティションを消さない、パーティションの管理は集計のあとに行う: `tests/integration/aggregate.test.ts`
-- [ ] T007 aggregate ジョブに集計の骨組みを書く（T006 を通す）: 運行日ごとに 1 つのトランザクションで「その日の行を消す → 指標ごとの集計を入れ直す → `aggregate_runs` を upsert」。指標ごとの集計は登録式にして、各ストーリーで足す。コマンドラインの `--from` / `--to`（`YYYY-MM-DD`）: `src/jobs/aggregate.ts`、`src/lib/db/aggregate.ts`
-- [ ] T007a 生データの削除の条件に、集計の定義の版を足す（`definition_version >= MIN_DROPPABLE_DEFINITION_VERSION` の `success` だけを集計済みとみなす）。版 0 の集計（指標がそろう前）では生データを消さない。既存のテストに版 0 のケースを足す: `src/lib/db/partitions.ts`、`tests/integration/retention.test.ts`
-- [ ] T008 [P] 分析 API の共通部分: `from` / `to`（運行日。既定は直近 7 日、最大 92 日）・`route`（`Green` 可）・`direction` の検証、範囲に当日が含まれるかの判定、応答の共通の項目（`definitionVersions`、`todayIncluded`、`lastAggregatedServiceDate`）のスキーマ: `src/lib/api/analytics.ts`、`src/lib/api-schemas/analytics.ts`
-- [ ] T009 [P] 分析 API の共通部分の単体テスト: 期間の既定値と上限、`from > to` で 400、当日を含むかの判定: `tests/unit/api/analytics-params.test.ts`
-- [ ] T010 画面の共通部分: ナビゲーションに Analytics を足し、`/analytics` から 4 つの画面へのタブ、絞り込み（期間・路線・方向）の部品、到着時刻の推定精度（±60 秒程度）の注記（FR-008）、ECharts を包む部品（ブラウザでだけ描画し、画面の幅に合わせる）: `src/app/analytics/layout.tsx`、`src/components/analytics/`、`src/components/charts/echart.tsx`、`src/components/layout/header.tsx`
-- [ ] T011 [P] 分析の E2E 用のデータ: 運行日 8 日分の到着イベントと予測サンプルを、決まった規則（Red の数駅、Green の幹線の駅、団子運転と間隔の開きを含む）で作るヘルパー。結合テストと E2E のシードで共有し、E2E のシードでは aggregate ジョブで前の 7 日を集計する: `tests/helpers/analytics-seed.ts`、`tests/e2e/seed-db.ts`
+- [X] T004 [P] 曜日種別と時間帯の単体テスト: `dayTypeOf(serviceDate)`（平日・土曜・日曜）、`bostonHourOf(instant)`（夏時間の切り替え日を含む）、運行日の時間帯の並び（3〜23, 0〜2）: `tests/unit/time.test.ts`
+- [X] T005 [P] `dayTypeOf`、`bostonHourOf`、`SERVICE_DAY_HOURS` を書く（T004 を通す）: `src/lib/time.ts`
+- [X] T006 aggregate ジョブの骨組みの結合テスト: 前の運行日を集計して `aggregate_runs` を `success`・定義の版付きで記録する、`--from` / `--to` で古い順に集計する、同じ運行日を 2 回集計しても行が変わらない（TR-004）、集計に失敗した運行日は `failed` を記録してパーティションを消さない、パーティションの管理は集計のあとに行う: `tests/integration/aggregate.test.ts`
+- [X] T007 aggregate ジョブに集計の骨組みを書く（T006 を通す）: 運行日ごとに 1 つのトランザクションで「その日の行を消す → 指標ごとの集計を入れ直す → `aggregate_runs` を upsert」。指標ごとの集計は登録式にして、各ストーリーで足す。コマンドラインの `--from` / `--to`（`YYYY-MM-DD`）: `src/jobs/aggregate.ts`、`src/lib/db/aggregate.ts`
+- [X] T007a 生データの削除の条件に、集計の定義の版を足す（`definition_version >= MIN_DROPPABLE_DEFINITION_VERSION` の `success` だけを集計済みとみなす）。版 0 の集計（指標がそろう前）では生データを消さない。既存のテストに版 0 のケースを足す: `src/lib/db/partitions.ts`、`tests/integration/retention.test.ts`
+- [X] T008 [P] 分析 API の共通部分: `from` / `to`（運行日。既定は直近 7 日、最大 92 日）・`route`（`Green` 可）・`direction` の検証、範囲に当日が含まれるかの判定、応答の共通の項目（`definitionVersions`、`todayIncluded`、`lastAggregatedServiceDate`）のスキーマ: `src/lib/api/analytics.ts`、`src/lib/api-schemas/analytics.ts`
+- [X] T009 [P] 分析 API の共通部分の単体テスト: 期間の既定値と上限、`from > to` で 400、当日を含むかの判定: `tests/unit/api/analytics-params.test.ts`
+- [X] T010 画面の共通部分: ナビゲーションに Analytics を足し、`/analytics` から 4 つの画面へのタブ、絞り込み（期間・路線・方向）の部品、到着時刻の推定精度（±60 秒程度）の注記（FR-008）、ECharts を包む部品（ブラウザでだけ描画し、画面の幅に合わせる）: `src/app/analytics/layout.tsx`、`src/components/analytics/`、`src/components/charts/echart.tsx`、`src/components/layout/header.tsx`
+- [X] T011 [P] 分析の E2E 用のデータ: 運行日 8 日分の到着イベントと予測サンプルを、決まった規則（Red の数駅、Green の幹線の駅、団子運転と間隔の開きを含む）で作るヘルパー。結合テストと E2E のシードで共有し、E2E のシードでは aggregate ジョブで前の 7 日を集計する: `tests/helpers/analytics-seed.ts`、`tests/e2e/seed-db.ts`
 
 **チェックポイント**: 集計の骨組みが動き、`aggregate_runs` が記録される。ユーザーストーリーを始められる
 
