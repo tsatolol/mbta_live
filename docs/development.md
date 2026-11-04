@@ -31,6 +31,7 @@ pnpm test:replay               # 記録した連続ポーリングを collector 
 pnpm test:e2e                  # Playwright（E2E 用の DB を作り直し、本番と同じビルドを APP_ENV=dev で起動する）
 pnpm e2e:seed [--migrate] base # E2E 用の DB にシードだけ入れる（シナリオ: base / stale-collection / out-of-service）
 pnpm test:smoke                # デプロイ後のスモークテスト（SMOKE_BASE_URL と SMOKE_ID_TOKEN が必要。パイプラインが実行する）
+pnpm exec playwright test -c playwright.dev.config.ts  # dev での E2E（DEV_BASE_URL と DEV_ID_TOKEN が必要。普段は scripts/dev-e2e.sh から）
 pnpm fixtures:record           # 実 API から 1 回分のフィクスチャを記録（7 リクエスト）
 pnpm fixtures:cases            # 記録済みのフィクスチャから特殊ケースのフィクスチャを作る（API は呼ばない）
 pnpm fixtures:record-sequence  # 実 API から連続ポーリングを記録（再生テスト用。1 分ごとに 3 リクエスト）
@@ -48,6 +49,7 @@ scripts/check-container.sh <イメージ> <DATABASE_URL>      # コンテナの�
 scripts/check-migration-compat.sh <DATABASE_URL>          # マイグレーションの互換性テスト（PROD_SHA で比べるコミットを指定できる）
 scripts/plan-summary.sh <plan の JSON> / scripts/plan-hash.sh <plan の JSON>
 scripts/smoke.sh <URL>                                    # IAP を通したスモークテスト（SMOKE_TESTER_SA と IAP_CLIENT_ID、deployer の gcloud の認証が必要）
+scripts/dev-e2e.sh <URL>                                  # IAP を通した dev での E2E（読み取りだけ。条件は smoke.sh と同じ。Chromium が必要）
 ```
 
 ## MBTA API を呼ぶときの注意

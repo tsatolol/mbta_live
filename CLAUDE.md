@@ -35,7 +35,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit 8 路線）の運�
 
 Next.js（App Router, TypeScript）/ Prisma ORM + PostgreSQL 16（Cloud SQL）/ Cloud Run（web + Jobs）, `us-east4` / MapLibre GL JS + OpenFreeMap / TanStack Query / Tailwind CSS + shadcn/ui / Apache ECharts / Vitest + Playwright / Terraform + GitHub Actions（WIF）/ pnpm, Node.js 24.x, TypeScript 6（typescript-eslint が 7 に未対応のため）
 
-## コマンド（予定）
+## コマンド
 
 詳細は `docs/development.md`。
 
@@ -44,7 +44,7 @@ docker compose up -d db && pnpm install && pnpm db:migrate
 pnpm dev                       # http://localhost:3000
 pnpm job:collect               # 実 API を使う。連打しない。普段は MBTA_FIXTURE_MODE=1
 pnpm lint && pnpm typecheck && pnpm test   # PR を出す前に実行（PR では軽いチェックだけが走る）
-pnpm test:e2e
+pnpm test:e2e                  # E2E 用の DB（mbta_live_e2e）を作り直し、本番と同じビルドで Playwright を実行
 ```
 
 ## spec-kit の使い方

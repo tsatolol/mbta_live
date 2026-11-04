@@ -91,6 +91,25 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 └── specs/                   # spec-kit の feature ごとの文書
 ```
 
+## 画面と内部 API（002）
+
+web は Next.js の App Router。画面はすべてクライアントで描画し（`"use client"`）、ブラウザから内部 API（Route Handlers）を TanStack Query で定期的に取得する。内部 API は DB を読むだけで、MBTA API は呼ばない。応答の型は `src/lib/api-schemas/` の zod スキーマで、サーバーと画面の両方が使う（契約は `specs/002-live-dashboard/contracts/live-api.md`）。
+
+| 画面 | パス | 使う内部 API | 取得の間隔 |
+|---|---|---|---|
+| Live Map | `/` | `/api/static/routes`, `/api/live/vehicles` | 車両 15 秒 |
+| Stations | `/stations` | `/api/static/stops` | 1 時間（静的データ） |
+| Arrival Board | `/stations/[stopId]` | `/api/live/predictions` | 30 秒（カウントダウンは毎秒） |
+| Alerts | `/alerts` | `/api/live/alerts`, `/api/static/routes` | 60 秒（過去の検索は送信時） |
+| System Status | `/status` | `/api/status` | 30 秒 |
+| 共通のヘッダー | すべて | `/api/health`（最終更新時刻と stale バナー） | 30 秒 |
+
+- Route Handler（`src/app/api/**/route.ts`）は、本番の DB と時計を `src/lib/api/` の関数に渡して呼ぶだけ。結合テストはその関数に、テスト用の DB と固定した時計を渡して呼ぶ
+- 計算する値（stale、アラートの状態、次の 3 本の選び方など）は `src/lib/metrics/` の純粋関数
+- 地図は MapLibre GL JS + OpenFreeMap（positron）。Worker はビルド時に `public/vendor/` にコピーする（`scripts/copy-maplibre-worker.mjs`）
+- 時刻は API では UTC の ISO 8601、画面でボストン時間に変換する（`formatInBoston`）
+- テスト: E2E（`tests/e2e/`）はフィクスチャを collector で取り込んだ DB に、本番と同じビルドを起動して実行する（リリース用の CI でも実行）。デプロイ後は dev に対して IAP を通した読み取りだけの E2E（`tests/e2e/dev/`）を実行する
+
 ## 認証・監視・ロールバック
 
 - **IAP**: Cloud Run に直接組み込む IAP（`iap_enabled`）。プロジェクトが組織に属していないので、OAuth クライアントは Cloud Console で作り、bootstrap が IAP の設定（プロジェクト単位）に入れる。許可するユーザーと smoke-tester は、bootstrap がプロジェクト単位の `roles/iap.httpsResourceAccessor` で付ける（`specs/004-infra-cicd/research.md`）
