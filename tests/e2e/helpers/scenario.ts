@@ -1,6 +1,6 @@
 // E2E の共通の定数（シードの側と、テストの側の両方で使う。server-only のコードを import しない）
 
-export type E2eScenario = "base" | "stale-collection" | "out-of-service";
+export type E2eScenario = "base" | "stale-collection" | "out-of-service" | "analytics";
 
 /** E2E 用の DB。開発用の DB とテスト用の DB とは別にする（中身は作り直される） */
 export const DEFAULT_E2E_DATABASE_URL =

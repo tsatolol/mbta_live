@@ -217,3 +217,72 @@ model AggregateRun {
 
   @@map("aggregate_runs")
 }
+
+// ---- 003 分析: 集計テーブル（aggregate ジョブが毎日書く。無期限に残す。specs/003-analytics/data-model.md）----
+
+/// 運行間隔の日次の統計（運行日 × 路線（Green の合算を含む）× 方向 × 親駅 × 時間帯（ET））
+model DailyHeadwayStat {
+  serviceDate   DateTime @map("service_date") @db.Date
+  routeId       String   @map("route_id")
+  directionId   Int      @map("direction_id")
+  stopId        String   @map("stop_id")
+  hour          Int      @db.SmallInt
+  n             Int
+  meanSec       Float    @map("mean_sec")
+  p50Sec        Float    @map("p50_sec")
+  p90Sec        Float    @map("p90_sec")
+  maxSec        Int      @map("max_sec")
+  bunchingCount Int      @map("bunching_count")
+  gapCount      Int      @map("gap_count")
+
+  @@id([serviceDate, routeId, directionId, stopId, hour])
+  @@index([routeId, serviceDate])
+  @@map("daily_headway_stats")
+}
+
+/// 到着予測の精度の日次の統計（運行日 × 路線 × 方向 × リード時間 × 予測の種類 × 時間帯（ET））
+model DailyPredictionAccuracy {
+  serviceDate     DateTime @map("service_date") @db.Date
+  routeId         String   @map("route_id")
+  directionId     Int      @map("direction_id")
+  leadBucketMin   Int      @map("lead_bucket_min") @db.SmallInt
+  updateType      String   @map("update_type")
+  hour            Int      @db.SmallInt
+  n               Int
+  meanErrorSec    Float    @map("mean_error_sec")
+  meanAbsErrorSec Float    @map("mean_abs_error_sec")
+  p90AbsErrorSec  Float    @map("p90_abs_error_sec")
+  within60sRatio  Float    @map("within_60s_ratio")
+
+  @@id([serviceDate, routeId, directionId, leadBucketMin, updateType, hour])
+  @@index([routeId, serviceDate])
+  @@map("daily_prediction_accuracy")
+}
+
+/// アラートの日次の統計（運行日 × 路線 × effect × cause）
+model DailyAlertStat {
+  serviceDate   DateTime @map("service_date") @db.Date
+  routeId       String   @map("route_id")
+  effect        String
+  cause         String
+  alertCount    Int      @map("alert_count")
+  activeMinutes Int      @map("active_minutes")
+
+  @@id([serviceDate, routeId, effect, cause])
+  @@index([routeId, serviceDate])
+  @@map("daily_alert_stats")
+}
+
+/// 時間帯ごとのアラートの有効な分数（ヒートマップ用。運行日 × 路線 × 時間帯（ET）× 区分）
+model HourlyAlertMinute {
+  serviceDate   DateTime @map("service_date") @db.Date
+  routeId       String   @map("route_id")
+  hour          Int      @db.SmallInt
+  /// disruption（遅延系）/ notice（お知らせ系）
+  category      String
+  activeMinutes Int      @map("active_minutes")
+
+  @@id([serviceDate, routeId, hour, category])
+  @@index([routeId, serviceDate])
+  @@map("hourly_alert_minutes")
+}

@@ -1,6 +1,6 @@
 # データモデル: 分析
 
-入力は 001 の `arrival_events`, `prediction_samples`, `alerts`, `alert_routes`（`specs/001-data-collection/data-model.md`）。集計の SQL は TypedSQL（`prisma/sql/*.sql`）で書く。指標の定数は `src/lib/metrics/constants.ts` に集める。
+入力は 001 の `arrival_events`, `prediction_samples`, `alerts`, `alert_routes`, `route_patterns`（`specs/001-data-collection/data-model.md`）。集計の SQL は `src/lib/db/analytics-sql.ts` に `$queryRaw` で書き、結果を zod で検証する（research.md）。指標の定数は `src/lib/metrics/constants.ts` に集める。
 
 ## 集計テーブル（aggregate ジョブが毎日作成。無期限保持）
 
@@ -9,9 +9,11 @@
 | `daily_headway_stats` | `service_date`, `route_id`（`Green` 合算を含む）, `direction_id`, `stop_id`, `hour`（0–23, ET）, `n`, `mean_sec`, `p50_sec`, `p90_sec`, `max_sec`, `bunching_count`, `gap_count` |
 | `daily_prediction_accuracy` | `service_date`, `route_id`, `direction_id`, `lead_bucket_min`, `update_type`, `hour`, `n`, `mean_error_sec`, `mean_abs_error_sec`, `p90_abs_error_sec`, `within_60s_ratio` |
 | `daily_alert_stats` | `service_date`, `route_id`, `effect`, `cause`, `alert_count`, `active_minutes` |
+| `hourly_alert_minutes` | `service_date`, `route_id`, `hour`, `category`（`disruption` / `notice`）, `active_minutes`（ヒートマップ用） |
 | `aggregate_runs` | `service_date` PK, `status`, `finished_at`, `definition_version` |
 
-- 曜日 × 時間帯のヒートマップは、`service_date` の曜日と `hour` から作る
+- 曜日 × 時間帯のヒートマップは、`service_date` の曜日と `hour` から作る（アラートは `hourly_alert_minutes`）
+- 主キーは各テーブルの次元の列すべて（`daily_headway_stats` なら `service_date`, `route_id`, `direction_id`, `stop_id`, `hour`）。`update_type` が空の予測は `UNKNOWN` として集計する
 - `aggregate_runs.status = success` の運行日だけ、001 の生データのパーティションを削除してよい
 - `definition_version` は指標の定義の版。定義を変えたら上げ、保持期間分さかのぼって再集計する。それより古い期間は旧定義の値のまま残るので、画面で版の境目が分かるようにする
 
@@ -22,7 +24,7 @@
 - (route, direction, 親駅) ごとに `arrival_events.arrived_at` を並べ、連続する到着の差を運行間隔とする
 - 60 分を超える間隔は運休時間帯とみなして除外する
 - **団子運転（bunching）**: 間隔 < 2 分
-- **間隔の開き（gap）**: 間隔 > 同じ (route, direction, 駅, 曜日種別, hour) の過去 28 日の中央値 × 2。基準の中央値は生データではなく `daily_headway_stats.p50_sec` から求める（生データの保持期間に左右されないようにするため）
+- **間隔の開き（gap）**: 間隔 > 同じ (route, direction, 駅, 曜日種別, hour) の過去 28 日の中央値 × 2。曜日種別は `weekday` / `saturday` / `sunday`（祝日は考えない）。基準がなければ数えない。基準の中央値は生データではなく `daily_headway_stats.p50_sec` から求める（生データの保持期間に左右されないようにするため）
 - Green Line の幹線区間では、支線別に加えて `route_id = Green`（全支線合算）でも計算する
 
 ### 予測誤差（Prediction Accuracy）
@@ -34,6 +36,9 @@
 
 ### アラート
 
-- 件数: (運行日, route, effect, cause) ごとに、`active_period` がその日に重なり、かつその日にフィードで観測されたアラートの数（予告だけの UPCOMING は数えない）
-- 継続時間: `active_period` と `first_seen_at`〜`last_seen_at` が重なる区間のうち、その日に含まれる分数
+- 運行日の各分（運行日の始まりから 1 分ごとの時刻 t）について、アラートが「有効」かを見る: `active_period` のどれかに入り（start ≤ t < end。end がなければ終わりなし）、かつフィードで観測されていた（`first_seen_at` ≤ t ≤ `last_seen_at`）
+- 件数: (運行日, route, effect, cause) ごとに、その日に有効な分が 1 分以上あったアラートの数（予告だけの UPCOMING の日は数えない）。複数の日に続くアラートは日ごとに 1 件（画面では「alert-days」）
+- 継続時間（`daily_alert_stats.active_minutes`）: アラートごとの有効な分数の合計
+- 時間帯ごとの分数（`hourly_alert_minutes.active_minutes`）: その時間帯に、その区分のアラートが 1 件以上有効だった分数（同時に 2 件あっても 1 分。最大 60）
+- `route_id = All`: 路線をまとめた行。複数の路線に関係するアラートを 1 回だけ数える（路線ごとの行を足すと重複するため）
 - 画面では、遅延系（`DELAY`, `SUSPENSION`, `SHUTTLE`, `STATION_CLOSURE`）とお知らせ系（`NOTICE`, `STATION_ISSUE` など、それ以外すべて）に分ける

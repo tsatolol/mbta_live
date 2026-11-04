@@ -122,3 +122,32 @@ export function parseMbtaDateTime(value: string): Date {
 export function formatInBoston(instant: Date, pattern: string): string {
   return format(new TZDate(instant.getTime(), BOSTON_TZ), pattern);
 }
+
+// ---- 003 分析で使う時間帯と曜日 ----
+
+/** 運行日の時間帯（ET の時）の並び。運行日は 03:00 に始まるので 3, 4, …, 23, 0, 1, 2 */
+export const SERVICE_DAY_HOURS: readonly number[] = Array.from(
+  { length: 24 },
+  (_, i) => (SERVICE_DAY_START_HOUR + i) % 24,
+);
+
+/** ある時刻の ET の時（0〜23）。夏時間が終わる日の 1 時台（2 回ある）はどちらも 1 */
+export function bostonHourOf(instant: Date): number {
+  return new TZDate(instant.getTime(), BOSTON_TZ).getHours();
+}
+
+/** 運行日の曜日（0 = 日曜 … 6 = 土曜）。運行日の日付そのものの曜日 */
+export function dayOfWeekOf(serviceDate: ServiceDate): number {
+  const { year, month, day } = parseServiceDate(serviceDate);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
+/** 曜日種別（間隔の開きの基準に使う）。祝日は考えない（specs/003-analytics/research.md） */
+export type DayType = "weekday" | "saturday" | "sunday";
+
+export function dayTypeOf(serviceDate: ServiceDate): DayType {
+  const dow = dayOfWeekOf(serviceDate);
+  if (dow === 0) return "sunday";
+  if (dow === 6) return "saturday";
+  return "weekday";
+}

@@ -2,6 +2,9 @@
 import { describe, expect, it } from "vitest";
 import {
   addServiceDays,
+  bostonHourOf,
+  dayOfWeekOf,
+  dayTypeOf,
   formatInBoston,
   isAggregateDeadlinePassed,
   isInServiceHours,
@@ -10,6 +13,7 @@ import {
   serviceDateOf,
   serviceDateToDbDate,
   serviceDayRange,
+  SERVICE_DAY_HOURS,
 } from "@/lib/time";
 
 const hours = (r: { start: Date; end: Date }) => (r.end.getTime() - r.start.getTime()) / 3_600_000;
@@ -140,5 +144,56 @@ describe("isAggregateDeadlinePassed", () => {
     ["2026-07-01T09:00:00Z", true, "夏時間（EDT）の 05:00"],
   ])("%s は %s（%s）", (utc, expected) => {
     expect(isAggregateDeadlinePassed(new Date(utc))).toBe(expected);
+  });
+});
+
+describe("dayTypeOf（003 の間隔の開きの基準）", () => {
+  it.each([
+    ["2026-11-02", "weekday"], // 月
+    ["2026-11-06", "weekday"], // 金
+    ["2026-11-07", "saturday"],
+    ["2026-11-08", "sunday"],
+    ["2026-11-01", "sunday"], // 夏時間が終わる日
+    ["2027-03-14", "sunday"], // 夏時間が始まる日
+  ] as const)("%s は %s", (date, expected) => {
+    expect(dayTypeOf(date)).toBe(expected);
+  });
+
+  it("不正な運行日は例外", () => {
+    expect(() => dayTypeOf("2026-02-30")).toThrow();
+  });
+});
+
+describe("dayOfWeekOf", () => {
+  it("運行日の曜日（0 = 日曜 … 6 = 土曜）", () => {
+    expect(dayOfWeekOf("2026-11-01")).toBe(0);
+    expect(dayOfWeekOf("2026-11-02")).toBe(1);
+    expect(dayOfWeekOf("2026-11-07")).toBe(6);
+  });
+});
+
+describe("bostonHourOf（ET の時）", () => {
+  it.each([
+    ["2026-11-02T15:20:00Z", 10], // EST（UTC-5）
+    ["2026-10-30T14:20:00Z", 10], // EDT（UTC-4）
+    ["2026-11-03T07:59:59Z", 2], // 運行日の終わりの直前
+    ["2026-11-03T08:00:00Z", 3], // 運行日の始まり
+    // 夏時間が終わる日（2026-11-01）の 1 時台は 2 回ある。どちらも 1
+    ["2026-11-01T05:30:00Z", 1], // EDT の 01:30
+    ["2026-11-01T06:30:00Z", 1], // EST の 01:30
+    // 夏時間が始まる日（2027-03-14）は 2 時台がない
+    ["2027-03-14T06:59:00Z", 1],
+    ["2027-03-14T07:00:00Z", 3],
+  ])("%s は %i 時", (iso, hour) => {
+    expect(bostonHourOf(new Date(iso))).toBe(hour);
+  });
+});
+
+describe("SERVICE_DAY_HOURS", () => {
+  it("運行日の時間帯の並び（3 〜 23, 0 〜 2）", () => {
+    expect(SERVICE_DAY_HOURS).toHaveLength(24);
+    expect(SERVICE_DAY_HOURS.slice(0, 3)).toEqual([3, 4, 5]);
+    expect(SERVICE_DAY_HOURS.slice(-4)).toEqual([23, 0, 1, 2]);
+    expect(new Set(SERVICE_DAY_HOURS).size).toBe(24);
   });
 });

@@ -34,7 +34,7 @@
 
 - **決定**: Prisma ORM（Prisma Migrate）を使う（当初案の Drizzle から、ユーザーの判断で変更）
 - **理由**: アプリ側の通常の読み書きを型安全に書ける
-- **トレードオフ**: パーティション、分析用の集計クエリ（`percentile_cont`、ウィンドウ関数）、大量の upsert は Prisma の API で表現できない。それぞれ手書きのマイグレーション SQL、TypedSQL（`prisma/sql/*.sql`）、`$executeRaw` で補う（data-model.md）
+- **トレードオフ**: パーティション、分析用の集計クエリ（`percentile_cont`、ウィンドウ関数）、大量の upsert は Prisma の API で表現できない。それぞれ手書きのマイグレーション SQL、`$queryRaw` + zod（当初は TypedSQL の予定だった。003 の research.md）、`$executeRaw` で補う（data-model.md）
 - **検証結果**（2026-11-02）: パーティションの子テーブルを別スキーマ `partitions` に置いても、`prisma migrate dev` は drift を出さない（「Already in sync」）。`tests/integration/prisma-drift.test.ts` で継続して確かめる
 - **バージョン**: Prisma 7.10（安定版）。npm の latest は 8.0 の RC だったので使わない
 

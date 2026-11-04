@@ -8,6 +8,7 @@ import {
   serviceDayRange,
   type ServiceDate,
 } from "@/lib/time";
+import { MIN_DROPPABLE_DEFINITION_VERSION } from "@/lib/metrics/constants";
 import type { Db } from "./client";
 
 export const PARTITION_SCHEMA = "partitions";
@@ -113,6 +114,7 @@ export interface RetentionResult {
  * 保持期間を過ぎた運行日の子テーブルを削除する。
  * - 今日を含めて直近 retentionDays 運行日分を残す（運行日 d が today - retentionDays 以前なら期限切れ）
  * - 集計が成功していない運行日（aggregate_runs.status が success でない、または記録がない）は削除しない
+ * - 定義の版が MIN_DROPPABLE_DEFINITION_VERSION より古い集計（指標がそろう前）も、集計済みとみなさない
  */
 export async function dropExpiredPartitions(
   db: Db,
@@ -132,7 +134,12 @@ export async function dropExpiredPartitions(
   const aggregated = new Set(
     (
       await db.aggregateRun.findMany({
-        where: { status: "success", serviceDate: { in: expiredDates.map(serviceDateToDbDate) } },
+        where: {
+          status: "success",
+          // 指標がそろう前（版 0）の集計では消さない（specs/003-analytics/research.md）
+          definitionVersion: { gte: MIN_DROPPABLE_DEFINITION_VERSION },
+          serviceDate: { in: expiredDates.map(serviceDateToDbDate) },
+        },
         select: { serviceDate: true },
       })
     ).map((r) => r.serviceDate.toISOString().slice(0, 10)),
