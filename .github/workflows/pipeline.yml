@@ -89,6 +89,37 @@ jobs:
       - name: Replay tests
         run: pnpm test:replay
 
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browser
+        # ブラウザはキャッシュから戻し、OS の依存パッケージだけは毎回入れる
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            pnpm exec playwright install-deps chromium
+          else
+            pnpm exec playwright install --with-deps chromium
+          fi
+
+      - name: E2E tests (002 TR-003)
+        # E2E 用の DB はシード（tests/e2e/seed-db.ts --migrate）が作る。本番と同じビルドを起動して確かめる
+        env:
+          E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mbta_live_e2e
+        run: pnpm test:e2e
+
+      - name: Upload E2E traces
+        # 失敗したテストのトレース（画面・通信の記録）。データはフィクスチャだけ
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: test-results/
+          retention-days: 7
+
       - name: Migration compatibility (TR-003)
         # 新しいマイグレーションを適用した DB に、prod で動いているコミットの結合テストを実行する
         run: scripts/check-migration-compat.sh "$PG_BASE_URL/mbta_live_compat"
@@ -272,6 +303,31 @@ jobs:
       - name: Run collector once
         # Secret Manager、DB、MBTA API への接続をまとめて確かめる
         run: gcloud run jobs execute collector --project="$PROJECT" --region="$REGION" --wait
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browser
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            pnpm exec playwright install-deps chromium
+          else
+            pnpm exec playwright install --with-deps chromium
+          fi
+
+      - name: E2E on dev (TR-007)
+        # 読み取りだけの短いテスト（地図・地図タイル・駅・アラート・稼働状況）を、IAP を通して実行する。
+        # collector を動かしたあとなので、最新のデータで確かめられる
+        env:
+          SMOKE_TESTER_SA: ${{ vars.SMOKE_TESTER_SA }}
+          IAP_CLIENT_ID: ${{ vars.IAP_CLIENT_ID }}
+        run: |
+          url="$(gcloud run services describe web --project="$PROJECT" --region="$REGION" --format='value(status.url)')"
+          scripts/dev-e2e.sh "$url"
 
   cd-prod:
     name: cd-prod

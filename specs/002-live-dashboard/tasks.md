@@ -124,13 +124,13 @@ description: "002 リアルタイム画面の実装タスク"
 
 ### ユーザーストーリー 4 のテスト
 
-- [ ] T029 [P] [US4] `GET /api/status` の結合テスト: ジョブごとの直近の `collector_runs`（状態・件数・エラー）、レート制限の残量、テーブルごとの行数: `tests/integration/api/status.test.ts`
+- [X] T029 [P] [US4] `GET /api/status` の結合テスト: ジョブごとの直近の `collector_runs`（状態・件数・エラー）、レート制限の残量、テーブルごとの行数: `tests/integration/api/status.test.ts`
 
 ### ユーザーストーリー 4 の実装
 
-- [ ] T030 [US4] `GET /api/status` を書く: テーブルの行数は、パーティションに分かれた大きなテーブルでも速く返せる方法（`pg_class.reltuples` の推定値など）にして、推定値であることを応答に含める: `src/app/api/status/route.ts`、`src/lib/db/status.ts`
-- [ ] T031 [US4] 稼働状況の画面を書く（FR-007）: 直近の収集の結果、レート制限の残量、DB のデータ量: `src/app/status/page.tsx`
-- [ ] T032 [US4] 共通部分と稼働状況の E2E（TR-003）: ヘッダーの最終更新時刻、収集が 3 分止まったときの stale バナー、`DEV` バッジ（`APP_ENV=dev` で起動）、フッターの出典表記、稼働状況の画面: `tests/e2e/layout.spec.ts`、`tests/e2e/status.spec.ts`
+- [X] T030 [US4] `GET /api/status` を書く: テーブルの行数は、パーティションに分かれた大きなテーブルでも速く返せる方法（`pg_class.reltuples` の推定値など）にして、推定値であることを応答に含める: `src/app/api/status/route.ts`、`src/lib/db/status.ts`
+- [X] T031 [US4] 稼働状況の画面を書く（FR-007）: 直近の収集の結果、レート制限の残量、DB のデータ量: `src/app/status/page.tsx`
+- [X] T032 [US4] 共通部分と稼働状況の E2E（TR-003）: ヘッダーの最終更新時刻、収集が 3 分止まったときの stale バナー、`DEV` バッジ（`APP_ENV=dev` で起動）、フッターの出典表記、稼働状況の画面: `tests/e2e/layout.spec.ts`、`tests/e2e/status.spec.ts`
 
 **チェックポイント**: すべてのユーザーストーリーが動く
 
@@ -141,11 +141,11 @@ description: "002 リアルタイム画面の実装タスク"
 **目的**: パイプラインへの組み込み、004 の残り、文書の反映、全体の確認
 
 - [ ] T033 リリース用の CI で E2E を動かす: `pipeline.yml` の ci ジョブに、Playwright のブラウザの用意と `pnpm test:e2e`（Postgres のサービスコンテナに E2E 用の DB を作る）を足す。所要時間が延びすぎないか（SC-002 とは別に、CI 全体）を確かめる: `.github/workflows/pipeline.yml`
-- [ ] T034 004 の T048 を行う: スモークテストに `/api/live/vehicles`・`/api/static/routes`・`/api/live/alerts` の確認を足す（共有のスキーマで解析できる）: `tests/smoke/smoke.test.ts`
+- [X] T034 004 の T048 を行う: スモークテストに `/api/live/vehicles`・`/api/static/routes`・`/api/live/alerts` の確認を足す（共有のスキーマで解析できる）: `tests/smoke/smoke.test.ts`
 - [ ] T035 004 の T049 を行う: dev の URL に対して、IAP を通して読み取りだけの短い E2E を cd-dev の最後に実行する: `tests/e2e/dev/`、`.github/workflows/pipeline.yml`
-- [ ] T036 [P] 文書を更新する（flow-back）: `contracts/live-api.md` に実際の応答の形とパラメータ、`docs/architecture.md` に画面と内部 API の構成、`docs/development.md` に `pnpm test:e2e` と E2E 用の DB、CLAUDE.md のコマンド
+- [X] T036 [P] 文書を更新する（flow-back）: `contracts/live-api.md` に実際の応答の形とパラメータ、`docs/architecture.md` に画面と内部 API の構成、`docs/development.md` に `pnpm test:e2e` と E2E 用の DB、CLAUDE.md のコマンド
 - [ ] T037 確認: dev で各画面を開き、初回表示（SC-002。3 秒以内、コールドスタートを除く）と、地図に路線と車両が出ることを確かめる。結果を research.md に記録する
-- [ ] T038 `/speckit-analyze` で 002 の文書とタスクの食い違いを点検し、見つかったものを反映する
+- [X] T038 `/speckit-analyze` で 002 の文書とタスクの食い違いを点検し、見つかったものを反映する
 
 ---
 

@@ -25,7 +25,7 @@ push to main（PR のマージ）
   │
   ├─ ci            （environment なし。GCP の認証は ci-builder だけ）
   │    pnpm install → lint → typecheck
-  │    → unit / integration / replay（Postgres サービスコンテナ）→ Playwright（フィクスチャ）
+  │    → unit / integration / replay（Postgres サービスコンテナ）→ Playwright（フィクスチャ。E2E 用の DB をシードし、本番と同じビルドを起動）
   │    → マイグレーションの互換性テスト（新しいマイグレーションを適用した DB に、prod で動いているコミットの結合テストを実行。TEST_SKIP_MIGRATE=1）
   │    → セキュリティ検査: pnpm audit（high 以上で失敗）、Gitleaks（リポジトリ全体）
   │    → docker build
@@ -41,8 +41,8 @@ push to main（PR のマージ）
   │    → terraform apply（envs/dev）
   │    → migrate Job をそのイメージで実行（prisma migrate deploy）
   │    → web をデプロイ（トラフィック 100%）、各 Job のイメージを更新（どちらもダイジェスト指定）
-  │    → スモークテスト（下記）
-  │    → dev での E2E: 読み取りだけの短い Playwright を dev の URL に対して実行（IAP を通す）
+  │    → スモークテスト（下記）→ collector Job を 1 回実行（--wait）
+  │    → dev での E2E: 読み取りだけの短い Playwright を dev の URL に対して実行（IAP を通す。scripts/dev-e2e.sh、tests/e2e/dev/）
   │
   └─ cd-prod       （environment: prod / Required reviewers で承認待ち / needs: cd-dev）
        github.sha が main の HEAD でなければ失敗

@@ -2,9 +2,13 @@
 // pnpm test には含めない（pnpm test:smoke）。パイプラインが次の環境変数を渡す:
 //   SMOKE_BASE_URL  … 対象の URL（prod の切り替え前は candidate タグの URL）
 //   SMOKE_ID_TOKEN  … smoke-tester の ID トークン（IAP を通るためのもの。ログに出さない）
-// 主要な内部 API の確認は 002 の完了後に足す（T048）。
+// 主要な内部 API（地図・アラート）が 200 を返し、応答が共有の zod スキーマで解析できることも確かめる（004 T048）。
 import { describe, expect, it } from "vitest";
+import type { z } from "zod";
+import { alertsResponseSchema } from "@/lib/api-schemas/alerts";
 import { healthResponseSchema } from "@/lib/api-schemas/health";
+import { routesResponseSchema } from "@/lib/api-schemas/routes";
+import { vehiclesResponseSchema } from "@/lib/api-schemas/vehicles";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -34,6 +38,24 @@ describe("スモークテスト", () => {
     expect(res.status).toBe(200);
     const body = healthResponseSchema.parse(await res.json());
     expect(body.status).toBe("ok");
+  });
+
+  it.each<[string, z.ZodType]>([
+    ["/api/live/vehicles", vehiclesResponseSchema],
+    ["/api/static/routes", routesResponseSchema],
+    ["/api/live/alerts", alertsResponseSchema],
+  ])("%s が 200 で、応答が共有のスキーマで解析できる", async (path, schema) => {
+    const res = await get(path, { headers: { authorization: `Bearer ${idToken}` } });
+    expect(res.status).toBe(200);
+    schema.parse(await res.json());
+  });
+
+  it("/api/static/routes に 8 路線がある（静的データが同期されている）", async () => {
+    const res = await get("/api/static/routes", {
+      headers: { authorization: `Bearer ${idToken}` },
+    });
+    const body = routesResponseSchema.parse(await res.json());
+    expect(body.routes).toHaveLength(8);
   });
 
   it("認証なしのリクエストは IAP で拒否される", async () => {
