@@ -1,6 +1,6 @@
 # データモデル: 分析
 
-入力は 001 の `arrival_events`, `prediction_samples`, `alerts`, `alert_routes`（`specs/001-data-collection/data-model.md`）。集計の SQL は TypedSQL（`prisma/sql/*.sql`）で書く。指標の定数は `src/lib/metrics/constants.ts` に集める。
+入力は 001 の `arrival_events`, `prediction_samples`, `alerts`, `alert_routes`, `route_patterns`（`specs/001-data-collection/data-model.md`）。集計の SQL は `src/lib/db/analytics-sql.ts` に `$queryRaw` で書き、結果を zod で検証する（research.md）。指標の定数は `src/lib/metrics/constants.ts` に集める。
 
 ## 集計テーブル（aggregate ジョブが毎日作成。無期限保持）
 
@@ -9,9 +9,11 @@
 | `daily_headway_stats` | `service_date`, `route_id`（`Green` 合算を含む）, `direction_id`, `stop_id`, `hour`（0–23, ET）, `n`, `mean_sec`, `p50_sec`, `p90_sec`, `max_sec`, `bunching_count`, `gap_count` |
 | `daily_prediction_accuracy` | `service_date`, `route_id`, `direction_id`, `lead_bucket_min`, `update_type`, `hour`, `n`, `mean_error_sec`, `mean_abs_error_sec`, `p90_abs_error_sec`, `within_60s_ratio` |
 | `daily_alert_stats` | `service_date`, `route_id`, `effect`, `cause`, `alert_count`, `active_minutes` |
+| `hourly_alert_minutes` | `service_date`, `route_id`, `hour`, `category`（`disruption` / `notice`）, `active_minutes`（ヒートマップ用） |
 | `aggregate_runs` | `service_date` PK, `status`, `finished_at`, `definition_version` |
 
-- 曜日 × 時間帯のヒートマップは、`service_date` の曜日と `hour` から作る
+- 曜日 × 時間帯のヒートマップは、`service_date` の曜日と `hour` から作る（アラートは `hourly_alert_minutes`）
+- 主キーは各テーブルの次元の列すべて（`daily_headway_stats` なら `service_date`, `route_id`, `direction_id`, `stop_id`, `hour`）。`update_type` が空の予測は `UNKNOWN` として集計する
 - `aggregate_runs.status = success` の運行日だけ、001 の生データのパーティションを削除してよい
 - `definition_version` は指標の定義の版。定義を変えたら上げ、保持期間分さかのぼって再集計する。それより古い期間は旧定義の値のまま残るので、画面で版の境目が分かるようにする
 
@@ -22,7 +24,7 @@
 - (route, direction, 親駅) ごとに `arrival_events.arrived_at` を並べ、連続する到着の差を運行間隔とする
 - 60 分を超える間隔は運休時間帯とみなして除外する
 - **団子運転（bunching）**: 間隔 < 2 分
-- **間隔の開き（gap）**: 間隔 > 同じ (route, direction, 駅, 曜日種別, hour) の過去 28 日の中央値 × 2。基準の中央値は生データではなく `daily_headway_stats.p50_sec` から求める（生データの保持期間に左右されないようにするため）
+- **間隔の開き（gap）**: 間隔 > 同じ (route, direction, 駅, 曜日種別, hour) の過去 28 日の中央値 × 2。曜日種別は `weekday` / `saturday` / `sunday`（祝日は考えない）。基準がなければ数えない。基準の中央値は生データではなく `daily_headway_stats.p50_sec` から求める（生データの保持期間に左右されないようにするため）
 - Green Line の幹線区間では、支線別に加えて `route_id = Green`（全支線合算）でも計算する
 
 ### 予測誤差（Prediction Accuracy）

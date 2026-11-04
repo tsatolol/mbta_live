@@ -59,8 +59,7 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 ├── prisma.config.ts
 ├── prisma/
 │   ├── schema.prisma        # DB スキーマの正（実装後）
-│   ├── migrations/          # Prisma Migrate（パーティション部分は手書き SQL）
-│   └── sql/                 # TypedSQL（分析・集計クエリ）
+│   └── migrations/          # Prisma Migrate（パーティション部分は手書き SQL）
 ├── src/
 │   ├── app/                 # App Router のページと api/ 配下の Route Handlers（002, 003）
 │   ├── generated/prisma/    # prisma generate の出力（gitignore）

@@ -12,7 +12,7 @@
 
 **言語/バージョン**: TypeScript（strict）、Node.js Active LTS（24.x）、SQL（PostgreSQL 16）
 
-**主な依存関係**: Prisma（TypedSQL）、Apache ECharts、TanStack Query、Next.js、zod
+**主な依存関係**: Prisma（`$queryRaw` + zod）、Apache ECharts 6、TanStack Query、Next.js、zod
 
 **ストレージ**: 001 の生データを読み、集計テーブルに書く
 
@@ -56,9 +56,9 @@ specs/003-analytics/
 リポジトリ全体の構成は [docs/architecture.md](../../docs/architecture.md) を参照。この feature で使う部分:
 
 ```text
-prisma/sql/                          # 集計クエリ（TypedSQL）
 src/
 ├── jobs/aggregate.ts
+├── lib/db/analytics-sql.ts           # 集計クエリ（運行日 1 つ分の SELECT。ジョブと当日分の計算で共有）
 ├── lib/metrics/                     # 指標の定義（純粋関数）+ constants.ts
 ├── app/analytics/{headways,predictions,alerts,patterns}/page.tsx
 ├── app/api/analytics/...
@@ -66,7 +66,7 @@ src/
 tests/unit/metrics/
 ```
 
-**構成の決定**: 集計は SQL（TypedSQL）で DB 内で行う。同じ定義を TypeScript の純粋関数でも持ち、小さなフィクスチャで両者の結果が一致することをテストする（定義のずれを防ぐため）。
+**構成の決定**: 集計は SQL（`$queryRaw`）で DB 内で行う。同じ定義を TypeScript の純粋関数でも持ち、小さなフィクスチャで両者の結果が一致することをテストする（定義のずれを防ぐため）。
 
 ## 複雑さの記録（Complexity Tracking）
 
