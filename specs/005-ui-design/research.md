@@ -82,6 +82,7 @@ WCAG の相対輝度で計算した（`contracts/design-tokens.md` の値）。�
 
 ## 駅の一覧（路線図）
 
+- **入力**: 今の `GET /api/static/stops` は、Red の Ashmont と Braintree の並びを 1 つにつないで返す（002 の research.md）ので、分岐の位置が分からない。応答に路線パターンごとの駅の並び（`patterns`）を足す（後方互換）
 - **組み立て**: 路線ごと（Green は 4 支線をまとめて 1 つ）に、方向 0 の canonical な路線パターンの駅の並びから、駅ごとに「その駅を通るパターンの組」を求め、同じ組が続く駅を 1 つの区間にまとめる。区間をパターンの並びの順につなぎ、組が分かれるところ（分岐）では、分かれた先の区間を横に並べる列として描く（`src/lib/display/strip-map.ts`。純粋関数で単体テストする）
 - **駅の数**: Green の 4 支線をまとめると 70 駅（Red 22、Orange 20、Blue 12、Mattapan 8）。縦に 1 列で並べると、いまより長くなるので、分岐を横に並べる。Green は幹線（Lechmere〜Kenmore）と、北の端（Medford/Tufts と Union Square）、西の 4 支線（B・C・D と、Copley で分かれる E）に分かれ、縦は 35 行ほどになる見込み
 - **配置**: デスクトップでは路線を列に並べる（Red・Mattapan・Blue をまとめた列、Orange の列、Green の幅の広い列）。スマホでは路線を縦に並べ、分岐の列は横に並べたまま（はみ出すときは区間ごとに折り返す）

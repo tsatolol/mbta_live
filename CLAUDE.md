@@ -15,7 +15,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit 8 路線）の運�
 | `specs/002-live-dashboard/` | 地図・駅・アラート・稼働状況の画面と内部 API |
 | `specs/003-analytics/` | 日次集計と 4 つの分析画面、指標の定義 |
 | `specs/004-infra-cicd/` | dev / prod の GCP 環境、Terraform、パイプライン（PR で軽いチェック → マージで CI 1 回 → CD dev → 承認 → CD prod） |
-| `specs/005-ui-design/` | 画面デザインの刷新（駅の案内に根ざした見た目、デザイントークン、暗い表示、アクセシビリティ）。計画の段階（次は tasks.md） |
+| `specs/005-ui-design/` | 画面デザインの刷新（駅の案内に根ざした見た目、デザイントークン、暗い表示、アクセシビリティ）。tasks.md まで作成済み（次は実装） |
 
 各 feature のディレクトリには `spec.md`（何を・なぜ。テスト要件を含む）と `plan.md`（どう作るか）が必ずあり、必要な feature だけに `research.md`（決定と理由）、`data-model.md`、`contracts/`、`quickstart.md` がある。`tasks.md` は `/speckit-tasks` で作る。
 
