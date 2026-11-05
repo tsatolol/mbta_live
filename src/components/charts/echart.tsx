@@ -14,6 +14,8 @@ import {
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useRef } from "react";
+import { useResolvedTheme } from "@/components/theme/use-theme";
+import { resolveCssVars } from "./resolve-css-vars";
 
 echarts.use([
   BarChart,
@@ -68,10 +70,21 @@ export function EChart({
     };
   }, [id]);
 
+  // 表示（明るい / 暗い）が変わったら、色を読み直して描き直す
+  const theme = useResolvedTheme();
+
   useEffect(() => {
-    // データが変わったら置き換える（前の系列を残さない）
-    chartRef.current?.setOption(option, { notMerge: true });
-  }, [option]);
+    // データか表示が変わったら置き換える（前の系列を残さない）。色の CSS 変数の参照を、いまの値にする
+    const styles = getComputedStyle(document.documentElement);
+    const resolved = resolveCssVars(option, (name) => styles.getPropertyValue(name).trim());
+    // canvas は CSS の書体を継ぐことができないので、ページの書体（Overpass）の名前を渡す
+    const fontFamily = getComputedStyle(document.body).fontFamily;
+    const textStyle = (resolved as { textStyle?: object }).textStyle;
+    chartRef.current?.setOption(
+      { ...resolved, textStyle: { ...textStyle, fontFamily } },
+      { notMerge: true },
+    );
+  }, [option, theme]);
 
   return (
     <div

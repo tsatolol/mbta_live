@@ -1,31 +1,199 @@
-/* Tailwind CSS v4 と shadcn/ui のテーマ（色は CSS 変数。路線色は MBTA の色をそのまま使う） */
+/*
+ * デザイントークン（005「Platform」）。値の正は specs/005-ui-design/contracts/design-tokens.md。
+ * 値を変えるときは、先にその表を変えてコントラストを計算し直す。部品の中に色の値を直接書かない。
+ *
+ * 明るい表示 = :root。暗い表示は次の 2 つ（research.md の「暗い表示と切り替え」）:
+ *   - OS が暗い表示で、明るい表示を選んでいない（data-theme="light" でない）
+ *   - 暗い表示を選んだ（data-theme="dark"）
+ * data-theme はルートの layout のインラインのスクリプトが、最初の描画の前に付ける（src/lib/theme.ts）
+ */
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
-
 :root {
-  --radius: 0.5rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --warning: oklch(0.83 0.16 84);
-  --warning-foreground: oklch(0.3 0.08 60);
-  --ring: oklch(0.708 0 0);
+  color-scheme: light;
+
+  /* 面と文字 */
+  --surface: #f3f5f6;
+  --panel: #ffffff;
+  --panel-muted: #e7ebee;
+  --ink: #1b2a35;
+  --ink-muted: #5a6772;
+  --rule: #c9d0d5;
+  --focus: #0b63ce;
+  --danger: #b42318;
+
+  /* 到着表示の板（大胆にする 1 か所） */
+  --board: #1b2a35;
+  --board-edge: #1b2a35;
+  --board-ink: #ffffff;
+  --board-muted: #a9b6bf;
+  --countdown: #ffb71b;
+
+  /* 路線色（文字には使わない）と、帯の上の文字 */
+  --line-red: #da291c;
+  --line-orange: #ed8b00;
+  --line-green: #00843d;
+  --line-blue: #003da5;
+  --line-stale: #8a969f;
+  --on-line-red: #ffffff;
+  --on-line-orange: #1b2a35;
+  --on-line-green: #ffffff;
+  --on-line-blue: #ffffff;
+
+  /* グラフ（003 で検証した配色。src/components/charts/theme.ts が名前で参照する） */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #c3c2b7;
+  /* ヒートマップの 1 色の段階（小さい → 大きい） */
+  --seq-1: #cde2fb;
+  --seq-2: #9ec5f4;
+  --seq-3: #6da7ec;
+  --seq-4: #3987e5;
+  --seq-5: #256abf;
+  --seq-6: #184f95;
+  --seq-7: #0d366b;
+
+  /*
+   * 002・003 の部品が使っている名前（shadcn/ui 由来）。新しいトークンに対応させる。
+   * --warning はユーザーストーリー 1 で縞の帯に置き換えるまでの間だけ残す
+   */
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --muted: var(--panel-muted);
+  --muted-foreground: var(--ink-muted);
+  --border: var(--rule);
+  --input: var(--rule);
+  --primary: var(--ink);
+  --primary-foreground: var(--panel);
+  --secondary: var(--panel-muted);
+  --secondary-foreground: var(--ink);
+  --destructive: var(--danger);
+  --warning: var(--countdown);
+  --warning-foreground: #1b2a35;
+  --ring: var(--focus);
+
+  --radius-control: 6px;
+  --radius-board: 4px;
+}
+
+/* 暗い表示の値（OS の設定に合わせる場合と、暗い表示を選んだ場合で同じ） */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface: #10181d;
+    --panel: #18232a;
+    --panel-muted: #22303a;
+    --ink: #e4eaed;
+    --ink-muted: #98a6b0;
+    --rule: #2c3a44;
+    --focus: #7cc4ff;
+    --danger: #ff8a80;
+    --board: #0a1014;
+    --board-edge: #2c3a44;
+    --line-red: #f0564a;
+    --line-green: #2fb46a;
+    --line-blue: #5b8def;
+    --line-stale: #6c7a84;
+    --on-line-red: #10181d;
+    --on-line-orange: #10181d;
+    --on-line-green: #10181d;
+    --on-line-blue: #10181d;
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-grid: #2c3a44;
+    --chart-axis: #3e4d58;
+    --seq-1: #104281;
+    --seq-2: #184f95;
+    --seq-3: #256abf;
+    --seq-4: #3987e5;
+    --seq-5: #6da7ec;
+    --seq-6: #9ec5f4;
+    --seq-7: #cde2fb;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #10181d;
+  --panel: #18232a;
+  --panel-muted: #22303a;
+  --ink: #e4eaed;
+  --ink-muted: #98a6b0;
+  --rule: #2c3a44;
+  --focus: #7cc4ff;
+  --danger: #ff8a80;
+  --board: #0a1014;
+  --board-edge: #2c3a44;
+  --line-red: #f0564a;
+  --line-green: #2fb46a;
+  --line-blue: #5b8def;
+  --line-stale: #6c7a84;
+  --on-line-red: #10181d;
+  --on-line-orange: #10181d;
+  --on-line-green: #10181d;
+  --on-line-blue: #10181d;
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-grid: #2c3a44;
+  --chart-axis: #3e4d58;
+  --seq-1: #104281;
+  --seq-2: #184f95;
+  --seq-3: #256abf;
+  --seq-4: #3987e5;
+  --seq-5: #6da7ec;
+  --seq-6: #9ec5f4;
+  --seq-7: #cde2fb;
 }
 
 @theme inline {
+  --font-sans: var(--font-overpass), system-ui, sans-serif;
+
+  /* 文字の大きさの段階（1.25 倍。contracts/design-tokens.md） */
+  --text-xs: 13px;
+  --text-xs--line-height: 1.4;
+  --text-sm: 16px;
+  --text-sm--line-height: 1.5;
+  --text-base: 16px;
+  --text-base--line-height: 1.5;
+  --text-md: 20px;
+  --text-md--line-height: 1.4;
+  --text-lg: 25px;
+  --text-lg--line-height: 1.25;
+  --text-xl: 31px;
+  --text-xl--line-height: 1.15;
+  --text-2xl: 39px;
+  --text-2xl--line-height: 1;
+  --text-3xl: 49px;
+  --text-3xl--line-height: 1;
+
+  --color-surface: var(--surface);
+  --color-panel: var(--panel);
+  --color-panel-muted: var(--panel-muted);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-rule: var(--rule);
+  --color-focus: var(--focus);
+  --color-danger: var(--danger);
+  --color-board: var(--board);
+  --color-board-edge: var(--board-edge);
+  --color-board-ink: var(--board-ink);
+  --color-board-muted: var(--board-muted);
+  --color-countdown: var(--countdown);
+  --color-line-red: var(--line-red);
+  --color-line-orange: var(--line-orange);
+  --color-line-green: var(--line-green);
+  --color-line-blue: var(--line-blue);
+  --color-line-stale: var(--line-stale);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -38,22 +206,50 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+
+  --radius-sm: 4px;
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-control);
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+  html {
+    background-color: var(--surface);
+  }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-surface font-sans text-ink antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
+  }
+  /* キーボードのフォーカスの輪（2px + 2px の隙間） */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+/* 時刻・分数・件数（幅をそろえる。Overpass の tnum） */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 動きを減らす設定では、アニメーションと遷移を止める */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

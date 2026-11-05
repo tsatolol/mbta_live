@@ -26,7 +26,7 @@ function toQuery(p: SearchParams): string {
   return q.toString();
 }
 
-const selectClass = "h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-sm";
+const selectClass = "h-9 rounded-md border border-input bg-panel px-2 text-sm text-ink";
 
 export function AlertSearch({ routes }: { routes: readonly RouteInfo[] }) {
   const [form, setForm] = useState<SearchParams>(() => {

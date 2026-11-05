@@ -50,13 +50,18 @@
 
 ### グラフ（003 で検証した配色を保つ）
 
+グラフを組み立てる関数は、色を `var(--chart-1)` のような参照で書き、描く直前に値に置き換える（research.md）。
+
 | トークン | 明るい表示（背景 `#FFFFFF`） | 暗い表示（背景 `#18232A`） |
 |---|---|---|
 | `--chart-1` | `#2A78D6` | `#3987E5` |
 | `--chart-2` | `#EB6834` | `#D95926` |
-| `--chart-grid` | `#E1E0D9` | `#2C3A44` |
-| `--chart-axis` | `#898781` | `#98A6B0` |
-| ヒートマップ（1 色の段階、薄い → 濃い） | `#CDE2FB` … `#0D366B`（7 段） | `#184F95` … `#CDE2FB`（逆順。暗い背景では明るいほど大きい） |
+| `--chart-3` | `#1BAF7A` | `#199E70` |
+| `--chart-4` | `#EDA100` | `#C98500` |
+| `--chart-grid`（目盛りの線） | `#E1E0D9` | `#2C3A44` |
+| `--chart-axis`（軸の線。飾り） | `#C3C2B7` | `#3E4D58` |
+| 軸・凡例の文字 | `--ink-muted` | `--ink-muted` |
+| `--seq-1` … `--seq-7`（ヒートマップ、小さい → 大きい） | `#CDE2FB` → `#0D366B` | `#104281` → `#CDE2FB`（暗い背景では明るいほど大きい） |
 
 暗い表示の 2 色は、dataviz の検証（色覚の差、普通の見え方の差、明るさの帯、彩度、背景との比）をすべて通した（2026-11-05）。
 
@@ -64,7 +69,7 @@
 
 | トークン | 値 |
 |---|---|
-| `--font-sans` | `"Overpass Variable", system-ui, sans-serif`（`@fontsource-variable/overpass` の latin と latin-ext） |
+| `--font-sans` | Overpass（`@fontsource-variable/overpass` の latin のファイルを `next/font/local` で。代わりの書体は寸法を合わせた Arial）、`system-ui`、`sans-serif` |
 | 数字 | 時刻・分数・件数・表の数値は `font-variant-numeric: tabular-nums` |
 | 太さ | 本文 400、強調 600、見出し 800 |
 

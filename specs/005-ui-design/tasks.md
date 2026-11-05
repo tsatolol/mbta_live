@@ -25,9 +25,9 @@ description: "005 画面デザインの刷新（Platform）の実装タスク"
 
 **目的**: 依存の追加、デザイントークン、書体
 
-- [ ] T001 依存を足す: `@fontsource-variable/overpass` 5.3.0（dependencies）、`@axe-core/playwright` 4.14.0（devDependencies）: `package.json`
-- [ ] T002 デザイントークンを CSS 変数で定義する（contracts/design-tokens.md の値。`:root` = 明るい表示、`@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }` と `:root[data-theme="dark"]` = 暗い表示）。Tailwind v4 の `@theme inline` で名前を付ける。shadcn の既定の灰色のトークンは新しいトークンに置き換え、使われていない `@custom-variant dark` を消す。フォーカスの輪、`prefers-reduced-motion`、`forced-colors` の基本の決まりもここに置く: `src/app/globals.css`
-- [ ] T003 [P] 書体を読み込む: Overpass の可変フォント（latin と latin-ext）を `@fontsource-variable/overpass` から読み込み、`--font-sans` にする。latin のファイルを `preload` し、代わりの書体との寸法の差（`size-adjust`）を合わせる。数字の表示に `tabular-nums` の決まりを用意する: `src/app/layout.tsx`、`src/app/globals.css`
+- [X] T001 依存を足す: `@fontsource-variable/overpass` 5.3.0（dependencies）、`@axe-core/playwright` 4.14.0（devDependencies）: `package.json`
+- [X] T002 デザイントークンを CSS 変数で定義する（contracts/design-tokens.md の値。`:root` = 明るい表示、`@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }` と `:root[data-theme="dark"]` = 暗い表示）。Tailwind v4 の `@theme inline` で名前を付ける。shadcn の既定の灰色のトークンは新しいトークンに置き換え、使われていない `@custom-variant dark` を消す。フォーカスの輪、`prefers-reduced-motion`、`forced-colors` の基本の決まりもここに置く: `src/app/globals.css`
+- [X] T003 [P] 書体を読み込む: Overpass の可変フォント（latin と latin-ext）を `@fontsource-variable/overpass` から読み込み、`--font-sans` にする。latin のファイルを `preload` し、代わりの書体との寸法の差（`size-adjust`）を合わせる。数字の表示に `tabular-nums` の決まりを用意する: `src/app/layout.tsx`、`src/app/globals.css`
 
 ---
 
@@ -37,13 +37,13 @@ description: "005 画面デザインの刷新（Platform）の実装タスク"
 
 **⚠️ 重要**: このフェーズが終わるまで、ユーザーストーリーの画面の作り直しは始めない
 
-- [ ] T004 [P] 表示の選択の単体テスト（TR-003）: localStorage の値の解釈（`light` / `dark` / `system`、不正な値と読めないときは `system`）、OS の設定と選択から解決した表示（明るい / 暗い）: `tests/unit/theme.test.ts`
-- [ ] T005 表示の選択を書く（T004 を通す）: 純粋関数（解釈・解決）と、最初の描画の前に `data-theme` を付けるインラインのスクリプトの文字列（同じ解釈を使う）: `src/lib/theme.ts`
-- [ ] T006 表示の選択の仕組み: ルートの layout の `<head>` にインラインのスクリプトを置き、`<html suppressHydrationWarning>` にする。選択を読み書きするフック（`useThemePreference`）と、解決した表示を返すフック（`useResolvedTheme`。`data-theme` の変化と `matchMedia` の変化を見る）。保存できないときはエラーにしない: `src/app/layout.tsx`、`src/components/theme/use-theme.ts`
-- [ ] T007 [P] アイコンの部品（警告の三角、情報の丸、チェック、太陽、月、画面、メニュー、閉じる）をインラインの SVG で作る。`aria-hidden`、大きさと太さは引数: `src/components/icons.tsx`
-- [ ] T008 [P] axe の検査の仕組み: 画面を開き、明るい表示と暗い表示（`colorScheme` のエミュレーション）のそれぞれで、WCAG 2.2 AA のタグで検査して違反の一覧を分かりやすく出す補助。地図の canvas の扱い（research.md の「除外」）: `tests/e2e/helpers/a11y.ts`
-- [ ] T009 既存の共通の部品（Badge、Input、Card、`selectClass`）と、画面で色の値を直接書いている所（路線色の `#${color}` を除く）をトークンに置き換える。見た目の作り直しは各ストーリーで行い、ここでは値の置き換えだけ: `src/components/ui/`、`src/components/analytics/filter-bar.tsx` ほか
-- [ ] T010 [P] グラフの色を、解決した表示に合わせて明るい・暗いの値に切り替える（contracts/design-tokens.md の「グラフ」。003 で検証した配色を保つ）。グラフの部品は表示が変わったら描き直す。変換の単体テストに暗い表示の値を足す: `src/components/charts/theme.ts`、`src/components/charts/echart.tsx`、`tests/unit/analytics/*.test.ts`
+- [X] T004 [P] 表示の選択の単体テスト（TR-003）: localStorage の値の解釈（`light` / `dark` / `system`、不正な値と読めないときは `system`）、OS の設定と選択から解決した表示（明るい / 暗い）: `tests/unit/theme.test.ts`
+- [X] T005 表示の選択を書く（T004 を通す）: 純粋関数（解釈・解決）と、最初の描画の前に `data-theme` を付けるインラインのスクリプトの文字列（同じ解釈を使う）: `src/lib/theme.ts`
+- [X] T006 表示の選択の仕組み: ルートの layout の `<head>` にインラインのスクリプトを置き、`<html suppressHydrationWarning>` にする。選択を読み書きするフック（`useThemePreference`）と、解決した表示を返すフック（`useResolvedTheme`。`data-theme` の変化と `matchMedia` の変化を見る）。保存できないときはエラーにしない: `src/app/layout.tsx`、`src/components/theme/use-theme.ts`
+- [X] T007 [P] アイコンの部品（警告の三角、情報の丸、チェック、太陽、月、画面、メニュー、閉じる）をインラインの SVG で作る。`aria-hidden`、大きさと太さは引数: `src/components/icons.tsx`
+- [X] T008 [P] axe の検査の仕組み: 画面を開き、明るい表示と暗い表示（`colorScheme` のエミュレーション）のそれぞれで、WCAG 2.2 AA のタグで検査して違反の一覧を分かりやすく出す補助。地図の canvas の扱い（research.md の「除外」）: `tests/e2e/helpers/a11y.ts`
+- [X] T009 既存の共通の部品（Badge、Input、Card、`selectClass`）と、画面で色の値を直接書いている所（路線色の `#${color}` を除く）をトークンに置き換える。見た目の作り直しは各ストーリーで行い、ここでは値の置き換えだけ: `src/components/ui/`、`src/components/analytics/filter-bar.tsx` ほか
+- [X] T010 [P] グラフの色を、解決した表示に合わせて明るい・暗いの値に切り替える（contracts/design-tokens.md の「グラフ」。003 で検証した配色を保つ）。グラフの部品は表示が変わったら描き直す。変換の単体テストに暗い表示の値を足す: `src/components/charts/theme.ts`、`src/components/charts/echart.tsx`、`tests/unit/analytics/*.test.ts`
 
 **チェックポイント**: どの画面でも、トークンと書体で描かれ、OS の設定で暗い表示になる。既存の E2E がすべて通る
 
