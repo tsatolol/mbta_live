@@ -15,6 +15,7 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit 8 路線）の運�
 | `specs/002-live-dashboard/` | 地図・駅・アラート・稼働状況の画面と内部 API |
 | `specs/003-analytics/` | 日次集計と 4 つの分析画面、指標の定義 |
 | `specs/004-infra-cicd/` | dev / prod の GCP 環境、Terraform、パイプライン（PR で軽いチェック → マージで CI 1 回 → CD dev → 承認 → CD prod） |
+| `specs/005-ui-design/` | 画面デザインの刷新（駅の案内に根ざした見た目、デザイントークン、アクセシビリティ）。仕様の段階 |
 
 各 feature のディレクトリには `spec.md`（何を・なぜ。テスト要件を含む）と `plan.md`（どう作るか）が必ずあり、必要な feature だけに `research.md`（決定と理由）、`data-model.md`、`contracts/`、`quickstart.md` がある。`tasks.md` は `/speckit-tasks` で作る。
 
@@ -66,6 +67,6 @@ pnpm test:e2e                  # E2E 用の DB（mbta_live_e2e）を作り直し
 - 将来の改善候補: API キーを取得したら収集を 30 秒間隔にする（到着検出の精度向上）、アラート通知
 
 <!-- SPECKIT START -->
-現在の計画: 実装の順番は 001 → 004（prod で収集を早く始めるため）→ 002 → 003。
+現在の計画: 001 → 004（prod で収集を早く始めるため）→ 002 → 003 は実装済み。次は 005（画面デザインの刷新）。
 各 feature の計画は `specs/<feature>/plan.md` を参照。
 <!-- SPECKIT END -->
