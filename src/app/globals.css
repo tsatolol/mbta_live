@@ -253,3 +253,26 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* 警戒の帯の斜めの縞（--ink と --panel の 2 色。forced-colors でも模様が残る） */
+.stale-stripes {
+  background-image: repeating-linear-gradient(-45deg, var(--ink) 0 6px, var(--panel) 6px 12px);
+  background-size: 17px 17px;
+  animation: stripes-slide 900ms ease-out 1;
+}
+
+@keyframes stripes-slide {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 51px 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .stale-stripes {
+    forced-color-adjust: none;
+    background-image: repeating-linear-gradient(-45deg, CanvasText 0 6px, Canvas 6px 12px);
+  }
+}

@@ -57,20 +57,20 @@ description: "005 画面デザインの刷新（Platform）の実装タスク"
 
 ### ユーザーストーリー 1 のテスト
 
-- [ ] T011 [P] [US1] 経過時間の表示の単体テスト（TR-003）: 「Just now」（5 秒未満）、「12 s ago」、「3 min ago」、「1 h ago」、未来の時刻と null の扱い、古さの段階（正常 / 3 分以上で古い。002 の `isLiveDataStale` と同じ境目）: `tests/unit/display/freshness.test.ts`
-- [ ] T012 [P] [US1] 表示の切り替えの E2E（TR-006）: OS の設定（`colorScheme: "dark"`）で暗い表示、切り替えで変わり読み込み直しても残る、最初に描かれた時点で正しい表示（`page.addInitScript` で最初の描画の `data-theme` と背景色を記録して確かめる）、キーボードで操作でき `aria-checked` が変わる: `tests/e2e/theme.spec.ts`
+- [X] T011 [P] [US1] 経過時間の表示の単体テスト（TR-003）: 「Just now」（5 秒未満）、「12 s ago」、「3 min ago」、「1 h ago」、未来の時刻と null の扱い、古さの段階（正常 / 3 分以上で古い。002 の `isLiveDataStale` と同じ境目）: `tests/unit/display/freshness.test.ts`
+- [X] T012 [P] [US1] 表示の切り替えの E2E（TR-006）: OS の設定（`colorScheme: "dark"`）で暗い表示、切り替えで変わり読み込み直しても残る、最初に描かれた時点で正しい表示（`page.addInitScript` で最初の描画の `data-theme` と背景色を記録して確かめる）、キーボードで操作でき `aria-checked` が変わる: `tests/e2e/theme.spec.ts`
 
 ### ユーザーストーリー 1 の実装
 
-- [ ] T013 [US1] 経過時間の表示を書く（T011 を通す）: `src/lib/display/freshness.ts`
-- [ ] T014 [US1] 鮮度の表示の部品: 点（正常 / 古い）+ 「Updated 12 s ago」（スマホは「12 s」）を毎秒更新。押すかフォーカスすると正確な時刻（ボストン時間）が出る。`data-testid="last-updated"` を保つ: `src/components/layout/freshness.tsx`
-- [ ] T015 [US1] 表示の切り替えの部品（`role="radiogroup"`、3 つの `role="radio"`、アイコン + 名前「Light」「Dark」「System」）: `src/components/layout/theme-toggle.tsx`
-- [ ] T016 [US1] データが古いときの帯: 縞（`--stripe`）+ 警告のアイコン + 文言（「Live data is 4 min old. The last successful collection was at 10:32 AM ET.」）。出たときに 1 回だけ縞を流す（動きを減らす設定では動かさない）。`data-testid="stale-banner"` と既存の文言「Live data is stale」を含める: `src/components/layout/stale-banner.tsx`
-- [ ] T017 [US1] ヘッダーを作り直す: 1 行（名前 + DEV のバッジ + 画面の切り替え + 鮮度 + 表示の切り替え）。幅 768px 未満では画面の切り替えと表示の切り替えをメニュー（`aria-expanded`、Esc で閉じる、フォーカスを戻す）に入れる。今の画面は文字の太さと下線の帯で示す。`env-badge` を保つ: `src/components/layout/header.tsx`、`src/components/layout/mobile-menu.tsx`
-- [ ] T018 [US1] フッターと、画面の見出しの決まり（`--text-lg` 800、字間 −0.01em）と本文の最大幅をそろえる。`footer` の文言は変えない: `src/components/layout/footer.tsx`、`src/app/layout.tsx`
-- [ ] T019 [US1] 既存の共通部分の E2E を新しいヘッダーに合わせる（最終更新が経過時間になる、stale の帯）。スマホ（390px）でヘッダーの高さが 64px 以下（SC-001）を足す: `tests/e2e/layout.spec.ts`
-- [ ] T020 [US1] axe の検査を足す（TR-004）: まずヘッダーとフッター（どの画面でも出るもの）を、稼働状況の画面で明るい・暗いの両方: `tests/e2e/a11y.spec.ts`
-- [ ] T021 [US1] スクリーンショットで確かめる（quickstart.md の 2〜4）。気づいたことを research.md に残す
+- [X] T013 [US1] 経過時間の表示を書く（T011 を通す）: `src/lib/display/freshness.ts`
+- [X] T014 [US1] 鮮度の表示の部品: 点（正常 / 古い）+ 「Updated 12 s ago」（スマホは「12 s」）を毎秒更新。押すかフォーカスすると正確な時刻（ボストン時間）が出る。`data-testid="last-updated"` を保つ: `src/components/layout/freshness.tsx`
+- [X] T015 [US1] 表示の切り替えの部品（`role="radiogroup"`、3 つの `role="radio"`、アイコン + 名前「Light」「Dark」「System」）: `src/components/layout/theme-toggle.tsx`
+- [X] T016 [US1] データが古いときの帯: 縞（`--stripe`）+ 警告のアイコン + 文言（「Live data is 4 min old. The last successful collection was at 10:32 AM ET.」）。出たときに 1 回だけ縞を流す（動きを減らす設定では動かさない）。`data-testid="stale-banner"` と既存の文言「Live data is stale」を含める: `src/components/layout/stale-banner.tsx`
+- [X] T017 [US1] ヘッダーを作り直す: 1 行（名前 + DEV のバッジ + 画面の切り替え + 鮮度 + 表示の切り替え）。幅 768px 未満では画面の切り替えと表示の切り替えをメニュー（`aria-expanded`、Esc で閉じる、フォーカスを戻す）に入れる。今の画面は文字の太さと下線の帯で示す。`env-badge` を保つ: `src/components/layout/header.tsx`、`src/components/layout/mobile-menu.tsx`
+- [X] T018 [US1] フッターと、画面の見出しの決まり（`--text-lg` 800、字間 −0.01em）と本文の最大幅をそろえる。`footer` の文言は変えない: `src/components/layout/footer.tsx`、`src/app/layout.tsx`
+- [X] T019 [US1] 既存の共通部分の E2E を新しいヘッダーに合わせる（最終更新が経過時間になる、stale の帯）。スマホ（390px）でヘッダーの高さが 64px 以下（SC-001）を足す: `tests/e2e/layout.spec.ts`
+- [X] T020 [US1] axe の検査を足す（TR-004）: まずヘッダーとフッター（どの画面でも出るもの）を、稼働状況の画面で明るい・暗いの両方: `tests/e2e/a11y.spec.ts`
+- [X] T021 [US1] スクリーンショットで確かめる（quickstart.md の 2〜4）。気づいたことを research.md に残す
 
 **チェックポイント**: 共通の土台がそろう（MVP。ここで PR を作り、dev で確かめる）
 
