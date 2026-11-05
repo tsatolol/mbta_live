@@ -66,12 +66,12 @@ export function heatmapOption(res: Pick<HeatmapResponse, "metric" | "cells">): E
   const axis = {
     axisLine: { show: false },
     axisTick: { show: false },
-    axisLabel: { color: INK.muted, fontSize: 11 },
+    axisLabel: { color: INK.muted, fontSize: 13 },
     splitArea: { show: false },
   };
   return {
     animation: false,
-    textStyle: { color: INK.secondary, fontFamily: "inherit" },
+    textStyle: { color: INK.secondary, fontSize: 13 },
     grid: { left: 40, right: 16, top: 8, bottom: 64 },
     tooltip: { trigger: "item" },
     xAxis: { type: "category", data: SERVICE_DAY_HOURS.map(hourLabel), ...axis },
@@ -91,7 +91,7 @@ export function heatmapOption(res: Pick<HeatmapResponse, "metric" | "cells">): E
       left: "center",
       bottom: 0,
       text: [`${info.unit} (high)`, "low"],
-      textStyle: { color: INK.muted, fontSize: 11 },
+      textStyle: { color: INK.muted, fontSize: 13 },
       inRange: { color: [...SEQUENTIAL_BLUE] },
     },
     series: [
@@ -99,7 +99,7 @@ export function heatmapOption(res: Pick<HeatmapResponse, "metric" | "cells">): E
         type: "heatmap",
         name: info.label,
         data,
-        itemStyle: { borderColor: "#ffffff", borderWidth: 2, borderRadius: 2 },
+        itemStyle: { borderColor: INK.surface, borderWidth: 2, borderRadius: 2 },
         emphasis: { itemStyle: { borderColor: INK.primary, borderWidth: 1 } },
       },
     ],

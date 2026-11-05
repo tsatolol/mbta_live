@@ -34,7 +34,7 @@ export default function AlertsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-xl font-semibold">Alerts</h1>
+      <h1 className="text-lg font-extrabold">Alerts</h1>
       {(routes.isError || active.isError || upcoming.isError) && (
         <p className="text-sm text-destructive" role="alert">
           Unable to load alerts. Retrying…

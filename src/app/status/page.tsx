@@ -118,7 +118,7 @@ export default function StatusPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">System status</h1>
+      <h1 className="text-lg font-extrabold">System status</h1>
       {status.isPending && <p className="text-sm text-muted-foreground">Loading status…</p>}
       {status.isError && (
         <p className="text-sm text-destructive" role="alert">

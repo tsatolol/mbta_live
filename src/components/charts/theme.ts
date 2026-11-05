@@ -1,40 +1,44 @@
-// グラフの共通の見た目（dataviz の参照パレット。画面は明るい背景だけなので light の値）。
+// グラフの共通の見た目（dataviz の参照パレット）。色は CSS 変数の参照（"var(--chart-1)" など）で書き、
+// グラフの部品（echart.tsx）が描く直前に、いまの表示（明るい / 暗い）の値に置き換える。
+// 値の正は specs/005-ui-design/contracts/design-tokens.md（src/app/globals.css）。
 // 系列の色は決まった順に割り当て、色だけで区別させない（系列が 2 つ以上なら凡例を出す）
 import type { EChartOption } from "./echart";
 
-/** 系列の色（決まった順。白い背景で色覚の差と対比を検証済み: 1 と 2） */
+/** 系列の色（決まった順。明るい・暗いの両方で色覚の差と対比を検証済み: 1 と 2） */
 export const SERIES_COLORS = [
-  "#2a78d6", // 青
-  "#eb6834", // 橙
-  "#1baf7a", // 緑青
-  "#eda100", // 黄
+  "var(--chart-1)", // 青
+  "var(--chart-2)", // 橙
+  "var(--chart-3)", // 緑青
+  "var(--chart-4)", // 黄
 ] as const;
 
 export const INK = {
-  primary: "#0b0b0b",
-  secondary: "#52514e",
-  muted: "#898781",
-  grid: "#e1e0d9",
-  axis: "#c3c2b7",
+  primary: "var(--ink)",
+  secondary: "var(--ink-muted)",
+  muted: "var(--ink-muted)",
+  grid: "var(--chart-grid)",
+  axis: "var(--chart-axis)",
+  /** 印の縁（背景と同じ色。重なった印の間に隙間を見せる） */
+  surface: "var(--panel)",
 } as const;
 
-/** 数値の連続量（ヒートマップ）の 1 色の段階（青、明るい → 暗い） */
+/** 数値の連続量（ヒートマップ）の 1 色の段階（小さい → 大きい）。暗い表示では明るいほど大きい */
 export const SEQUENTIAL_BLUE = [
-  "#cde2fb",
-  "#9ec5f4",
-  "#6da7ec",
-  "#3987e5",
-  "#256abf",
-  "#184f95",
-  "#0d366b",
+  "var(--seq-1)",
+  "var(--seq-2)",
+  "var(--seq-3)",
+  "var(--seq-4)",
+  "var(--seq-5)",
+  "var(--seq-6)",
+  "var(--seq-7)",
 ] as const;
 
 const axisCommon = {
   axisLine: { lineStyle: { color: INK.axis } },
   axisTick: { show: false },
-  axisLabel: { color: INK.muted, fontSize: 11 },
+  axisLabel: { color: INK.muted, fontSize: 13 },
   splitLine: { lineStyle: { color: INK.grid, width: 1 } },
-  nameTextStyle: { color: INK.muted, fontSize: 11 },
+  nameTextStyle: { color: INK.muted, fontSize: 13 },
 };
 
 /** カテゴリの x 軸 + 数値の y 軸のグラフの土台（凡例は上、十字線のツールチップ） */
@@ -45,7 +49,7 @@ export function baseCartesian(options: {
 }): EChartOption {
   return {
     animation: false,
-    textStyle: { color: INK.secondary, fontFamily: "inherit" },
+    textStyle: { color: INK.secondary, fontSize: 13 },
     grid: { left: 48, right: 16, top: options.legend ? 36 : 16, bottom: 32, containLabel: false },
     legend: options.legend
       ? {
@@ -54,7 +58,7 @@ export function baseCartesian(options: {
           icon: "roundRect",
           itemWidth: 12,
           itemHeight: 8,
-          textStyle: { color: INK.secondary },
+          textStyle: { color: INK.secondary, fontSize: 13 },
         }
       : { show: false },
     tooltip: {
@@ -85,7 +89,7 @@ export function lineSeries(name: string, data: readonly (number | null)[], color
     lineStyle: { width: 2 },
     symbol: "circle",
     symbolSize: 8,
-    itemStyle: { borderColor: "#ffffff", borderWidth: 2 },
+    itemStyle: { borderColor: INK.surface, borderWidth: 2 },
     connectNulls: false,
   };
 }

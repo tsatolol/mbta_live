@@ -41,7 +41,7 @@ export default function ArrivalBoardPage() {
         </p>
       ) : (
         <>
-          <h1 className="text-xl font-semibold" data-testid="station-name">
+          <h1 className="text-xl font-extrabold" data-testid="station-name">
             {board.data?.stop.name ?? "Loading…"}
           </h1>
           {board.isError && (

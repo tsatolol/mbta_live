@@ -7,7 +7,7 @@ import { PrecisionNote } from "@/components/analytics/analytics-notes";
 export default function AnalyticsLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Analytics</h1>
+      <h1 className="text-lg font-extrabold">Analytics</h1>
       <Suspense>
         <AnalyticsTabs />
       </Suspense>
