@@ -13,7 +13,7 @@
 
 ## 要件の完成度
 
-- [ ] [NEEDS CLARIFICATION] の印が残っていない（FR-014 ダークモード、TR-004 axe-core の 2 つが残っている）
+- [x] [NEEDS CLARIFICATION] の印が残っていない（FR-014 ダークモードと TR-004 axe-core は 2026-11-05 に決めた。spec.md の「明確化」）
 - [x] 要件はテストでき、あいまいでない
 - [x] 成功基準は測れる（高さ・割合・コントラスト・時間）
 - [x] 成功基準は実装に依存しない
@@ -31,5 +31,5 @@
 
 ## メモ
 
-- 残っている 2 つの [NEEDS CLARIFICATION] は `/speckit-clarify` で決めてから plan.md に進む
+- 2 つの [NEEDS CLARIFICATION] は 2026-11-05 に決めた（ダークモード: OS に合わせることに加え手動の切り替え、axe-core: 依存に加える）。plan.md に進める
 - 既存の仕様（002 FR-001〜FR-008、003 FR-008）を保つ要件は、それぞれの FR に「保つ」と書いた
