@@ -104,17 +104,17 @@ description: "005 画面デザインの刷新（Platform）の実装タスク"
 
 ### ユーザーストーリー 3 のテスト
 
-- [ ] T030 [P] [US3] 残り時間の表示の単体テスト（TR-003）: 2 分以上は「n min」（切り捨て）、2 分未満は「1:23」、0 秒以下は「Now」、過ぎた便は出さない（今の `countdownLabel` / `countdownClock` を置き換える）: `tests/unit/arrivals/format.test.ts`
+- [X] T030 [P] [US3] 残り時間の表示の単体テスト（TR-003）: 2 分以上は「n min」（切り捨て）、2 分未満は「1:23」、表示中に 0 秒以下になった便は次回取得まで「Now」、取得時点で過ぎていた便は出さない（今の `countdownLabel` / `countdownClock` を置き換える）: `tests/unit/arrivals/format.test.ts`
 
 ### ユーザーストーリー 3 の実装
 
-- [ ] T031 [US3] 残り時間の表示を書く（T030 を通す）: `src/components/arrivals/format.ts`
-- [ ] T032 [US3] 発車標の板の部品: 方向ごとの行（路線色の帯、行先、「Red Line, southbound」、次の 3 本の残り時間 `--countdown` `--text-2xl` と到着時刻、始発駅の「departs」、運休の取り消し線と「Cancelled」）。今の `data-testid`（`direction-<route>-<dir>`、`arrival`、`data-trip-id`、`data-cancelled`、`arrival-cancelled`、`no-arrivals`）を保ち、残り時間は `arrival-countdown` の 1 つにまとめる（`arrival-clock` はなくす）: `src/components/arrivals/departure-board.tsx`
-- [ ] T033 [US3] 駅のアラートの表示を作り直す: 遅延系は縞 + 警告のアイコン + 「Disruption」、お知らせ系は情報のアイコン + 「Notice」。板の前に出す（`station-alerts`、`station-alert` を保つ）: `src/components/arrivals/station-alerts.tsx`
-- [ ] T034 [US3] 駅のページを作り直す: パンくず「Stations / Park Street」（矢印を使わない）、駅名（`--text-xl`）と通る路線の帯、アラート、板。「Station not found」の文言に、駅の一覧への道を添える: `src/app/stations/[stopId]/page.tsx`
-- [ ] T035 [US3] 駅の E2E を直す（plan.md の「既存の振る舞いの変更」）: 毎秒のカウントダウンは、Playwright の時計を進めて「n min」が減ること、2 分未満の便の秒が減ることで確かめる。残り時間の要素が 1 便に 1 つ: `tests/e2e/stations.spec.ts`
-- [ ] T036 [US3] axe の検査に駅のページを足す（明るい・暗い）。残り時間が画面で最も大きい文字（SC-004）を E2E で確かめる（計算した `font-size` を比べる）: `tests/e2e/a11y.spec.ts`、`tests/e2e/stations.spec.ts`
-- [ ] T037 [US3] スクリーンショットで確かめる（デスクトップ・スマホ、明るい・暗い）
+- [X] T031 [US3] 残り時間の表示を書く（T030 を通す）: `src/components/arrivals/format.ts`
+- [X] T032 [US3] 発車標の板の部品: 方向ごとの行（路線色の帯、行先、「Red Line, southbound」、次の 3 本の残り時間 `--countdown` `--text-2xl` と到着時刻、始発駅の「departs」、運休の取り消し線と「Cancelled」）。今の `data-testid`（`direction-<route>-<dir>`、`arrival`、`data-trip-id`、`data-cancelled`、`arrival-cancelled`、`no-arrivals`）を保ち、残り時間は `arrival-countdown` の 1 つにまとめる（`arrival-clock` はなくす）: `src/components/arrivals/departure-board.tsx`
+- [X] T033 [US3] 駅のアラートの表示を作り直す: 遅延系は縞 + 警告のアイコン + 「Disruption」、お知らせ系は情報のアイコン + 「Notice」。板の前に出す（`station-alerts`、`station-alert` を保つ）: `src/components/arrivals/station-alerts.tsx`
+- [X] T034 [US3] 駅のページを作り直す: パンくず「Stations / Park Street」（矢印を使わない）、駅名（`--text-xl`）と通る路線の帯、アラート、板。「Station not found」の文言に、駅の一覧への道を添える: `src/app/stations/[stopId]/page.tsx`
+- [X] T035 [US3] 駅の E2E を直す（plan.md の「既存の振る舞いの変更」）: 毎秒のカウントダウンは、Playwright の時計を進めて「n min」が減ること、2 分未満の便の秒が減ることで確かめる。残り時間の要素が 1 便に 1 つ: `tests/e2e/stations.spec.ts`
+- [X] T036 [US3] axe の検査に駅のページを足す（明るい・暗い）。残り時間が画面で最も大きい文字（SC-004）を E2E で確かめる（計算した `font-size` を比べる）: `tests/e2e/a11y.spec.ts`、`tests/e2e/stations.spec.ts`
+- [X] T037 [US3] スクリーンショットで確かめる（デスクトップ・スマホ、明るい・暗い）
 
 **チェックポイント**: US1〜US3（P1）がそろう
 
