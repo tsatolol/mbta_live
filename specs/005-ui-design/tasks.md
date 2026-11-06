@@ -82,17 +82,17 @@ description: "005 画面デザインの刷新（Platform）の実装タスク"
 
 ### ユーザーストーリー 2 のテスト
 
-- [ ] T022 [P] [US2] 路線ごとの列車の数の単体テスト（TR-003）: 路線の並び順、列車のない路線は 0、更新の止まった列車も数える、合計: `tests/unit/display/line-counts.test.ts`
+- [X] T022 [P] [US2] 路線ごとの列車の数の単体テスト（TR-003）: 路線の並び順、列車のない路線は 0、更新の止まった列車も数える、合計: `tests/unit/display/line-counts.test.ts`
 
 ### ユーザーストーリー 2 の実装
 
-- [ ] T023 [US2] 路線ごとの列車の数を書く（T022 を通す）: `src/lib/display/line-counts.ts`
-- [ ] T024 [US2] 凡例の部品: 路線ごとの行（帯 + 名前 + 数）を切り替えのボタン（`aria-pressed`、`data-testid="route-filter-<id>"` を保つ）にする。選んでいない路線は帯を中抜きにし、文字を `--ink-muted` に。合計の列車の数（`data-testid="vehicle-count"` を保つ）。スマホでは地図の下の閉じた帯（「Lines」+ 合計）で、押すと開く: `src/components/map/line-legend.tsx`
-- [ ] T025 [US2] 地図を作り直す: 解決した表示で `positron` / `dark` のスタイルを選び、表示が変わったら `setStyle` してソースとレイヤーを足し直す（初期化を関数にまとめる）。路線を太く（5px）、列車の印を大きく（1.3 倍）、印に `--panel` の縁。色はトークンの路線色（暗い表示の値）と `--line-stale`: `src/components/map/live-map.tsx`
-- [ ] T026 [US2] 地図の画面の配置: 地図がヘッダーとフッターの 1 行を除いた高さ（`100dvh`）を全部使う。凡例はデスクトップで地図の左、スマホで地図の下。運行時間外の表示（`data-testid="out-of-service"` を保つ）は地図の上に重ねる。取得の失敗の文言（何が起きて、どうなるか）: `src/app/page.tsx`
-- [ ] T027 [US2] 地図の E2E を凡例に合わせる（`route-filter-<id>` の場所が変わる）。凡例の路線ごとの数が車両の数と合う、デスクトップで地図の高さが表示できる領域の 85% 以上（SC-002）、暗い表示で地図のスタイルが `dark` になる（スタイルの取得の URL を見る）を足す: `tests/e2e/map.spec.ts`
-- [ ] T028 [US2] axe の検査に地図の画面を足す（明るい・暗い）: `tests/e2e/a11y.spec.ts`
-- [ ] T029 [US2] スクリーンショットで確かめる。dev では OpenFreeMap の Dark のスタイルで路線と列車の印が埋もれないかを見る（research.md の未解決）
+- [X] T023 [US2] 路線ごとの列車の数を書く（T022 を通す）: `src/lib/display/line-counts.ts`
+- [X] T024 [US2] 凡例の部品: 路線ごとの行（帯 + 名前 + 数）を切り替えのボタン（`aria-pressed`、`data-testid="route-filter-<id>"` を保つ）にする。選んでいない路線は帯を中抜きにし、文字を `--ink-muted` に。合計の列車の数（`data-testid="vehicle-count"` を保つ）。スマホでは地図の下の閉じた帯（「Lines」+ 合計）で、押すと開く: `src/components/map/line-legend.tsx`
+- [X] T025 [US2] 地図を作り直す: 解決した表示で `positron` / `dark` のスタイルを選び、表示が変わったら `setStyle` してソースとレイヤーを足し直す（初期化を関数にまとめる）。路線を太く（5px）、列車の印を大きく（1.3 倍）、印に `--panel` の縁。色はトークンの路線色（暗い表示の値）と `--line-stale`: `src/components/map/live-map.tsx`
+- [X] T026 [US2] 地図の画面の配置: 地図がヘッダーとフッターの 1 行を除いた高さ（`100dvh`）を全部使う。凡例はデスクトップで地図の左、スマホで地図の下。運行時間外の表示（`data-testid="out-of-service"` を保つ）は地図の上に重ねる。取得の失敗の文言（何が起きて、どうなるか）: `src/app/page.tsx`
+- [X] T027 [US2] 地図の E2E を凡例に合わせる（`route-filter-<id>` の場所が変わる）。凡例の路線ごとの数が車両の数と合う、デスクトップで地図の高さが表示できる領域の 85% 以上（SC-002）、暗い表示で地図のスタイルが `dark` になる（スタイルの取得の URL を見る）を足す: `tests/e2e/map.spec.ts`
+- [X] T028 [US2] axe の検査に地図の画面を足す（明るい・暗い）: `tests/e2e/a11y.spec.ts`
+- [ ] T029 [US2] スクリーンショットで確かめる（ローカルの PC / スマホ・明暗両方と実タイルは確認済み。research.md 参照。dev 確認はデプロイ後に残る）。dev では OpenFreeMap の Dark のスタイルで路線と列車の印が埋もれないかを見る（research.md の未解決）
 
 **チェックポイント**: US1 と US2 が動く
 
