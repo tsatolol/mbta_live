@@ -9,6 +9,7 @@ import { alertsResponseSchema } from "@/lib/api-schemas/alerts";
 import { healthResponseSchema } from "@/lib/api-schemas/health";
 import { routesResponseSchema } from "@/lib/api-schemas/routes";
 import { vehiclesResponseSchema } from "@/lib/api-schemas/vehicles";
+import { smokeGet } from "../helpers/smoke-http";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -21,7 +22,7 @@ const idToken = requiredEnv("SMOKE_ID_TOKEN");
 
 async function get(path: string, init: RequestInit = {}): Promise<Response> {
   // IAP のログイン画面へのリダイレクトを、そのまま拒否として見るため、リダイレクトをたどらない
-  const res = await fetch(`${baseUrl}${path}`, { redirect: "manual", ...init });
+  const res = await smokeGet(`${baseUrl}${path}`, init);
   if (res.status >= 500) {
     // 原因を調べられるよう、応答の本文を出す（IAP やアプリのエラーの文言。秘密の値は含まない）
     const body = await res.clone().text();
@@ -54,6 +55,7 @@ describe("スモークテスト", () => {
     const res = await get("/api/static/routes", {
       headers: { authorization: `Bearer ${idToken}` },
     });
+    expect(res.status).toBe(200);
     const body = routesResponseSchema.parse(await res.json());
     expect(body.routes).toHaveLength(8);
   });
