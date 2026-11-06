@@ -276,3 +276,34 @@
     background-image: repeating-linear-gradient(-45deg, CanvasText 0 6px, Canvas 6px 12px);
   }
 }
+
+/* 地図だけは共通の余白・最大幅を外し、警告帯やフッターの高さにも追従する。 */
+body:has(.map-page) {
+  height: 100dvh;
+  min-height: 0;
+}
+body:has(.map-page) > header,
+body:has(.map-page) > footer {
+  flex-shrink: 0;
+}
+main:has(> .map-page) {
+  display: flex;
+  min-height: 0;
+  max-width: none;
+  padding: 0;
+}
+body:has(.map-page) footer > div {
+  padding-block: 4px;
+}
+.maplibregl-popup-content {
+  background: var(--panel);
+  color: var(--ink);
+}
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: var(--panel);
+}
+@media (max-width: 767px) {
+  .line-legend {
+    border-top: 1px solid var(--rule);
+  }
+}

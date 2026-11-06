@@ -6,7 +6,9 @@ import { useMemo, useState } from "react";
 import { routesResponseSchema } from "@/lib/api-schemas/routes";
 import { vehiclesResponseSchema } from "@/lib/api-schemas/vehicles";
 import { fetchJson } from "@/lib/fetch-json";
-import { cn } from "@/lib/utils";
+import { WarningIcon } from "@/components/icons";
+import { LineLegend } from "@/components/map/line-legend";
+import { lineCounts } from "@/lib/display/line-counts";
 
 // MapLibre はブラウザでだけ動くので、サーバーでは描画しない
 const LiveMap = dynamic(() => import("@/components/map/live-map"), {
@@ -45,55 +47,44 @@ export default function LiveMapPage() {
     });
 
   const vehicleList = vehicles.data?.vehicles ?? [];
-  const visibleCount = vehicleList.filter((v) => !hidden.has(v.routeId)).length;
+  const counts = lineCounts(routeList, vehicleList);
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Route filter">
-        {routeList.map((r) => {
-          const on = !hidden.has(r.id);
-          return (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => toggle(r.id)}
-              aria-pressed={on}
-              data-testid={`route-filter-${r.id}`}
-              className={cn(
-                "rounded-full border px-3 py-1 text-xs font-medium",
-                on ? "text-white" : "bg-background text-muted-foreground",
-              )}
-              style={
-                on ? { backgroundColor: `#${r.color}`, borderColor: `#${r.color}` } : undefined
-              }
-            >
-              {r.longName}
-            </button>
-          );
-        })}
-        {vehicles.isSuccess && (
-          <span className="ml-auto text-xs text-muted-foreground" data-testid="vehicle-count">
-            {visibleCount} trains
-          </span>
+    <div className="map-page flex min-h-0 flex-1 flex-col md:flex-row">
+      <LineLegend
+        routes={routeList}
+        counts={counts}
+        hidden={hidden}
+        onToggle={toggle}
+        ready={vehicles.isSuccess}
+      />
+      <section
+        className="relative order-first min-h-0 min-w-0 flex-1 md:order-none"
+        aria-label="Live train map"
+      >
+        {vehicles.isSuccess && vehicleList.length === 0 && (
+          <p
+            className="absolute inset-x-4 top-4 z-10 border border-rule bg-panel p-3 text-sm"
+            data-testid="out-of-service"
+            role="status"
+          >
+            No trains are running right now. Service is outside operating hours.
+          </p>
         )}
-      </div>
-
-      {vehicles.isSuccess && vehicleList.length === 0 && (
-        <p
-          className="rounded-md border bg-muted px-3 py-2 text-sm"
-          data-testid="out-of-service"
-          role="status"
-        >
-          No trains are running right now. Service is outside operating hours.
-        </p>
-      )}
-      {(routes.isError || vehicles.isError) && (
-        <p className="text-sm text-destructive" role="alert">
-          Unable to load live data. Retrying…
-        </p>
-      )}
-
-      <div className="h-[70vh] min-h-[400px] overflow-hidden rounded-lg border">
+        {(routes.isError || vehicles.isError) && (
+          <p
+            className="absolute inset-x-4 top-4 z-10 border border-rule bg-panel p-3 text-sm text-danger"
+            role="alert"
+          >
+            <WarningIcon className="mr-2 inline-block" />
+            Unable to load live data. Retrying automatically.
+          </p>
+        )}
+        {routes.isPending && (
+          <p className="p-4 text-sm text-ink-muted" role="status">
+            Loading routes…
+          </p>
+        )}
         {routes.data && (
           <LiveMap
             routes={routes.data}
@@ -101,7 +92,7 @@ export default function LiveMapPage() {
             selectedRouteIds={selectedRouteIds}
           />
         )}
-      </div>
+      </section>
     </div>
   );
 }

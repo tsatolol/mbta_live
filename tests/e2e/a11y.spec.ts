@@ -4,7 +4,10 @@ import { expect, test } from "@playwright/test";
 import { axeViolations, COLOR_SCHEMES, formatViolations } from "./helpers/a11y";
 import { seedE2e } from "./helpers/seed";
 
+import { stubMapTiles, waitForMap } from "./helpers/map";
+
 const PAGES = [
+  { name: "地図と凡例", path: "/", ready: "vehicle-count" },
   { name: "稼働状況（共通のヘッダーとフッターを含む）", path: "/status", ready: "job-collect" },
 ];
 
@@ -21,8 +24,10 @@ test.describe("アクセシビリティ（axe-core）", () => {
       }) => {
         const context = await browser.newContext({ colorScheme: scheme, baseURL });
         const page = await context.newPage();
+        if (path === "/") await stubMapTiles(page);
         await page.goto(path);
         await page.getByTestId(ready).waitFor();
+        if (path === "/") await waitForMap(page);
         const violations = await axeViolations(page);
         expect(violations, formatViolations(violations)).toEqual([]);
         await context.close();

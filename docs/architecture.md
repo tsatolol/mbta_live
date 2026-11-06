@@ -107,7 +107,7 @@ web は Next.js の App Router。画面はすべてクライアントで描画�
 
 - Route Handler（`src/app/api/**/route.ts`）は、本番の DB と時計を `src/lib/api/` の関数に渡して呼ぶだけ。結合テストはその関数に、テスト用の DB と固定した時計を渡して呼ぶ
 - 計算する値（stale、アラートの状態、次の 3 本の選び方など）は `src/lib/metrics/` の純粋関数
-- 地図は MapLibre GL JS + OpenFreeMap（positron）。Worker はビルド時に `public/vendor/` にコピーする（`scripts/copy-maplibre-worker.mjs`）
+- 地図は MapLibre GL JS + OpenFreeMap（明るい表示は positron、暗い表示は dark）。CSS の路線色トークンを使い、表示切り替え後にソース・レイヤーを再構築する。地図画面は残りの高さを使い、凡例は PC で左、スマホで下部の折りたたみ式。路線ごとの列車数は更新が止まった列車を含み、合計は表示対象の列車数。Worker はビルド時に `public/vendor/` にコピーする（`scripts/copy-maplibre-worker.mjs`）
 - 時刻は API では UTC の ISO 8601、画面でボストン時間に変換する（`formatInBoston`）
 - テスト: E2E（`tests/e2e/`）はフィクスチャを collector で取り込んだ DB に、本番と同じビルドを起動して実行する（リリース用の CI でも実行）。デプロイ後は dev に対して IAP を通した読み取りだけの E2E（`tests/e2e/dev/`）を実行する
 
