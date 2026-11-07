@@ -1,11 +1,13 @@
 "use client";
-// 駅の一覧（Stations、US2）: 駅名で検索し、路線ごとにまとめて表示する（FR-003）
-import Link from "next/link";
+// 005 US4: 駅を消さずに検索で強調し、Green の幹線は一回だけ描く。
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { stopsResponseSchema } from "@/lib/api-schemas/stops";
 import { fetchJson } from "@/lib/fetch-json";
+import { buildStripMaps } from "@/lib/display/strip-map";
 import { matchesStationQuery } from "@/components/arrivals/format";
+import { LineDiagram } from "@/components/stations/line-diagram";
+import { WarningIcon } from "@/components/icons";
 import { Input } from "@/components/ui/input";
 
 export default function StationsPage() {
@@ -15,70 +17,76 @@ export default function StationsPage() {
     staleTime: 60 * 60_000,
   });
   const [query, setQuery] = useState("");
-
-  const groups = (stops.data?.routes ?? [])
-    .map((r) => ({ ...r, stations: r.stations.filter((s) => matchesStationQuery(s.name, query)) }))
-    .filter((r) => r.stations.length > 0);
+  const lines = useMemo(() => (stops.data ? buildStripMaps(stops.data) : []), [stops.data]);
+  const matches = new Set(
+    lines.flatMap((line) =>
+      line.stations.filter((s) => matchesStationQuery(s.name, query)).map((s) => s.id),
+    ),
+  ).size;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-testid="stations-page">
       <h1 className="text-lg font-extrabold">Stations</h1>
       <Input
         type="search"
         placeholder="Search stations"
         aria-label="Search stations"
+        aria-describedby="station-search-help"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="max-w-md"
         data-testid="station-search"
       />
-
-      {stops.isPending && <p className="text-sm text-muted-foreground">Loading stations…</p>}
+      <p id="station-search-help" className="text-xs text-ink-muted">
+        Follow a line to find your station. Search to highlight a station on the diagram.
+      </p>
+      {stops.isPending && (
+        <p className="text-sm text-ink-muted" role="status">
+          Loading stations…
+        </p>
+      )}
       {stops.isError && (
         <p className="text-sm text-destructive" role="alert">
-          Unable to load stations. Retrying…
+          <WarningIcon className="mr-2 inline-block" />
+          Unable to load stations. Retrying automatically.
         </p>
       )}
-      {stops.isSuccess && groups.length === 0 && (
-        <p className="text-sm text-muted-foreground" data-testid="no-stations">
-          No stations match “{query.trim()}”.
+      {stops.isSuccess && (
+        <p
+          className="text-xs text-ink-muted"
+          role="status"
+          aria-live="polite"
+          data-testid={matches === 0 ? "no-stations" : "station-search-results"}
+        >
+          {matches === 0
+            ? query.trim()
+              ? `No stations match “${query.trim()}”.`
+              : "No stations are available yet."
+            : query.trim()
+              ? `${matches} station${matches === 1 ? "" : "s"} highlighted.`
+              : "Select a station for live arrivals."}
         </p>
       )}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {groups.map((r) => (
-          <section
-            key={r.routeId}
-            className="rounded-lg border"
-            data-testid={`station-group-${r.routeId}`}
-            aria-labelledby={`route-heading-${r.routeId}`}
-          >
-            <h2
-              id={`route-heading-${r.routeId}`}
-              className="flex items-center gap-2 border-b px-3 py-2 text-sm font-semibold"
-            >
-              <span
-                aria-hidden
-                className="inline-block size-3 rounded-full"
-                style={{ backgroundColor: `#${r.routeColor}` }}
-              />
-              {r.routeName}
-            </h2>
-            <ul className="divide-y text-sm">
-              {r.stations.map((s) => (
-                <li key={s.id}>
-                  <Link
-                    href={`/stations/${encodeURIComponent(s.id)}`}
-                    className="block px-3 py-1.5 hover:bg-muted"
-                    data-testid={`station-link-${s.id}`}
-                  >
-                    {s.name}
-                  </Link>
-                </li>
+      <div className="station-diagrams" data-testid="station-diagrams">
+        <div className="flex min-w-0 flex-col gap-6">
+          {lines
+            .filter((line) => line.routeId === "Red")
+            .map((line) => (
+              <LineDiagram key={line.routeId} line={line} query={query} />
+            ))}
+          <div className="station-secondary grid min-w-0 grid-cols-2 gap-4">
+            {lines
+              .filter((line) => ["Mattapan", "Blue"].includes(line.routeId))
+              .map((line) => (
+                <LineDiagram key={line.routeId} line={line} query={query} />
               ))}
-            </ul>
-          </section>
-        ))}
+          </div>
+        </div>
+        {lines
+          .filter((line) => line.routeId === "Orange" || line.routeId === "Green")
+          .map((line) => (
+            <LineDiagram key={line.routeId} line={line} query={query} />
+          ))}
       </div>
     </div>
   );

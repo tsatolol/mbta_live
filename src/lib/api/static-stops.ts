@@ -1,7 +1,7 @@
 // GET /api/static/stops（US2）: 路線ごとの親駅の一覧（停車順）。route で 1 路線に絞り込める
 import "server-only";
 import { z } from "zod";
-import { listRouteStations } from "@/lib/db/static-read";
+import { listRouteStations, listStationPatterns } from "@/lib/db/static-read";
 import { isTargetRouteId } from "@/lib/mbta/constants";
 import { routeIdSchema } from "@/lib/api-schemas/common";
 import { stopsResponseSchema } from "@/lib/api-schemas/stops";
@@ -21,6 +21,7 @@ export function getStops(deps: ApiDeps) {
         liveMeta(deps.db, deps.clock),
         listRouteStations(deps.db, query.data.route),
       ]);
-      return okResponse(stopsResponseSchema, { ...meta, routes });
+      const patterns = await listStationPatterns(deps.db, routes, query.data.route);
+      return okResponse(stopsResponseSchema, { ...meta, routes, patterns });
     });
 }

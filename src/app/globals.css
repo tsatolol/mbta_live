@@ -307,3 +307,144 @@ body:has(.map-page) footer > div {
     border-top: 1px solid var(--rule);
   }
 }
+
+/* 005 US4: 分岐は横の列。狭い幅では区間ごとに折り返し、元の線との接続を残す。 */
+.station-diagrams {
+  display: grid;
+  gap: 32px;
+  align-items: start;
+}
+@media (min-width: 1200px) {
+  .station-diagrams {
+    grid-template-columns: 288px 164px minmax(0, 1fr);
+  }
+}
+.strip-segment {
+  position: relative;
+}
+.strip-segment::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--diagram-line);
+}
+.strip-station {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 4px 3px 24px;
+  font-size: var(--text-xs);
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+.strip-station:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.strip-point {
+  position: absolute;
+  left: 3px;
+  top: calc(50% - 5px);
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--diagram-line);
+  border-radius: 50%;
+  background: var(--surface);
+}
+.strip-station[data-search-match="true"] .strip-point {
+  left: 1px;
+  top: calc(50% - 7px);
+  width: 14px;
+  height: 14px;
+  border-color: var(--ink);
+  background: var(--ink);
+}
+.strip-branches {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.strip-branch {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+.strip-branch-label {
+  min-height: 24px;
+  padding: 3px 4px 3px 24px;
+  overflow-wrap: anywhere;
+}
+.strip-fork {
+  margin-left: 6px;
+  border-left: 4px solid var(--diagram-line);
+  padding-left: 16px;
+  padding-top: 12px;
+}
+.strip-fork > .strip-branch::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -16px;
+  right: 0;
+  height: 4px;
+  background: var(--diagram-line);
+}
+.strip-fork > .strip-branch::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 6px;
+  height: 24px;
+  width: 4px;
+  background: var(--diagram-line);
+}
+.strip-join {
+  padding-bottom: 12px;
+}
+.strip-join::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 6px;
+  right: 0;
+  height: 4px;
+  background: var(--diagram-line);
+}
+.strip-join > .strip-branch {
+  background: linear-gradient(var(--diagram-line), var(--diagram-line)) 6px 0 / 4px 100% no-repeat;
+}
+.strip-join > .strip-branch::after {
+  content: "";
+  position: absolute;
+  bottom: -12px;
+  left: 6px;
+  width: 4px;
+  height: 12px;
+  background: var(--diagram-line);
+}
+@media (forced-colors: active) {
+  .strip-segment::before,
+  .strip-fork > .strip-branch::before,
+  .strip-fork > .strip-branch::after,
+  .strip-join::after,
+  .strip-join > .strip-branch::after {
+    background: CanvasText;
+  }
+  .strip-point,
+  .strip-fork {
+    border-color: CanvasText;
+  }
+  .strip-join > .strip-branch {
+    border-left: 4px solid CanvasText;
+    background: none;
+  }
+}
+
+.station-secondary h2 {
+  font-size: var(--text-sm);
+}

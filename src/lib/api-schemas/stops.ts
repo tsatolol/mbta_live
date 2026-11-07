@@ -10,7 +10,15 @@ export const stationSchema = z.object({
 });
 export type Station = z.infer<typeof stationSchema>;
 
+export const stationPatternSchema = z.object({
+  routeId: z.string(),
+  routePatternId: z.string(),
+  stationIds: z.array(z.string()),
+});
+export type StationPattern = z.infer<typeof stationPatternSchema>;
+
 export const stopsResponseSchema = liveMetaSchema.extend({
+  patterns: z.array(stationPatternSchema),
   routes: z.array(
     z.object({
       routeId: z.string(),
