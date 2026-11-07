@@ -108,6 +108,7 @@ web は Next.js の App Router。画面はすべてクライアントで描画�
 - Route Handler（`src/app/api/**/route.ts`）は、本番の DB と時計を `src/lib/api/` の関数に渡して呼ぶだけ。結合テストはその関数に、テスト用の DB と固定した時計を渡して呼ぶ
 - 計算する値（stale、アラートの状態、次の 3 本の選び方など）は `src/lib/metrics/` の純粋関数
 - 地図は MapLibre GL JS + OpenFreeMap（明るい表示は positron、暗い表示は dark）。CSS の路線色トークンを使い、表示切り替え後にソース・レイヤーを再構築する。地図画面は残りの高さを使い、凡例は PC で左、スマホで下部の折りたたみ式。路線ごとの列車数は更新が止まった列車を含み、合計は表示対象の列車数。Worker はビルド時に `public/vendor/` にコピーする（`scripts/copy-maplibre-worker.mjs`）
+- 駅の一覧は方向 0 の canonical な停車順（`/api/static/stops` の追加項目 `patterns`）から分岐・合流を組み立てる。API の既存の路線別一覧は維持し、表示では Green の 4 支線を 1 つにまとめて幹線を一回だけ描く。検索は駅を隠さず、名前と点を強調する
 - 駅の到着表示は、明暗どちらでも濃い発車標に方向別の次の 3 本を出す。残り時間は各便に 1 つ（2 分以上は分、2 分未満は秒）。取得時点で過ぎた便は除外し、取得後に予定時刻を迎えた便は次回取得まで「Now」。運休は時刻の取り消し線と「Cancelled」、駅・路線のアラートは板の前に表示する
 - 時刻は API では UTC の ISO 8601、画面でボストン時間に変換する（`formatInBoston`）
 - テスト: E2E（`tests/e2e/`）はフィクスチャを collector で取り込んだ DB に、本番と同じビルドを起動して実行する（リリース用の CI でも実行）。デプロイ後は dev に対して IAP を通した読み取りだけの E2E（`tests/e2e/dev/`）を実行する

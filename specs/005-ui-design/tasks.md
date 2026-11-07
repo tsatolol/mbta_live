@@ -126,17 +126,17 @@ description: "005 画面デザインの刷新（Platform）の実装タスク"
 
 ### ユーザーストーリー 4 のテスト
 
-- [ ] T038 [P] [US4] 路線図の組み立ての単体テスト（TR-003）: 1 本の路線（Orange）、末端で分かれる（Red の Ashmont / Braintree）、両端で分かれ途中で複数回分かれる（Green: 北の Medford/Tufts と Union Square、Copley での E、Kenmore での B・C・D）、すべての駅が 1 回ずつ出る、区間の順が停車順と矛盾しない: `tests/unit/display/strip-map.test.ts`
+- [X] T038 [P] [US4] 路線図の組み立ての単体テスト（TR-003）: 1 本の路線（Orange）、末端で分かれる（Red の Ashmont / Braintree）、両端で分かれ途中で複数回分かれる（Green: 北の Medford/Tufts と Union Square、Copley での E、Kenmore での B・C・D）、すべての駅が 1 回ずつ出る、区間の順が停車順と矛盾しない: `tests/unit/display/strip-map.test.ts`
 
 ### ユーザーストーリー 4 の実装
 
-- [ ] T039 [US4] 路線図の組み立てを書く（T038 を通す）: `src/lib/display/strip-map.ts`
-- [ ] T040 [US4] 駅の一覧の API に、路線パターンごとの駅の並び（`patterns`: 路線・パターン ID・親駅 ID の並び。方向 0 の canonical なもの）を足す。今の `GET /api/static/stops` は Red の Ashmont と Braintree の並びを 1 つにつないで返すので、どこで分かれるかが分からないため。項目を足すだけ（後方互換）。先に 002 の契約を直し、結合テストを足す: `specs/002-live-dashboard/contracts/live-api.md`、`src/lib/api-schemas/stops.ts`、`src/lib/db/static-read.ts`、`src/lib/api/static-stops.ts`、`tests/integration/api/static-stops.test.ts`
-- [ ] T041 [US4] 路線図の部品: 縦の路線色の線と駅の点、分岐は横に並べた列。駅名は駅のページへのリンク（`station-link-<id>` を保つ）。検索に該当する駅を強調し、ほかを `--ink-muted` に: `src/components/stations/line-diagram.tsx`
-- [ ] T042 [US4] 駅の一覧の画面を作り直す: 検索、路線図の並び（デスクトップは列、スマホは縦）。`station-group-<route>` は路線図ごと（Green は `station-group-Green`）。該当する駅がないときの文言（`no-stations` を保つ）: `src/app/stations/page.tsx`
-- [ ] T043 [US4] 駅の E2E を直す（Park Street は Red と Green の 2 つの路線図に出る）。Green の幹線の駅が 1 回だけ、検索の強調、デスクトップで縦の長さが 1,350px 以下（SC-003）を足す: `tests/e2e/stations.spec.ts`
-- [ ] T044 [US4] axe の検査に駅の一覧を足す（明るい・暗い）: `tests/e2e/a11y.spec.ts`
-- [ ] T045 [US4] スクリーンショットで確かめる。高さが目標に届かなければ、配置を見直して research.md に残す
+- [X] T039 [US4] 路線図の組み立てを書く（T038 を通す）: `src/lib/display/strip-map.ts`
+- [X] T040 [US4] 駅の一覧の API に、路線パターンごとの駅の並び（`patterns`: 路線・パターン ID・親駅 ID の並び。方向 0 の canonical なもの）を足す。今の `GET /api/static/stops` は Red の Ashmont と Braintree の並びを 1 つにつないで返すので、どこで分かれるかが分からないため。項目を足すだけ（後方互換）。先に 002 の契約を直し、結合テストを足す: `specs/002-live-dashboard/contracts/live-api.md`、`src/lib/api-schemas/stops.ts`、`src/lib/db/static-read.ts`、`src/lib/api/static-stops.ts`、`tests/integration/api/static-stops.test.ts`
+- [X] T041 [US4] 路線図の部品: 縦の路線色の線と駅の点、分岐は横に並べた列。駅名は駅のページへのリンク（`station-link-<id>` を保つ）。検索に該当する駅を強調し、ほかを `--ink-muted` に: `src/components/stations/line-diagram.tsx`
+- [X] T042 [US4] 駅の一覧の画面を作り直す: 検索、路線図の並び（デスクトップは列、スマホは縦）。`station-group-<route>` は路線図ごと（Green は `station-group-Green`）。該当する駅がないときの文言（`no-stations` を保つ）: `src/app/stations/page.tsx`
+- [X] T043 [US4] 駅の E2E を直す（Park Street は Red と Green の 2 つの路線図に出る）。Green の幹線の駅が 1 回だけ、検索の強調、デスクトップで縦の長さが 1,350px 以下（SC-003）を足す: `tests/e2e/stations.spec.ts`
+- [X] T044 [US4] axe の検査に駅の一覧を足す（明るい・暗い）: `tests/e2e/a11y.spec.ts`
+- [X] T045 [US4] スクリーンショットで確かめる。高さが目標に届かなければ、配置を見直して research.md に残す
 
 **チェックポイント**: US1〜US4 が動く
 

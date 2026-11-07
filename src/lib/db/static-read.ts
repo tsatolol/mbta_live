@@ -1,5 +1,6 @@
 // 静的データ（路線・駅・路線パターン）を読むクエリ（002）。書き込みは sync-static（001）だけが行う
 import "server-only";
+import type { StationPattern } from "@/lib/api-schemas/stops";
 import type { Db } from "./client";
 import { jsonStringArray } from "./live";
 
@@ -116,4 +117,24 @@ export async function listRouteStations(db: Db, routeId?: string): Promise<Route
         return s ? [s] : [];
       }),
     }));
+}
+
+/** 005 US4: 分岐の情報を保つ方向 0 の canonical な停車順。 */
+export async function listStationPatterns(
+  db: Db,
+  routes: readonly RouteStationsRow[],
+  routeId?: string,
+): Promise<StationPattern[]> {
+  const patterns = await db.routePattern.findMany({
+    where: { canonical: true, directionId: 0, ...(routeId ? { routeId } : {}) },
+    orderBy: [{ routeId: "asc" }, { id: "asc" }],
+    select: { id: true, routeId: true, stationIds: true },
+  });
+  const valid = new Map(routes.map((r) => [r.routeId, new Set(r.stations.map((s) => s.id))]));
+  return patterns.flatMap((p) => {
+    const stationIds = [...new Set(stationIdsOf(p.stationIds))].filter((id) =>
+      valid.get(p.routeId)?.has(id),
+    );
+    return stationIds.length ? [{ routeId: p.routeId, routePatternId: p.id, stationIds }] : [];
+  });
 }

@@ -12,7 +12,7 @@
 | `GET /api/live/predictions` | `stop`（親駅 ID, 必須） | その親駅に属するホームの `predictions_current` を路線・方向別に次の 3 本。始発駅は `departure_time` を使う。`SKIPPED` と、予定時刻が過ぎた便、時刻のない便は除く。運休の便は `cancelled`。その駅と路線に有効なアラートも返す。親駅でなければ 404 |
 | `GET /api/live/alerts` | `routes`、`status`（`active` / `upcoming` / `all`。既定は `active`）、`effects`（カンマ区切り）、`from`、`to`（運行日 `YYYY-MM-DD`） | アラートの一覧（重要度の高い順、最大 200 件。超えたら `truncated`）。`status` は `active_period` と現在時刻から計算する。`all` はフィードから消えた過去のアラートも含む。`from` / `to` はその期間に有効だったもの |
 | `GET /api/static/routes` | なし | 路線と路線形状（encoded polyline を GeoJSON に変換済み） |
-| `GET /api/static/stops` | `route`（任意、1 路線） | 親駅の一覧（路線ごと、停車順。分岐のある路線は両方の支線の駅を含む） |
+| `GET /api/static/stops` | `route`（任意、1 路線） | 親駅の一覧 `routes`（路線ごと、停車順。既存の形を維持）と、分岐を組み立てる `patterns`（方向 0 の canonical な路線パターンごとの停車順） |
 | `GET /api/status` | なし | ジョブ（collect / sync-static / aggregate）ごとの直近 10 回の `collector_runs`、最後の成功、直近 24 時間の実行と失敗の数、レート制限の残量（最後に記録した collector の値）、テーブルごとの行数（履歴テーブルは推定値で、`estimated` で示す） |
 | `GET /api/health` | なし | DB に接続できるか、最後に収集に成功した時刻、前の運行日の集計が成功しているか。Cloud Run の起動確認、スモークテスト、監視に使う。DB に接続できなければ 503。004 で先に作った（応答の型は `src/lib/api-schemas/health.ts`） |
 
@@ -41,3 +41,18 @@
 応答の型は zod スキーマとして `src/lib/api-schemas/` に定義し、Route Handler（応答を組み立てる側）と画面（受け取る側）の両方で使う。結合テストでは、実際の応答がこのスキーマで解析できることを確かめる。
 
 分析用の API は `specs/003-analytics/contracts/analytics-api.md` を参照。
+
+
+## 駅の路線図用の拡張（005 US4）
+
+`GET /api/static/stops` は既存の `routes` を保ち、トップレベルに `patterns` を追加する。
+
+```ts
+patterns: {
+  routeId: string;
+  routePatternId: string;
+  stationIds: string[]; // 停車順の親駅 ID。routes にある駅だけ。重複なし
+}[]
+```
+
+方向 0 かつ canonical のパターンを路線 ID・パターン ID 順に返す。`route` で絞る場合は `routes` と `patterns` の両方を絞る。駅のないパターンは除く。既存の `routes[].stations` の順序・内容は変えない。表示側は Green の 4 支線をまとめ、パターンの共通区間と分岐から図を組み立てる。DB の変更・新しい外部 API 呼び出しはない。
