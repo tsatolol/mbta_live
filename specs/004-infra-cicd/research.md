@@ -202,7 +202,8 @@
 
 ### plan のハッシュ（FR-007）
 
-- **方式**: `terraform show -json` の `resource_changes` のうち no-op 以外の、アドレス・操作・`before`・`after`・`after_unknown` を、キーを並べ替えた JSON にして SHA-256 を取る（`scripts/plan-hash.sh`）
+- **方式**: `terraform show -json` の `resource_changes` のうち no-op 以外の、アドレス・操作・属性の差分を、キーを並べ替えた JSON にして SHA-256 を取る（`scripts/plan-hash.sh`）。差分は、`before` と `after` で値が違う属性（変更前後の値）と、apply 後に決まる属性（`after_unknown`。値ではなく未確定であることだけ）。削除は値を比べない
+- **`before` 全体を比べない理由**: `before` は refresh した state なので、変更と関係のない属性も時間で変わる。当初は `before`・`after`・`after_unknown` をそのまま比べていたが、collector の Job に `MBTA_API_KEY` を足した変更（PR #45）で、prod の collector が毎分実行されるため `latest_created_execution` などが ci と cd-prod の plan のあいだで変わり、cd-prod がハッシュの不一致で止まった（それまではジョブが no-op でハッシュの対象外だった）。単体テスト `tests/unit/infra/plan-hash.test.ts` で、この場合に同じハッシュになり、変更の内容が違えば違うハッシュになることを確かめる
 - 同じ設定と state からは同じハッシュになり、変更内容が変わればハッシュも変わることを、開発環境で random プロバイダの plan で確かめた
 - DB のパスワードは write-only の引数なので、plan に値が出ずハッシュにも影響しない。イメージは ci と cd-prod で同じダイジェストを渡す
 - ci の plan は ci-builder（読み取りだけ）で `-lock=false` で作る。plan の全文はログに出さず、件数とアドレスの要約（`scripts/plan-summary.sh`）だけを出す
