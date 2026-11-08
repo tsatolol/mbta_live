@@ -71,7 +71,7 @@ pnpm tsx --conditions=react-server tests/perf/analytics-perf.ts   # prod 規模�
 
 ## MBTA API を呼ぶときの注意
 
-- キーなしの上限は送信元 IP 単位で 20 req/分。ローカルも同じ制限を共有する
+- dev / prod のジョブはキーありで呼ぶ（Secret Manager の `MBTA_API_KEY`）。ローカルは普段キーなしで、上限は送信元 IP 単位で 20 req/分
 - 普段は `MBTA_FIXTURE_MODE=1` でフィクスチャを使い、実 API は手動で数回実行する程度にとどめる
 - テスト（CI を含む）では実 API を呼ばない
 

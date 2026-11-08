@@ -28,7 +28,7 @@ description: "004 インフラと CI/CD の実装タスク"
 - [X] T001 Terraform のディレクトリを作る: `infra/terraform/{bootstrap,modules/app,envs/dev,envs/prod}/`。各ディレクトリに `versions.tf`（Terraform と Google provider の最新安定版を `required_version` / `required_providers` で固定）を置く。`.terraform/`、`*.tfstate*`、`*.tfvars`（`terraform.tfvars.example` と `envs/*/terraform.tfvars` は除く）を `.gitignore` に追加する
 - [X] T002 [P] Terraform の書式と静的検査のコマンドを用意する: `pnpm infra:fmt`（`terraform fmt -recursive -check infra/terraform`）と `pnpm infra:validate`（各ディレクトリで `terraform init -backend=false && terraform validate`）: `package.json`、`scripts/infra-validate.sh`
 - [X] T003 （人が行う）bootstrap の apply に必要な値を決める: 請求先アカウントの ID（Cloud Console の「お支払い」で確かめる）、dev / prod のプロジェクト ID（GCP 全体で一意。例: `mbta-live-dev-xxxx`）。プロジェクト ID を `docs/architecture.md` の「環境の違い」と CLAUDE.md の未決事項に反映する（請求先アカウントの ID はコミットしない）。決定: dev `mbta-live-dev-76bt`、prod `mbta-live-prod-76bt`
-- [ ] T004 （人が行う）MBTA API キーを 2 つ（dev 用 / prod 用）取得する（https://api-v3.mbta.com で登録。キーを発行する API はないので自動化できない）。値は、envs の初回の apply でシークレットの入れ物ができた後に `gcloud secrets versions add` で入れる（Terraform の変数で渡すと state に値が残るため）
+- [X] T004 （人が行う）MBTA API キーを 2 つ（dev 用 / prod 用）取得する（https://api-v3.mbta.com で登録。キーを発行する API はないので自動化できない）。値は、envs の初回の apply でシークレットの入れ物ができた後に `gcloud secrets versions add` で入れる（Terraform の変数で渡すと state に値が残るため）。2026-11-08 に dev / prod のシークレットへ登録し、両環境の `mbta_api_key_enabled` を true にした
 
 ---
 

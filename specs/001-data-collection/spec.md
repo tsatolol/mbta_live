@@ -144,5 +144,5 @@
 ## 前提条件（Assumptions）
 
 - 到着時刻は車両位置から推定するため、1 分間隔の収集では精度が ±60 秒程度になる。dev（5 分間隔）の精度はさらに低い
-- 開発の初期は MBTA API キーなしで動かす。prod の稼働前にキーを取得する（`specs/004-infra-cicd/`）
+- 開発の初期は MBTA API キーなしで動かした。dev / prod には別々のキーを Secret Manager に登録してあり、ジョブはキーありで呼ぶ（`specs/004-infra-cicd/`）
 - 運行日は `America/New_York` の時刻から 3 時間引いた日付とする
