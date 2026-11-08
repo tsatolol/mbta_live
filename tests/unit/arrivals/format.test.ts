@@ -1,26 +1,44 @@
-// 駅の到着表示の文言
+// 005 US3: カウントダウンの境界と、取得時点の過去便の除外。
 import { describe, expect, it } from "vitest";
-import { countdownClock, countdownLabel, matchesStationQuery } from "@/components/arrivals/format";
+import {
+  countdownLabel,
+  arrivalDirectionLabel,
+  upcomingArrivals,
+  matchesStationQuery,
+} from "@/components/arrivals/format";
 
 const now = new Date("2026-11-02T15:20:00Z");
 const at = (sec: number) => new Date(now.getTime() + sec * 1000);
 
 describe("countdownLabel", () => {
-  it("1 分以上は n min（切り捨て）、1 分未満は < 1 min、過ぎたら null", () => {
-    expect(countdownLabel(at(5 * 60 + 59), now)).toBe("5 min");
-    expect(countdownLabel(at(60), now)).toBe("1 min");
-    expect(countdownLabel(at(59), now)).toBe("< 1 min");
-    expect(countdownLabel(at(0), now)).toBeNull();
-    expect(countdownLabel(at(-30), now)).toBeNull();
+  it.each([
+    [359, "5 min"],
+    [180, "3 min"],
+    [120, "2 min"],
+    [119.999, "1:59"],
+    [83, "1:23"],
+    [60, "1:00"],
+    [59, "0:59"],
+    [1, "0:01"],
+    [0.5, "0:00"],
+    [0, "Now"],
+    [-30, "Now"],
+  ])("残り %s 秒を %s と表示する", (sec, expected) => {
+    expect(countdownLabel(at(sec), now)).toBe(expected);
   });
 });
 
-describe("countdownClock", () => {
-  it("m:ss で毎秒進む", () => {
-    expect(countdownClock(at(125), now)).toBe("2:05");
-    expect(countdownClock(at(124.5), now)).toBe("2:04");
-    expect(countdownClock(at(0), now)).toBe("0:00");
-    expect(countdownClock(at(-1), now)).toBeNull();
+describe("upcomingArrivals", () => {
+  it("取得時点で過ぎていた便を除き、取得後に時刻を迎えた便は次の取得まで Now にする", () => {
+    const arrivals = [-1, 0, 1, 180].map((sec) => ({
+      time: at(sec).toISOString(),
+      tripId: String(sec),
+    }));
+    const visible = upcomingArrivals(arrivals, now);
+    expect(visible.map((a) => a.tripId)).toEqual(["1", "180"]);
+    expect(countdownLabel(new Date(visible[0]!.time), at(5))).toBe("Now");
+    expect(upcomingArrivals(arrivals, at(5)).map((a) => a.tripId)).toEqual(["180"]);
+    expect(arrivals).toHaveLength(4);
   });
 });
 
@@ -30,5 +48,17 @@ describe("matchesStationQuery", () => {
     expect(matchesStationQuery("Park Street", "STREET")).toBe(true);
     expect(matchesStationQuery("Park Street", "harvard")).toBe(false);
     expect(matchesStationQuery("Park Street", "")).toBe(true);
+  });
+});
+
+// MBTA は South / North と Inbound / Outbound の両方を返す。
+describe("arrivalDirectionLabel", () => {
+  it.each([
+    ["South", "southbound"],
+    ["North", "northbound"],
+    ["Outbound", "outbound"],
+    ["Inbound", "inbound"],
+  ])("%s を %s と表示する", (name, label) => {
+    expect(arrivalDirectionLabel(name)).toBe(label);
   });
 });
