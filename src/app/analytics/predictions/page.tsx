@@ -19,7 +19,9 @@ import {
   updateTypeLabel,
   withinByLeadOption,
 } from "@/components/analytics/prediction-charts";
-import { ChartSection, StatTile } from "@/components/analytics/stat-tile";
+import { ChartSection } from "@/components/analytics/chart-section";
+import { AnalyticsSummary } from "@/components/analytics/summary";
+import { predictionSummary } from "@/lib/display/summaries";
 import { useAnalyticsFilters } from "@/components/analytics/use-analytics-filters";
 
 export default function PredictionsPage() {
@@ -85,36 +87,9 @@ export default function PredictionsPage() {
       {res && (
         <>
           <AggregationNote meta={res} />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile
-              testId="stat-predictions"
-              label="Predictions evaluated"
-              value={(totals?.n ?? 0).toLocaleString("en-US")}
-              hint="Matched with a detected arrival (interpolated arrivals excluded)"
-            />
-            <StatTile
-              testId="stat-mae"
-              label="Mean absolute error"
-              value={totals ? `${Math.round(totals.meanAbsErrorSec)} s` : "–"}
-            />
-            <StatTile
-              testId="stat-within"
-              label="Within ±60 seconds"
-              value={totals ? `${percent(totals.within60sRatio)}%` : "–"}
-            />
-            <StatTile
-              testId="stat-bias"
-              label="Bias (mean error)"
-              value={totals ? biasLabel(totals.meanErrorSec) : "–"}
-              hint="Positive means trains arrived later than predicted"
-            />
-          </div>
+          <AnalyticsSummary parts={predictionSummary(res)} empty={!totals} />
 
-          {!totals ? (
-            <p className="text-sm text-muted-foreground" data-testid="analytics-empty">
-              No prediction data for this selection.
-            </p>
-          ) : (
+          {totals && (
             <>
               <ChartSection
                 title="Error by lead time (seconds)"
@@ -148,58 +123,72 @@ export default function PredictionsPage() {
               </ChartSection>
               <details className="text-sm">
                 <summary className="cursor-pointer text-muted-foreground">Show data tables</summary>
-                <table
-                  className="mt-2 w-full text-left text-xs tabular-nums"
-                  data-testid="prediction-lead-table"
+                <div
+                  className="overflow-x-auto"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Prediction statistics by lead time"
                 >
-                  <thead className="text-muted-foreground">
-                    <tr>
-                      <th className="py-1 pr-3 font-medium">Lead time</th>
-                      <th className="py-1 pr-3 font-medium">Predictions</th>
-                      <th className="py-1 pr-3 font-medium">Bias</th>
-                      <th className="py-1 pr-3 font-medium">Mean abs. error (s)</th>
-                      <th className="py-1 pr-3 font-medium">p90 abs. error (s)</th>
-                      <th className="py-1 pr-3 font-medium">Within ±60 s</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {res.byLead.map((l) => (
-                      <tr key={l.leadBucketMin} className="border-t">
-                        <td className="py-1 pr-3">{leadLabel(l.leadBucketMin)}</td>
-                        <td className="py-1 pr-3">{l.n}</td>
-                        <td className="py-1 pr-3">{biasLabel(l.meanErrorSec)}</td>
-                        <td className="py-1 pr-3">{Math.round(l.meanAbsErrorSec)}</td>
-                        <td className="py-1 pr-3">{Math.round(l.p90AbsErrorSec)}</td>
-                        <td className="py-1 pr-3">{percent(l.within60sRatio)}%</td>
+                  <table
+                    className="mt-2 w-full text-left text-xs tabular-nums"
+                    data-testid="prediction-lead-table"
+                  >
+                    <thead className="text-muted-foreground">
+                      <tr>
+                        <th className="py-1 pr-3 font-medium">Lead time</th>
+                        <th className="py-1 pr-3 font-medium">Predictions</th>
+                        <th className="py-1 pr-3 font-medium">Bias</th>
+                        <th className="py-1 pr-3 font-medium">Mean abs. error (s)</th>
+                        <th className="py-1 pr-3 font-medium">p90 abs. error (s)</th>
+                        <th className="py-1 pr-3 font-medium">Within ±60 s</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <table
-                  className="mt-4 w-full text-left text-xs tabular-nums"
-                  data-testid="prediction-type-table"
+                    </thead>
+                    <tbody>
+                      {res.byLead.map((l) => (
+                        <tr key={l.leadBucketMin} className="border-t">
+                          <td className="py-1 pr-3">{leadLabel(l.leadBucketMin)}</td>
+                          <td className="py-1 pr-3">{l.n}</td>
+                          <td className="py-1 pr-3">{biasLabel(l.meanErrorSec)}</td>
+                          <td className="py-1 pr-3">{Math.round(l.meanAbsErrorSec)}</td>
+                          <td className="py-1 pr-3">{Math.round(l.p90AbsErrorSec)}</td>
+                          <td className="py-1 pr-3">{percent(l.within60sRatio)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div
+                  className="overflow-x-auto"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Prediction statistics by type"
                 >
-                  <thead className="text-muted-foreground">
-                    <tr>
-                      <th className="py-1 pr-3 font-medium">Prediction type</th>
-                      <th className="py-1 pr-3 font-medium">Predictions</th>
-                      <th className="py-1 pr-3 font-medium">Bias</th>
-                      <th className="py-1 pr-3 font-medium">Mean abs. error (s)</th>
-                      <th className="py-1 pr-3 font-medium">Within ±60 s</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {res.byUpdateType.map((t) => (
-                      <tr key={t.updateType} className="border-t">
-                        <td className="py-1 pr-3">{updateTypeLabel(t.updateType)}</td>
-                        <td className="py-1 pr-3">{t.n}</td>
-                        <td className="py-1 pr-3">{biasLabel(t.meanErrorSec)}</td>
-                        <td className="py-1 pr-3">{Math.round(t.meanAbsErrorSec)}</td>
-                        <td className="py-1 pr-3">{percent(t.within60sRatio)}%</td>
+                  <table
+                    className="mt-4 w-full text-left text-xs tabular-nums"
+                    data-testid="prediction-type-table"
+                  >
+                    <thead className="text-muted-foreground">
+                      <tr>
+                        <th className="py-1 pr-3 font-medium">Prediction type</th>
+                        <th className="py-1 pr-3 font-medium">Predictions</th>
+                        <th className="py-1 pr-3 font-medium">Bias</th>
+                        <th className="py-1 pr-3 font-medium">Mean abs. error (s)</th>
+                        <th className="py-1 pr-3 font-medium">Within ±60 s</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {res.byUpdateType.map((t) => (
+                        <tr key={t.updateType} className="border-t">
+                          <td className="py-1 pr-3">{updateTypeLabel(t.updateType)}</td>
+                          <td className="py-1 pr-3">{t.n}</td>
+                          <td className="py-1 pr-3">{biasLabel(t.meanErrorSec)}</td>
+                          <td className="py-1 pr-3">{Math.round(t.meanAbsErrorSec)}</td>
+                          <td className="py-1 pr-3">{percent(t.within60sRatio)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </details>
             </>
           )}

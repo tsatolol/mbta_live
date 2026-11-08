@@ -21,6 +21,16 @@ test.describe("アラート", () => {
       await expect(card).toHaveAttribute("data-status", "active");
       await expect(card.getByTestId("alert-effect")).not.toBeEmpty();
     }
+    const disruption = page
+      .locator('[data-testid="alert-card"][data-category="disruption"]')
+      .first();
+    const notice = active.locator('[data-testid="alert-card"][data-category="notice"]').first();
+    await expect(disruption).toContainText("Disruption");
+    await expect(disruption.locator(".stale-stripes")).toBeVisible();
+    await expect(disruption.locator("svg")).toBeVisible();
+    await expect(notice).toContainText("Notice");
+    await expect(notice.locator("svg")).toBeVisible();
+    await expect(notice.locator(".stale-stripes")).toHaveCount(0);
     // 路線の並び順にまとまる
     const groups = await active
       .getByTestId("alert-group")

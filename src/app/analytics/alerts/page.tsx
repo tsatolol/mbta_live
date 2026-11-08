@@ -17,7 +17,9 @@ import {
 } from "@/components/analytics/alert-charts";
 import { AggregationNote } from "@/components/analytics/analytics-notes";
 import { FilterBar } from "@/components/analytics/filter-bar";
-import { ChartSection, StatTile } from "@/components/analytics/stat-tile";
+import { ChartSection } from "@/components/analytics/chart-section";
+import { AnalyticsSummary } from "@/components/analytics/summary";
+import { alertSummary } from "@/lib/display/summaries";
 import { useAnalyticsFilters } from "@/components/analytics/use-analytics-filters";
 
 export default function AlertTrendsPage() {
@@ -64,36 +66,9 @@ export default function AlertTrendsPage() {
       {res && (
         <>
           <AggregationNote meta={res} />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile
-              testId="stat-disruption-alerts"
-              label="Disruption alerts"
-              value={res.totals.disruption.alertCount.toLocaleString("en-US")}
-              hint="Delays, suspensions, shuttles, station closures (alert-days)"
-            />
-            <StatTile
-              testId="stat-disruption-hours"
-              label="Disruption hours"
-              value={minutesToHours(res.totals.disruption.activeMinutes).toLocaleString("en-US")}
-            />
-            <StatTile
-              testId="stat-notice-alerts"
-              label="Notices"
-              value={res.totals.notice.alertCount.toLocaleString("en-US")}
-              hint="Station issues and other notices (alert-days)"
-            />
-            <StatTile
-              testId="stat-notice-hours"
-              label="Notice hours"
-              value={minutesToHours(res.totals.notice.activeMinutes).toLocaleString("en-US")}
-            />
-          </div>
+          <AnalyticsSummary parts={alertSummary(res)} empty={Boolean(empty)} />
 
-          {empty ? (
-            <p className="text-sm text-muted-foreground" data-testid="analytics-empty">
-              No alerts were active for this selection.
-            </p>
-          ) : (
+          {!empty && (
             <>
               <ChartSection
                 title="Alert hours by service date"
@@ -118,50 +93,64 @@ export default function AlertTrendsPage() {
               </ChartSection>
               <details className="text-sm">
                 <summary className="cursor-pointer text-muted-foreground">Show data tables</summary>
-                <table
-                  className="mt-2 w-full text-left text-xs tabular-nums"
-                  data-testid="alert-effect-table"
+                <div
+                  className="overflow-x-auto"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Alert statistics by effect"
                 >
-                  <thead className="text-muted-foreground">
-                    <tr>
-                      <th className="py-1 pr-3 font-medium">Effect</th>
-                      <th className="py-1 pr-3 font-medium">Type</th>
-                      <th className="py-1 pr-3 font-medium">Alert-days</th>
-                      <th className="py-1 pr-3 font-medium">Hours</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {res.byEffect.map((e) => (
-                      <tr key={e.effect} className="border-t">
-                        <td className="py-1 pr-3">{effectLabel(e.effect)}</td>
-                        <td className="py-1 pr-3">{CATEGORY_LABELS[e.category]}</td>
-                        <td className="py-1 pr-3">{e.alertCount}</td>
-                        <td className="py-1 pr-3">{minutesToHours(e.activeMinutes)}</td>
+                  <table
+                    className="mt-2 w-full text-left text-xs tabular-nums"
+                    data-testid="alert-effect-table"
+                  >
+                    <thead className="text-muted-foreground">
+                      <tr>
+                        <th className="py-1 pr-3 font-medium">Effect</th>
+                        <th className="py-1 pr-3 font-medium">Type</th>
+                        <th className="py-1 pr-3 font-medium">Alert-days</th>
+                        <th className="py-1 pr-3 font-medium">Hours</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <table
-                  className="mt-4 w-full text-left text-xs tabular-nums"
-                  data-testid="alert-cause-table"
+                    </thead>
+                    <tbody>
+                      {res.byEffect.map((e) => (
+                        <tr key={e.effect} className="border-t">
+                          <td className="py-1 pr-3">{effectLabel(e.effect)}</td>
+                          <td className="py-1 pr-3">{CATEGORY_LABELS[e.category]}</td>
+                          <td className="py-1 pr-3">{e.alertCount}</td>
+                          <td className="py-1 pr-3">{minutesToHours(e.activeMinutes)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div
+                  className="overflow-x-auto"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Alert statistics by cause"
                 >
-                  <thead className="text-muted-foreground">
-                    <tr>
-                      <th className="py-1 pr-3 font-medium">Cause</th>
-                      <th className="py-1 pr-3 font-medium">Alert-days</th>
-                      <th className="py-1 pr-3 font-medium">Hours</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {res.byCause.map((c) => (
-                      <tr key={c.cause} className="border-t">
-                        <td className="py-1 pr-3">{effectLabel(c.cause)}</td>
-                        <td className="py-1 pr-3">{c.alertCount}</td>
-                        <td className="py-1 pr-3">{minutesToHours(c.activeMinutes)}</td>
+                  <table
+                    className="mt-4 w-full text-left text-xs tabular-nums"
+                    data-testid="alert-cause-table"
+                  >
+                    <thead className="text-muted-foreground">
+                      <tr>
+                        <th className="py-1 pr-3 font-medium">Cause</th>
+                        <th className="py-1 pr-3 font-medium">Alert-days</th>
+                        <th className="py-1 pr-3 font-medium">Hours</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {res.byCause.map((c) => (
+                        <tr key={c.cause} className="border-t">
+                          <td className="py-1 pr-3">{effectLabel(c.cause)}</td>
+                          <td className="py-1 pr-3">{c.alertCount}</td>
+                          <td className="py-1 pr-3">{minutesToHours(c.activeMinutes)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </details>
             </>
           )}

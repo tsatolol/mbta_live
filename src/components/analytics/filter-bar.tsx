@@ -5,7 +5,8 @@ import type { RouteInfo } from "@/lib/api-schemas/routes";
 import { Input } from "@/components/ui/input";
 import type { Filters } from "./use-analytics-filters";
 
-export const selectClass = "h-9 rounded-md border border-input bg-panel px-2 text-sm text-ink";
+export const selectClass =
+  "h-9 max-w-full rounded-md border border-input bg-panel px-2 text-sm text-ink";
 
 export function FilterField({ label, children }: { label: string; children: ReactNode }) {
   return (

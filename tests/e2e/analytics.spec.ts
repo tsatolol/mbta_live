@@ -19,6 +19,9 @@ test.describe("分析: 運行間隔", () => {
     );
     await expect(page.getByTestId("filter-route")).toHaveValue("Red");
 
+    await expect(page.getByTestId("analytics-summary")).toContainText(
+      "Red Line trains had a typical headway",
+    );
     const trend = await chartData(page, "headway-trend");
     // 過去の 6 日（と、今日の分があれば今日）
     expect(trend.categories.length).toBeGreaterThanOrEqual(6);
@@ -52,6 +55,7 @@ test.describe("分析: 運行間隔", () => {
     await page.goto("/analytics/headways");
     await page.getByTestId("filter-route").selectOption("Green");
     await expect(page).toHaveURL(/route=Green/);
+    await expect(page.getByTestId("analytics-summary")).toContainText("Green Line trains");
     await expect(page.getByTestId("filter-stop").locator("option")).toHaveText([
       "All stations",
       "Boylston",
@@ -67,6 +71,7 @@ test.describe("分析: 運行間隔", () => {
     const all = Number(
       (await page.getByTestId("stat-headways-value").textContent())!.replace(/,/g, ""),
     );
+    const summaryBefore = await page.getByTestId("analytics-summary").textContent();
     await page.getByTestId("filter-stop").selectOption({ label: "Harvard" });
     await expect(page).toHaveURL(/stop=place-harsq/);
     await expect
@@ -74,6 +79,8 @@ test.describe("分析: 運行間隔", () => {
         Number((await page.getByTestId("stat-headways-value").textContent())!.replace(/,/g, "")),
       )
       .toBeLessThan(all);
+
+    await expect(page.getByTestId("analytics-summary")).not.toHaveText(summaryBefore!);
 
     // ほかのタブに移っても、期間と路線は引き継ぐ
     await page.getByTestId("filter-route").selectOption("Orange");
@@ -121,6 +128,7 @@ test.describe("分析: 予測精度", () => {
     await expect(page).toHaveURL(/updateType=AT_TERMINAL/);
     // テスト用データの AT_TERMINAL は偶数の便だけで、誤差はすべて正（予測より遅く到着）
     await expect(page.getByTestId("stat-bias-value")).toHaveText(/^\+\d+ s \(late\)$/);
+    await expect(page.getByTestId("analytics-summary")).toContainText("(late)");
   });
 });
 
@@ -177,6 +185,9 @@ test.describe("分析: 曜日 × 時間帯のパターン", () => {
     );
     await expect(page.getByTestId("filter-metric")).toHaveValue("headway_p90");
 
+    await expect(page.getByTestId("analytics-summary")).toContainText(
+      "90th-percentile headway peaked",
+    );
     const headway = await heatmapData(page);
     expect(headway.y).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
     expect(headway.x[0]).toBe("3:00");
@@ -186,6 +197,9 @@ test.describe("分析: 曜日 × 時間帯のパターン", () => {
 
     await page.getByTestId("filter-metric").selectOption("alert_minutes");
     await expect(page).toHaveURL(/metric=alert_minutes/);
+    await expect(page.getByTestId("analytics-summary")).toContainText(
+      "disruption alert time peaked",
+    );
     // Red の遅延は毎日 08:00〜09:00 ET（x = 5 は 8:00 の列）
     await expect
       .poll(async () => (await heatmapData(page)).cells.some(([x, , v]) => x === 5 && v === 60))

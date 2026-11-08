@@ -22,13 +22,13 @@ pnpm build && DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mbta_li
 
 次の画面を、デスクトップ（1280 × 860）とスマホ（390 × 844）、明るい表示と暗い表示で撮って見る（Playwright の `colorScheme` で OS の設定をまねる）。気づいたことは research.md に残す。
 
-| 画面 | 見るところ |
-|---|---|
-| `/` | 地図がヘッダーの下を全部使う（SC-002）。凡例の列車の数。スマホのヘッダーが 1 行（SC-001）|
-| `/stations` | 路線図の分岐、Green の幹線が 1 回、検索の強調、縦の長さ（SC-003） |
-| `/stations/place-pktrm` | 残り時間が最も大きい文字（SC-004）。運休・始発駅の表示 |
-| `/alerts`, `/status` | 縞とアイコンと文言で重要度が分かる |
-| `/analytics/headways`, `/analytics/patterns` | 要点の一文。グラフの暗い表示 |
+| 画面                                                                                        | 見るところ                                                                                            |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `/`                                                                                         | 地図がヘッダーの下を全部使う（SC-002）。凡例の列車の数。スマホのヘッダーが 1 行（SC-001）             |
+| `/stations`                                                                                 | 路線図の分岐、Green の幹線が 1 回、検索の強調、縦の長さ（SC-003）                                     |
+| `/stations/place-pktrm`                                                                     | 残り時間が最も大きい文字（SC-004）。運休・始発駅の表示                                                |
+| `/alerts`, `/status`                                                                        | 縞とアイコンと文言で重要度が分かる                                                                    |
+| `/analytics/headways`, `/analytics/predictions`, `/analytics/alerts`, `/analytics/patterns` | 要点の文と絞り込みによる更新。グラフの暗い表示。欠測と0の区別、近似値・alert-days・運行日の曜日の表記 |
 
 ## 3. 表示の切り替え
 
@@ -40,3 +40,9 @@ pnpm build && DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mbta_li
 ## 4. 色覚の多様性
 
 Chrome の DevTools の Rendering → Emulate vision deficiencies（Protanopia・Deuteranopia・Achromatopsia）で、路線・アラートの重要度・凡例の選択の状態・データが古いときの帯が区別できることを確かめる。forced-colors（Emulate CSS media feature forced-colors: active）でも同じ。
+
+`tests/e2e/design-final.spec.ts` でも Chromium CDP の色覚シミュレーション、forced-colors の選択・検索強調・文言と実際の描画色、ヒートマップの明暗の段階、幅320pxを検査する。forced-colors では axe が指定色を読んで誤検出することがあるため、通常の明暗の axe と分けて、目視と実描画色も確かめる。axe の除外を追加して回避しない。
+
+## 5. デプロイ後に確認する
+
+認証・コマンド・スクリーンショット例は `docs/development.md`。dev E2E で明暗の初回表示3秒以内（T058）、Dark スタイルと実タイルを確認する。dev / prod それぞれで PC・スマホの明暗切り替え、保存、主要画面を目視確認する（T029 / T061）。ローカルの結果でこれらを完了扱いにしない。

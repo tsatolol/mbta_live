@@ -18,7 +18,9 @@ import {
   heatmapOption,
   METRIC_INFO,
 } from "@/components/analytics/heatmap-chart";
-import { ChartSection } from "@/components/analytics/stat-tile";
+import { ChartSection } from "@/components/analytics/chart-section";
+import { AnalyticsSummary } from "@/components/analytics/summary";
+import { patternSummary } from "@/lib/display/summaries";
 import { useAnalyticsFilters } from "@/components/analytics/use-analytics-filters";
 
 function isMetric(value: string | undefined): value is HeatmapMetric {
@@ -85,11 +87,8 @@ export default function PatternsPage() {
       {res && (
         <>
           <AggregationNote meta={res} />
-          {!hasData ? (
-            <p className="text-sm text-muted-foreground" data-testid="analytics-empty">
-              No data for this selection.
-            </p>
-          ) : (
+          <AnalyticsSummary parts={patternSummary(res)} empty={!hasData} />
+          {hasData && (
             <>
               <ChartSection
                 title={`${info.label} by day of week and hour, Boston time (${info.unit})`}
@@ -106,7 +105,12 @@ export default function PatternsPage() {
               </ChartSection>
               <details className="text-sm">
                 <summary className="cursor-pointer text-muted-foreground">Show data table</summary>
-                <div className="mt-2 overflow-x-auto">
+                <div
+                  className="mt-2 overflow-x-auto"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Pattern data table"
+                >
                   <table className="text-left text-xs tabular-nums" data-testid="pattern-table">
                     <thead className="text-muted-foreground">
                       <tr>

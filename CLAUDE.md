@@ -6,16 +6,16 @@ MBTA V3 API を使い、ボストン地下鉄（Rapid Transit 8 路線）の運�
 
 ## 文書の場所
 
-| 文書 | 内容 |
-|---|---|
-| `.specify/memory/constitution.md` | プロジェクト全体の原則（必ず守る。テスト方針と文書の保守方針を含む） |
-| `docs/architecture.md` | システム全体の現在の構成、環境の違い、リポジトリ構成、文書の正（source of truth）の一覧 |
-| `docs/development.md` | ローカル開発の手順、コマンド、環境変数 |
-| `specs/001-data-collection/` | 収集ジョブ（collector / sync-static）、DB スキーマ、到着検出、MBTA API の利用方法と実測した応答の性質（`contracts/mbta-api.md`） |
-| `specs/002-live-dashboard/` | 地図・駅・アラート・稼働状況の画面と内部 API |
-| `specs/003-analytics/` | 日次集計と 4 つの分析画面、指標の定義 |
-| `specs/004-infra-cicd/` | dev / prod の GCP 環境、Terraform、パイプライン（PR で軽いチェック → マージで CI 1 回 → CD dev → 承認 → CD prod） |
-| `specs/005-ui-design/` | 画面デザインの刷新（駅の案内に根ざした見た目、デザイントークン、暗い表示、アクセシビリティ）。フェーズ 1〜6 を実装済み（フェーズ 4 の dev での目視確認は残る）。次はフェーズ 7（アラートと稼働状況） |
+| 文書                              | 内容                                                                                                                                                                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.specify/memory/constitution.md` | プロジェクト全体の原則（必ず守る。テスト方針と文書の保守方針を含む）                                                                                                                                                                  |
+| `docs/architecture.md`            | システム全体の現在の構成、環境の違い、リポジトリ構成、文書の正（source of truth）の一覧                                                                                                                                               |
+| `docs/development.md`             | ローカル開発の手順、コマンド、環境変数                                                                                                                                                                                                |
+| `specs/001-data-collection/`      | 収集ジョブ（collector / sync-static）、DB スキーマ、到着検出、MBTA API の利用方法と実測した応答の性質（`contracts/mbta-api.md`）                                                                                                      |
+| `specs/002-live-dashboard/`       | 地図・駅・アラート・稼働状況の画面と内部 API                                                                                                                                                                                          |
+| `specs/003-analytics/`            | 日次集計と 4 つの分析画面、指標の定義                                                                                                                                                                                                 |
+| `specs/004-infra-cicd/`           | dev / prod の GCP 環境、Terraform、パイプライン（PR で軽いチェック → マージで CI 1 回 → CD dev → 承認 → CD prod）                                                                                                                     |
+| `specs/005-ui-design/`            | 画面デザインの刷新（駅の案内に根ざした見た目、デザイントークン、暗い表示、アクセシビリティ）。フェーズ 1〜8 とフェーズ 9 の実装・ローカル確認を完了。次はデプロイ後の T029 / T058 / T061（実タイル・初回表示・dev / prod の目視確認） |
 
 各 feature のディレクトリには `spec.md`（何を・なぜ。テスト要件を含む）と `plan.md`（どう作るか）が必ずあり、必要な feature だけに `research.md`（決定と理由）、`data-model.md`、`contracts/`、`quickstart.md` がある。`tasks.md` は `/speckit-tasks` で作る。
 
@@ -67,6 +67,7 @@ pnpm test:e2e                  # E2E 用の DB（mbta_live_e2e）を作り直し
 - 将来の改善候補: API キーを取得したら収集を 30 秒間隔にする（到着検出の精度向上）、アラート通知
 
 <!-- SPECKIT START -->
-現在の計画: 001 → 004（prod で収集を早く始めるため）→ 002 → 003 は実装済み。005（画面デザインの刷新）はフェーズ 1〜6 を実装済み。フェーズ 4 の dev 確認は残る。次はフェーズ 7（アラートと稼働状況）。
+
+現在の計画: 001 → 004（prod で収集を早く始めるため）→ 002 → 003 は実装済み。005（画面デザインの刷新）はフェーズ 1〜8 とフェーズ 9 の実装・ローカル確認を完了。次はデプロイ後の T029 / T058 / T061。
 各 feature の計画は `specs/<feature>/plan.md` を参照。
 <!-- SPECKIT END -->

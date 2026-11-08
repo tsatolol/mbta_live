@@ -14,9 +14,10 @@ import {
   headwayByHourOption,
   headwayIncidentsOption,
   headwayTrendOption,
-  overallMedianMin,
 } from "@/components/analytics/headway-charts";
-import { ChartSection, StatTile } from "@/components/analytics/stat-tile";
+import { ChartSection } from "@/components/analytics/chart-section";
+import { AnalyticsSummary } from "@/components/analytics/summary";
+import { headwaySummary } from "@/lib/display/summaries";
 import { useAnalyticsFilters } from "@/components/analytics/use-analytics-filters";
 
 export default function HeadwaysPage() {
@@ -37,7 +38,6 @@ export default function HeadwaysPage() {
   const trend = useMemo(() => (res ? headwayTrendOption(res) : null), [res]);
   const byHour = useMemo(() => (res ? headwayByHourOption(res) : null), [res]);
   const incidents = useMemo(() => (res ? headwayIncidentsOption(res) : null), [res]);
-  const median = res ? overallMedianMin(res) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -77,37 +77,9 @@ export default function HeadwaysPage() {
       {res && (
         <>
           <AggregationNote meta={res} />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile
-              testId="stat-headways"
-              label="Headways measured"
-              value={res.totals.n.toLocaleString("en-US")}
-            />
-            <StatTile
-              testId="stat-median"
-              label="Typical headway"
-              value={median === null ? "–" : `${median} min`}
-              hint="Median, averaged over days and hours"
-            />
-            <StatTile
-              testId="stat-bunching"
-              label="Bunching"
-              value={res.totals.bunchingCount.toLocaleString("en-US")}
-              hint="Headways under 2 minutes"
-            />
-            <StatTile
-              testId="stat-gaps"
-              label="Gaps"
-              value={res.totals.gapCount.toLocaleString("en-US")}
-              hint="Over 2× the usual headway for that hour"
-            />
-          </div>
+          <AnalyticsSummary parts={headwaySummary(res)} empty={res.totals.n === 0} />
 
-          {res.totals.n === 0 ? (
-            <p className="text-sm text-muted-foreground" data-testid="analytics-empty">
-              No headway data for this selection.
-            </p>
-          ) : (
+          {res.totals.n > 0 && (
             <>
               <ChartSection
                 title="Headway by service date (minutes)"
@@ -136,35 +108,42 @@ export default function HeadwaysPage() {
               </ChartSection>
               <details className="text-sm">
                 <summary className="cursor-pointer text-muted-foreground">Show data table</summary>
-                <table
-                  className="mt-2 w-full text-left text-xs tabular-nums"
-                  data-testid="headway-table"
+                <div
+                  className="overflow-x-auto"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Headway statistics"
                 >
-                  <thead className="text-muted-foreground">
-                    <tr>
-                      <th className="py-1 pr-3 font-medium">Service date</th>
-                      <th className="py-1 pr-3 font-medium">Headways</th>
-                      <th className="py-1 pr-3 font-medium">Median (min)</th>
-                      <th className="py-1 pr-3 font-medium">p90 (min)</th>
-                      <th className="py-1 pr-3 font-medium">Max (min)</th>
-                      <th className="py-1 pr-3 font-medium">Bunching</th>
-                      <th className="py-1 pr-3 font-medium">Gaps</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {res.daily.map((d) => (
-                      <tr key={d.serviceDate} className="border-t">
-                        <td className="py-1 pr-3">{d.serviceDate}</td>
-                        <td className="py-1 pr-3">{d.n}</td>
-                        <td className="py-1 pr-3">{secToMin(d.p50Sec)}</td>
-                        <td className="py-1 pr-3">{secToMin(d.p90Sec)}</td>
-                        <td className="py-1 pr-3">{secToMin(d.maxSec)}</td>
-                        <td className="py-1 pr-3">{d.bunchingCount}</td>
-                        <td className="py-1 pr-3">{d.gapCount}</td>
+                  <table
+                    className="mt-2 w-full text-left text-xs tabular-nums"
+                    data-testid="headway-table"
+                  >
+                    <thead className="text-muted-foreground">
+                      <tr>
+                        <th className="py-1 pr-3 font-medium">Service date</th>
+                        <th className="py-1 pr-3 font-medium">Headways</th>
+                        <th className="py-1 pr-3 font-medium">Median (min)</th>
+                        <th className="py-1 pr-3 font-medium">p90 (min)</th>
+                        <th className="py-1 pr-3 font-medium">Max (min)</th>
+                        <th className="py-1 pr-3 font-medium">Bunching</th>
+                        <th className="py-1 pr-3 font-medium">Gaps</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {res.daily.map((d) => (
+                        <tr key={d.serviceDate} className="border-t">
+                          <td className="py-1 pr-3">{d.serviceDate}</td>
+                          <td className="py-1 pr-3">{d.n}</td>
+                          <td className="py-1 pr-3">{secToMin(d.p50Sec)}</td>
+                          <td className="py-1 pr-3">{secToMin(d.p90Sec)}</td>
+                          <td className="py-1 pr-3">{secToMin(d.maxSec)}</td>
+                          <td className="py-1 pr-3">{d.bunchingCount}</td>
+                          <td className="py-1 pr-3">{d.gapCount}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </details>
             </>
           )}
