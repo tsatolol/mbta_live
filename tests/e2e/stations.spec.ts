@@ -22,22 +22,126 @@ test.describe("駅", () => {
     seedE2e("base");
   });
 
-  test("駅名で検索すると、該当する駅が路線ごとにまとまって出る", async ({ page }) => {
+  test("検索は路線図を保ち、Park Street を Red と Green で強調する", async ({ page }) => {
     await page.goto("/stations");
-    await expect(page.getByTestId("station-group-Red")).toBeVisible();
-    await expect(page.locator('[data-testid^="station-group-"]')).toHaveCount(8);
-
-    await page.getByTestId("station-search").fill("park st");
-    // Park Street は Red と Green の 4 支線を通る
     await expect(page.locator('[data-testid^="station-group-"]')).toHaveCount(5);
-    for (const route of ["Red", "Green-B", "Green-C", "Green-D", "Green-E"]) {
-      await expect(
-        page.getByTestId(`station-group-${route}`).getByTestId("station-link-place-pktrm"),
-      ).toHaveText("Park Street");
+    const green = page.getByTestId("station-group-Green");
+    await expect(green.locator('[data-testid^="station-link-"]')).toHaveCount(70);
+    for (const id of ["place-pktrm", "place-coecl", "place-kencl", "place-lech"]) {
+      await expect(green.getByTestId(`station-link-${id}`)).toHaveCount(1);
     }
-
+    const total = await page.locator('[data-testid^="station-link-"]').count();
+    await page.getByTestId("station-search").fill("  PARK ST  ");
+    await expect(page.locator('[data-search-match="true"]')).toHaveCount(2);
+    await expect(page.getByTestId("station-search-results")).toHaveText("1 station highlighted.");
+    for (const route of ["Red", "Green"]) {
+      const match = page
+        .getByTestId(`station-group-${route}`)
+        .getByTestId("station-link-place-pktrm");
+      await expect(match).toHaveAttribute("data-search-match", "true");
+      await expect(match).toHaveCSS("font-weight", "800");
+    }
+    const other = green.getByTestId("station-link-place-coecl");
+    await expect(other).toBeVisible();
+    await expect(other).toHaveAttribute("data-search-match", "false");
+    await expect(other).toHaveCSS("font-weight", "400");
+    await expect(page.locator('[data-testid^="station-link-"]')).toHaveCount(total);
     await page.getByTestId("station-search").fill("no such station");
     await expect(page.getByTestId("no-stations")).toBeVisible();
+    await expect(page.locator('[data-testid^="station-link-"]')).toHaveCount(total);
+    await page.getByTestId("station-search").fill("");
+    await expect(page.getByTestId("no-stations")).toHaveCount(0);
+    await expect(page.locator("[data-search-match]")).toHaveCount(0);
+  });
+
+  test("PC の路線図は全路線と分岐を含めて 1,350px 以下（SC-003）", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 860 });
+    await page.goto("/stations");
+    await expect(page.getByTestId("station-group-Green")).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    const measurements = await page.evaluate(() => ({
+      height: document.documentElement.scrollHeight,
+      width: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(measurements.height).toBeLessThanOrEqual(1350);
+    expect(measurements.scrollWidth).toBe(measurements.width);
+    const red = page.getByTestId("station-group-Red");
+    await expect(red.getByTestId("station-link-place-jfk")).toHaveCount(1);
+    await expect(red.getByTestId("station-link-place-asmnl")).toBeVisible();
+    await expect(red.getByTestId("station-link-place-brntn")).toBeVisible();
+    const green = page.getByTestId("station-group-Green");
+    for (const id of [
+      "place-mdftf",
+      "place-unsqu",
+      "place-lake",
+      "place-clmnl",
+      "place-river",
+      "place-hsmnl",
+    ]) {
+      await expect(green.getByTestId(`station-link-${id}`)).toBeVisible();
+    }
+    await expect(
+      red.getByRole("group", { name: "Branches from JFK/UMass", exact: true }),
+    ).toBeVisible();
+    for (const name of [
+      "Branches joining at Lechmere",
+      "Branches from Copley",
+      "Branches from Kenmore",
+    ]) {
+      await expect(green.getByRole("group", { name, exact: true })).toBeVisible();
+    }
+    await expect(green.locator('[data-joins="true"]')).toHaveCount(1);
+    await expect(green.locator('[data-joins="false"]')).toHaveCount(2);
+  });
+
+  for (const width of [320, 390]) {
+    test(`路線図は幅 ${width}px で折り返され、検索した駅へキーボードで移動できる`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto("/stations");
+      const green = page.getByTestId("station-group-Green");
+      const target = green.getByTestId("station-link-place-pktrm");
+      await expect(target).toBeAttached();
+      await page.getByTestId("station-search").fill("Park Street");
+      await expect(target).toHaveAttribute("data-search-match", "true");
+      const overflow = await page.evaluate(() => {
+        const links = [...document.querySelectorAll('[data-testid^="station-link-"]')];
+        return links
+          .filter((link) => {
+            const bounds = link.getBoundingClientRect();
+            return (
+              bounds.left < 0 ||
+              bounds.right > document.documentElement.clientWidth ||
+              link.scrollWidth > link.clientWidth
+            );
+          })
+          .map((link) => link.textContent);
+      });
+      expect(overflow).toEqual([]);
+      await target.focus();
+      await expect(target).toBeFocused();
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(/\/stations\/place-pktrm$/);
+      await expect(page.getByTestId("station-name")).toHaveText("Park Street");
+    });
+  }
+
+  test("静的データがまだないときは案内を出す", async ({ page }) => {
+    await page.route("**/api/static/stops", async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          patterns: [],
+          lastCollectedAt: null,
+          generatedAt: new Date().toISOString(),
+        },
+      });
+    });
+    await page.goto("/stations");
+    await expect(page.getByTestId("no-stations")).toHaveText("No stations are available yet.");
+    await expect(page.locator('[data-testid^="station-group-"]')).toHaveCount(0);
   });
 
   test("駅を選ぶと、方向ごとに次の 3 本が発車標に出る", async ({ page }) => {

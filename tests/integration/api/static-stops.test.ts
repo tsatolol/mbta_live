@@ -73,6 +73,31 @@ describe("GET /api/static/stops", () => {
     expect(withParkStreet).toEqual(["Red", "Green-B", "Green-C", "Green-D", "Green-E"]);
   });
 
+  it("方向 0 の canonical なパターンだけを返し、Red の分岐と Green の北端を保つ", async () => {
+    const { body } = await call();
+    expect(body).toHaveProperty("patterns");
+    const { routes, patterns } = stopsResponseSchema.parse(body);
+    const canonical = await db.routePattern.findMany({
+      where: { canonical: true, directionId: 0 },
+      orderBy: [{ routeId: "asc" }, { id: "asc" }],
+    });
+    expect(patterns.map((p) => p.routePatternId)).toEqual(canonical.map((p) => p.id));
+    for (const p of patterns) {
+      const ids = routes.find((r) => r.routeId === p.routeId)!.stations.map((s) => s.id);
+      expect(p.stationIds.every((id) => ids.includes(id))).toBe(true);
+      expect(new Set(p.stationIds).size).toBe(p.stationIds.length);
+    }
+    const red = patterns.filter((p) => p.routeId === "Red");
+    expect(red).toHaveLength(2);
+    expect(red.map((p) => p.stationIds.at(-1)).sort()).toEqual(["place-asmnl", "place-brntn"]);
+    for (const p of red)
+      expect(p.stationIds.indexOf("place-jfk")).toBeLessThan(p.stationIds.length - 1);
+    expect(patterns.find((p) => p.routeId === "Green-D")!.stationIds[0]).toBe("place-unsqu");
+    expect(patterns.find((p) => p.routeId === "Green-E")!.stationIds[0]).toBe("place-mdftf");
+    const filtered = stopsResponseSchema.parse((await call("?route=Red")).body);
+    expect(filtered.patterns).toEqual(red);
+  });
+
   it.each(["?route=Foo", "?route=", `?route=${"x".repeat(40)}`])(
     "不正な route（%s）で 400",
     async (query) => {

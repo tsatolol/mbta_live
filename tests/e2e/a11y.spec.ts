@@ -7,6 +7,7 @@ import { seedE2e } from "./helpers/seed";
 import { stubMapTiles, waitForMap } from "./helpers/map";
 
 const PAGES = [
+  { name: "駅の路線図", path: "/stations", ready: "station-group-Green" },
   { name: "駅の発車標", path: "/stations/place-pktrm", ready: "departure-board" },
   { name: "駅のアラート", path: "/stations/place-jaksn", ready: "station-alerts" },
   { name: "地図と凡例", path: "/", ready: "vehicle-count" },
