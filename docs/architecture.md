@@ -24,28 +24,29 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
                          └─────────────────────────────────────────────────────────────────┘
 ```
 
-| コンポーネント | 担当する feature |
-|---|---|
-| collector, sync-static, 生データのテーブル | 001 |
-| web（地図・駅・アラート・稼働状況）| 002 |
-| aggregate, 集計テーブル, web（分析画面）| 003 |
-| GCP 環境, Terraform, パイプライン, 監視 | 004 |
+| コンポーネント                                 | 担当する feature |
+| ---------------------------------------------- | ---------------- |
+| collector, sync-static, 生データのテーブル     | 001              |
+| web（地図・駅・アラート・稼働状況）            | 002              |
+| aggregate, 集計テーブル, web（分析画面）       | 003              |
+| GCP 環境, Terraform, パイプライン, 監視        | 004              |
+| デザイントークン、明暗の切り替え、画面の見た目 | 005              |
 
 ## 環境の違い
 
-| | dev | prod |
-|---|---|---|
-| GCP プロジェクト | `mbta-live-dev-76bt` | `mbta-live-prod-76bt` |
-| デプロイ | main への push で自動 | dev 成功後、承認されてから |
-| collector の間隔 | 5 分（`*/5 * * * *`） | 1 分（`* * * * *`） |
-| sync-static / aggregate | 毎日 04:00 / 04:30 ET | 同左 |
-| 生データの保持 | 3 日 | 28 日 |
-| Cloud SQL | `db-f1-micro`、バックアップ 1 日、`deletion_protection=false` | `db-f1-micro`、バックアップ 7 日、`deletion_protection=true` |
-| 値の置き場所 | `infra/terraform/envs/dev/terraform.tfvars` | `infra/terraform/envs/prod/terraform.tfvars` |
-| IAP で許可するユーザー | 開発者 | 利用者（開発者を含む） |
-| MBTA API キー | dev 用 | prod 用 |
-| 予算アラート | 小さめ | 本番相当（金額は未定。bootstrap の `monthly_budgets`） |
-| 監視の通知 | なし（Cloud Monitoring の画面で見る） | メール（bootstrap の通知チャンネル） |
+|                         | dev                                                           | prod                                                         |
+| ----------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| GCP プロジェクト        | `mbta-live-dev-76bt`                                          | `mbta-live-prod-76bt`                                        |
+| デプロイ                | main への push で自動                                         | dev 成功後、承認されてから                                   |
+| collector の間隔        | 5 分（`*/5 * * * *`）                                         | 1 分（`* * * * *`）                                          |
+| sync-static / aggregate | 毎日 04:00 / 04:30 ET                                         | 同左                                                         |
+| 生データの保持          | 3 日                                                          | 28 日                                                        |
+| Cloud SQL               | `db-f1-micro`、バックアップ 1 日、`deletion_protection=false` | `db-f1-micro`、バックアップ 7 日、`deletion_protection=true` |
+| 値の置き場所            | `infra/terraform/envs/dev/terraform.tfvars`                   | `infra/terraform/envs/prod/terraform.tfvars`                 |
+| IAP で許可するユーザー  | 開発者                                                        | 利用者（開発者を含む）                                       |
+| MBTA API キー           | dev 用                                                        | prod 用                                                      |
+| 予算アラート            | 小さめ                                                        | 本番相当（金額は未定。bootstrap の `monthly_budgets`）       |
+| 監視の通知              | なし（Cloud Monitoring の画面で見る）                         | メール（bootstrap の通知チャンネル）                         |
 
 ## リポジトリ構成
 
@@ -96,14 +97,14 @@ dev と prod の 2 つの GCP プロジェクトに、それぞれこの構成�
 
 web は Next.js の App Router。画面はすべてクライアントで描画し（`"use client"`）、ブラウザから内部 API（Route Handlers）を TanStack Query で定期的に取得する。内部 API は DB を読むだけで、MBTA API は呼ばない。応答の型は `src/lib/api-schemas/` の zod スキーマで、サーバーと画面の両方が使う（契約は `specs/002-live-dashboard/contracts/live-api.md`）。
 
-| 画面 | パス | 使う内部 API | 取得の間隔 |
-|---|---|---|---|
-| Live Map | `/` | `/api/static/routes`, `/api/live/vehicles` | 車両 15 秒 |
-| Stations | `/stations` | `/api/static/stops` | 1 時間（静的データ） |
-| Arrival Board | `/stations/[stopId]` | `/api/live/predictions` | 30 秒（カウントダウンは毎秒） |
-| Alerts | `/alerts` | `/api/live/alerts`, `/api/static/routes` | 60 秒（過去の検索は送信時） |
-| System Status | `/status` | `/api/status` | 30 秒 |
-| 共通のヘッダー | すべて | `/api/health`（最終更新時刻と stale バナー） | 30 秒 |
+| 画面           | パス                 | 使う内部 API                                 | 取得の間隔                    |
+| -------------- | -------------------- | -------------------------------------------- | ----------------------------- |
+| Live Map       | `/`                  | `/api/static/routes`, `/api/live/vehicles`   | 車両 15 秒                    |
+| Stations       | `/stations`          | `/api/static/stops`                          | 1 時間（静的データ）          |
+| Arrival Board  | `/stations/[stopId]` | `/api/live/predictions`                      | 30 秒（カウントダウンは毎秒） |
+| Alerts         | `/alerts`            | `/api/live/alerts`, `/api/static/routes`     | 60 秒（過去の検索は送信時）   |
+| System Status  | `/status`            | `/api/status`                                | 30 秒                         |
+| 共通のヘッダー | すべて               | `/api/health`（最終更新時刻と stale バナー） | 30 秒                         |
 
 - Route Handler（`src/app/api/**/route.ts`）は、本番の DB と時計を `src/lib/api/` の関数に渡して呼ぶだけ。結合テストはその関数に、テスト用の DB と固定した時計を渡して呼ぶ
 - 計算する値（stale、アラートの状態、次の 3 本の選び方など）は `src/lib/metrics/` の純粋関数
@@ -117,24 +118,33 @@ web は Next.js の App Router。画面はすべてクライアントで描画�
 
 aggregate ジョブ（毎日 04:30 ET）が、前の運行日の生データ（`arrival_events`・`prediction_samples`・`alerts`）を集計テーブルに書き、そのあと保持期間を過ぎた生データのパーティションを消す（集計が定義の版 1 以上で成功した運行日だけ）。集計テーブルは無期限に残す。定義は `specs/003-analytics/data-model.md`。
 
-| 集計テーブル | 単位 |
-|---|---|
-| `daily_headway_stats` | 運行日 × 路線（Green の合算を含む）× 方向 × 親駅 × 時間帯 |
-| `daily_prediction_accuracy` | 運行日 × 路線 × 方向 × リード時間 × 予測の種類 × 時間帯 |
-| `daily_alert_stats` | 運行日 × 路線（`All` を含む）× effect × cause |
-| `hourly_alert_minutes` | 運行日 × 路線（`All` を含む）× 時間帯 × 区分（遅延系 / お知らせ系） |
+| 集計テーブル                | 単位                                                                |
+| --------------------------- | ------------------------------------------------------------------- |
+| `daily_headway_stats`       | 運行日 × 路線（Green の合算を含む）× 方向 × 親駅 × 時間帯           |
+| `daily_prediction_accuracy` | 運行日 × 路線 × 方向 × リード時間 × 予測の種類 × 時間帯             |
+| `daily_alert_stats`         | 運行日 × 路線（`All` を含む）× effect × cause                       |
+| `hourly_alert_minutes`      | 運行日 × 路線（`All` を含む）× 時間帯 × 区分（遅延系 / お知らせ系） |
 
-| 画面 | パス | 使う内部 API |
-|---|---|---|
-| Headways | `/analytics/headways` | `/api/analytics/headways`, `/api/static/routes` |
-| Prediction accuracy | `/analytics/predictions` | `/api/analytics/predictions` |
-| Alert trends | `/analytics/alerts` | `/api/analytics/alerts` |
-| Patterns | `/analytics/patterns` | `/api/analytics/heatmap` |
+| 画面                | パス                     | 使う内部 API                                    |
+| ------------------- | ------------------------ | ----------------------------------------------- |
+| Headways            | `/analytics/headways`    | `/api/analytics/headways`, `/api/static/routes` |
+| Prediction accuracy | `/analytics/predictions` | `/api/analytics/predictions`                    |
+| Alert trends        | `/analytics/alerts`      | `/api/analytics/alerts`                         |
+| Patterns            | `/analytics/patterns`    | `/api/analytics/heatmap`                        |
 
 - 集計の SQL は指標ごとに「運行日 1 つ分の SELECT」を 1 つだけ持ち（`src/lib/db/analytics-sql.ts`）、ジョブ（INSERT）と分析 API（今日の分の計算）で共有する。同じ定義の TypeScript 版（`src/lib/metrics/`）と、小さなデータで結果を突き合わせるテストがある
 - 分析 API は、今日より前を集計テーブルから、今日の分を生データから計算して結合する。今日の分の計算結果は Web のプロセスに 60 秒だけ残す（`src/lib/api/today-cache.ts`）
 - 絞り込み（期間・路線・方向・駅など）は URL のクエリに持つ。グラフは Apache ECharts（`src/components/charts/`）
 - 過去の運行日の再集計: `pnpm job:aggregate --from … --to …`。Cloud Run Job では引数を丸ごと置き換えるので、先頭に `jobs/aggregate.mjs` を付ける（`docs/development.md`）
+
+## 画面デザイン（005 Platform）
+
+- デザイントークンの値の正は `specs/005-ui-design/contracts/design-tokens.md`、実装は `src/app/globals.css` の CSS 変数と Tailwind の `@theme inline`。Overpass は `next/font/local` で同梱し、preload と代替書体の寸法調整を行う。
+- Light / Dark / System の選択は `src/lib/theme.ts` と `components/theme/` で扱う。初回描画前のスクリプトで保存値を適用し、System は OS の設定に従う。保存できなくても表示を続ける。地図のスタイルと ECharts の色も解決した表示に追従する。
+- アラートは細い区切り線の一覧。既存の effect による分類を使い、Disruption は縞・警告アイコン・文言、Notice は情報アイコン・文言で示す。路線は色の帯と名前を併記する。
+- 稼働状況は collector の成功時刻・最新の結果・過去24時間の失敗を `lib/display/status-summary.ts` で一文にし、アイコンとともに表の上に出す。表内では個別ジョブの状態を保ち、横に長い実行履歴はキーボードでもスクロールできる領域に収める。
+- 分析の4画面は `lib/display/summaries.ts` の純粋関数で要点の文を作り、数値の `stat-…-value` を保つ。運行間隔は近似中央値、アラートの件数は alert-days と明記し、パターンは運行日の曜日とボストン時間で示す。グラフは見出しと余白で区切り、絞り込み・精度と集計の注記・数値表は保つ。DB・集計定義・内部 API の変更はない。
+- アクセシビリティは `tests/e2e/a11y.spec.ts`（明暗の WCAG 2.2 AA）、`design-final.spec.ts`（ヒートマップの明暗・色覚シミュレーション・forced-colors・幅320px）で検証する。地図 canvas は凡例と文で補い、画像の目視確認と実環境での確認も行う。
 
 ## 認証・監視・ロールバック
 
@@ -146,13 +156,13 @@ aggregate ジョブ（毎日 04:30 ET）が、前の運行日の生データ（`
 
 イメージは 1 つ（`Dockerfile`）。既定のコマンドは web で、Cloud Run Jobs は command / args で上書きする（`infra/terraform/modules/app/jobs.tf`）。作業ディレクトリは `/app`。
 
-| 用途 | コマンド | ローカルで同じ処理 |
-|---|---|---|
-| web | `node server.js`（既定。`PORT=8080`） | `pnpm dev` / `pnpm start` |
-| collector | `node jobs/collect.mjs` | `pnpm job:collect` |
-| sync-static | `node jobs/sync-static.mjs` | `pnpm job:sync-static` |
-| aggregate | `node jobs/aggregate.mjs [--from YYYY-MM-DD --to YYYY-MM-DD]` | `pnpm job:aggregate` |
-| migrate | `node migrate/node_modules/prisma/build/index.js migrate deploy --config migrate/prisma.config.ts` | `pnpm db:migrate` |
+| 用途        | コマンド                                                                                           | ローカルで同じ処理        |
+| ----------- | -------------------------------------------------------------------------------------------------- | ------------------------- |
+| web         | `node server.js`（既定。`PORT=8080`）                                                              | `pnpm dev` / `pnpm start` |
+| collector   | `node jobs/collect.mjs`                                                                            | `pnpm job:collect`        |
+| sync-static | `node jobs/sync-static.mjs`                                                                        | `pnpm job:sync-static`    |
+| aggregate   | `node jobs/aggregate.mjs [--from YYYY-MM-DD --to YYYY-MM-DD]`                                      | `pnpm job:aggregate`      |
+| migrate     | `node migrate/node_modules/prisma/build/index.js migrate deploy --config migrate/prisma.config.ts` | `pnpm db:migrate`         |
 
 `jobs/*.mjs` は `src/jobs/` を依存ごと 1 ファイルにまとめたもの（`pnpm build:jobs`）。イメージの中身と決めた理由は `specs/004-infra-cicd/research.md` の「イメージの中身」。
 
@@ -160,11 +170,11 @@ Web とジョブは同じ Next.js プロジェクト・同じイメージに入�
 
 ## 文書の正（source of truth）
 
-| 情報 | 正 |
-|---|---|
-| プロジェクトの原則 | `.specify/memory/constitution.md` |
-| システムの現在の構成 | このファイル |
-| DB スキーマ | 実装前は各 feature の `data-model.md`、実装後は `prisma/schema.prisma`。`data-model.md` は「その feature で何を足したか・なぜか」の記録として残す |
-| MBTA API の使い方と実測した性質 | `specs/001-data-collection/contracts/mbta-api.md` |
-| 内部 API | `specs/002-live-dashboard/contracts/live-api.md`, `specs/003-analytics/contracts/analytics-api.md` |
-| 開発手順・環境変数 | `docs/development.md` |
+| 情報                            | 正                                                                                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| プロジェクトの原則              | `.specify/memory/constitution.md`                                                                                                                 |
+| システムの現在の構成            | このファイル                                                                                                                                      |
+| DB スキーマ                     | 実装前は各 feature の `data-model.md`、実装後は `prisma/schema.prisma`。`data-model.md` は「その feature で何を足したか・なぜか」の記録として残す |
+| MBTA API の使い方と実測した性質 | `specs/001-data-collection/contracts/mbta-api.md`                                                                                                 |
+| 内部 API                        | `specs/002-live-dashboard/contracts/live-api.md`, `specs/003-analytics/contracts/analytics-api.md`                                                |
+| 開発手順・環境変数              | `docs/development.md`                                                                                                                             |

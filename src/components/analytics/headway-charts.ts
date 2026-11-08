@@ -76,9 +76,5 @@ export function headwayIncidentsOption(res: Pick<HeadwaysResponse, "daily">): EC
   });
 }
 
-/** 期間全体の運行間隔の中央値（件数で重み付けした近似、分）。データがなければ null */
-export function overallMedianMin(res: Pick<HeadwaysResponse, "daily">): number | null {
-  const n = res.daily.reduce((s, d) => s + d.n, 0);
-  if (n === 0) return null;
-  return secToMin(res.daily.reduce((s, d) => s + d.p50Sec * d.n, 0) / n);
-}
+// 既存の呼び出し側のため公開パスを保つ。表示用の計算の正は lib/display。
+export { overallMedianMin } from "@/lib/display/summaries";

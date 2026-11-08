@@ -1,6 +1,7 @@
 // アラートを路線（の組み合わせ）ごとにまとめて出す
 import type { AlertItem } from "@/lib/api-schemas/alerts";
 import type { RouteInfo } from "@/lib/api-schemas/routes";
+import { lineColorToken } from "@/lib/display/line-counts";
 import { AlertCard } from "./alert-card";
 import { groupAlertsByRoutes } from "./format";
 
@@ -33,14 +34,14 @@ export function AlertGroups({
                 <span key={id} className="flex items-center gap-1.5">
                   <span
                     aria-hidden
-                    className="inline-block size-3 rounded-full"
-                    style={{ backgroundColor: `#${byId.get(id)?.color ?? "888888"}` }}
+                    className="inline-block h-5 w-1.5 shrink-0"
+                    style={{ backgroundColor: `var(${lineColorToken(id)})` }}
                   />
                   {byId.get(id)?.longName ?? id}
                 </span>
               ))}
             </h3>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col">
               {g.alerts.map((a) => (
                 <AlertCard key={a.id} alert={a} />
               ))}

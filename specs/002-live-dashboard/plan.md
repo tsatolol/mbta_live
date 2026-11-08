@@ -30,14 +30,14 @@ Next.js の App Router で地図・駅・アラート・稼働状況の画面と
 
 ## 憲章との適合確認（Constitution Check）
 
-| 原則 | 適合 |
-|---|---|
-| I. MBTA API はジョブからだけ | ✅ 内部 API は DB だけを読む |
-| II. Web は読み取り専用 | ✅ すべて GET |
-| III. 入力の検証 | ✅ クエリパラメータを zod で検証 |
-| IV. テスト | ✅ 4 画面に Playwright、内部 API に結合テスト、計算する値に単体テスト |
-| V. 時刻 | ✅ API は UTC、表示時にボストン時間へ変換 |
-| VI. 1 つのイメージ | ✅ 環境の表示は実行時の `APP_ENV` だけ |
+| 原則                         | 適合                                                                  |
+| ---------------------------- | --------------------------------------------------------------------- |
+| I. MBTA API はジョブからだけ | ✅ 内部 API は DB だけを読む                                          |
+| II. Web は読み取り専用       | ✅ すべて GET                                                         |
+| III. 入力の検証              | ✅ クエリパラメータを zod で検証                                      |
+| IV. テスト                   | ✅ 4 画面に Playwright、内部 API に結合テスト、計算する値に単体テスト |
+| V. 時刻                      | ✅ API は UTC、表示時にボストン時間へ変換                             |
+| VI. 1 つのイメージ           | ✅ 環境の表示は実行時の `APP_ENV` だけ                                |
 
 ## プロジェクト構成（Project Structure）
 
@@ -70,8 +70,9 @@ src/
 ├── components/
 │   ├── layout/                      # ヘッダー（最終更新時刻・stale バナー・DEV バッジ）、フッター
 │   ├── map/                         # MapLibre の地図、ポップアップの文言
-│   ├── arrivals/                    # 到着表示（方向ごとのカード、駅のアラート）
-│   ├── alerts/                      # アラートのカード・まとまり・検索
+│   ├── arrivals/                    # 方向別の発車標、駅のアラート（005）
+│   ├── stations/                    # 分岐と合流を示す路線図（005）
+│   ├── alerts/                      # 細い区切り線の一覧・まとまり・検索（005）
 │   ├── status/                      # 稼働状況の表示用の関数
 │   └── ui/                          # shadcn/ui（Badge、Card、Input）
 ├── hooks/use-now.ts                 # 一定間隔で現在時刻を更新する
@@ -80,6 +81,7 @@ src/
     ├── api-schemas/                 # 応答の zod スキーマ（サーバーと画面で共有）
     ├── db/{live,static-read,status}.ts   # 読み取りクエリ
     ├── metrics/{live,arrival-board,alerts}.ts   # 計算する値（純粋関数）
+    ├── display/                     # 路線図、鮮度、稼働状況の要約（005 の純粋関数）
     └── geo/polyline.ts              # encoded polyline → GeoJSON
 tests/
 ├── integration/api/                 # 内部 API の結合テスト

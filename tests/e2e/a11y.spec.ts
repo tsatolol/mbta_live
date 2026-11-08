@@ -7,6 +7,8 @@ import { seedE2e } from "./helpers/seed";
 import { stubMapTiles, waitForMap } from "./helpers/map";
 
 const PAGES = [
+  { name: "アラート", path: "/alerts", ready: "active-alerts" },
+  { name: "運行間隔の分析", path: "/analytics/headways", ready: "analytics-summary" },
   { name: "駅の路線図", path: "/stations", ready: "station-group-Green" },
   { name: "駅の発車標", path: "/stations/place-pktrm", ready: "departure-board" },
   { name: "駅のアラート", path: "/stations/place-jaksn", ready: "station-alerts" },
@@ -16,7 +18,7 @@ const PAGES = [
 
 test.describe("アクセシビリティ（axe-core）", () => {
   test.beforeAll(() => {
-    seedE2e("base");
+    seedE2e("analytics");
   });
 
   for (const scheme of COLOR_SCHEMES) {

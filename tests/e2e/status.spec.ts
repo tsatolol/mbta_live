@@ -1,5 +1,6 @@
 // 002 TR-003: 稼働状況の画面（US4）。共通部分（最終更新時刻・stale バナー・DEV バッジ・出典表記）は layout.spec.ts
 import { expect, test } from "@playwright/test";
+import { statusResponseSchema } from "@/lib/api-schemas/status";
 import { seedE2e } from "./helpers/seed";
 
 test.describe("稼働状況", () => {
@@ -7,6 +8,10 @@ test.describe("稼働状況", () => {
     seedE2e("base");
     await page.goto("/status");
 
+    await expect(page.getByTestId("status-summary")).toContainText(
+      "Collection is running normally",
+    );
+    await expect(page.getByTestId("status-summary").locator("svg")).toBeVisible();
     const collect = page.getByTestId("job-collect");
     await expect(collect.getByTestId("job-last-status")).toHaveText("success");
     await expect(collect.getByTestId("job-last-success")).toContainText("just now");
@@ -35,7 +40,37 @@ test.describe("稼働状況", () => {
   test("収集が止まっていると、最後の成功からの経過時間と stale バナーが出る", async ({ page }) => {
     seedE2e("stale-collection");
     await page.goto("/status");
+    await expect(page.getByTestId("status-summary")).toContainText("Collection is delayed");
+    await expect(page.getByTestId("status-summary").locator(".stale-stripes")).toBeVisible();
     await expect(page.getByTestId("stale-banner")).toContainText("Live data is stale");
     await expect(page.getByTestId("last-collected")).toContainText("4 min ago");
   });
+});
+
+test("収集の失敗を警告し、未実行の状態も正常と区別する", async ({ page }) => {
+  seedE2e("base");
+  const source = statusResponseSchema.parse(await (await page.request.get("/api/status")).json());
+  await page.route("**/api/status", (route) =>
+    route.fulfill({
+      json: {
+        ...source,
+        jobs: source.jobs.map((job) =>
+          job.job === "collect"
+            ? {
+                ...job,
+                failedLast24h: 1,
+                lastRun: job.lastRun ? { ...job.lastRun, status: "failed" } : null,
+              }
+            : job,
+        ),
+      },
+    }),
+  );
+  await page.goto("/status");
+  await expect(page.getByTestId("status-summary")).toContainText("latest collection failed");
+  await page.route("**/api/status", (route) =>
+    route.fulfill({ json: { ...source, lastCollectedAt: null, jobs: [] } }),
+  );
+  await page.reload();
+  await expect(page.getByTestId("status-summary")).toHaveText("No collection has succeeded yet.");
 });
