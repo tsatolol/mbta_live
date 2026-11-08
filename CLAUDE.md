@@ -59,12 +59,11 @@ pnpm test:e2e                  # E2E 用の DB（mbta_live_e2e）を作り直し
 
 - dev / prod の予算額（決めたら bootstrap の `monthly_budgets` に書いて apply する。GCP プロジェクトは `mbta-live-dev-76bt` / `mbta-live-prod-76bt`。bootstrap の Terraform で作成済み）
 - prod の承認者（現状はリポジトリのオーナーのみ。bootstrap の `prod_reviewer`）
-- MBTA API キーの取得（dev 用・prod 用。取得したら Secret Manager の `MBTA_API_KEY` に入れ、`envs/<env>/terraform.tfvars` の `mbta_api_key_enabled` を true にする。それまではキーなしで収集している）
 - 独自ドメインを使うか
 - 平日のラッシュ時の `/predictions` の件数とサイズ（日曜早朝は 416 件・非圧縮 251KB、平日 10:20 ET は 2,278 件・非圧縮 1.36MB）
 - 団子運転・間隔の開きのしきい値
 - 時刻表との比較による遅延指標を作るか
-- 将来の改善候補: API キーを取得したら収集を 30 秒間隔にする（到着検出の精度向上）、アラート通知
+- 将来の改善候補: 収集を 30 秒間隔にする（API キーは dev / prod とも登録済み。到着検出の精度向上。憲章の「1 環境あたり 5 req/分以下」の見直しが必要）、アラート通知
 
 <!-- SPECKIT START -->
 
